@@ -1,0 +1,17 @@
+{
+  "name": "campus-erp",
+  "version": "1.0.0",
+  "description": "PlanetU Technovision ERP for students and employees - Phase 1: role-based login + Student portal (Dashboard, Profile, Institute, Calendar, Timetable)",
+  "private": true,
+  "workspaces": ["server", "client"],
+  "scripts": {
+    "dev": "concurrently -n api,web -c blue,magenta \"npm run dev -w server\" \"npm run dev -w client\"",
+    "build": "npm run build -w client",
+    "start": "npm run start -w server",
+    "seed": "npm run seed -w server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1"
+  },
+  "engines": { "node": ">=18.11" }
+}
