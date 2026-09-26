@@ -8,7 +8,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { env } from '../config/env.js';
-import { buildSeed, refreshDemoDates } from './seed.js';
+import { buildSeed, migrate, refreshDemoDates } from './seed.js';
 
 let cache = null;
 
@@ -25,6 +25,9 @@ export function db() {
     cache = JSON.parse(fs.readFileSync(env.DB_FILE, 'utf8'));
     // Demo data is anchored to "today" so the calendar/timetable always look alive.
     refreshDemoDates(cache);
+    // Backfills collections added by later phases (e.g. Admin's departments/
+    // designations) into a db.json that was seeded before they existed.
+    migrate(cache);
   } else {
     cache = buildSeed();
     writeToDisk();

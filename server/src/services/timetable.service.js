@@ -1,4 +1,4 @@
-import { db } from '../db/store.js';
+import { db, save } from '../db/store.js';
 import { addDays, parseISO, toISO } from '../utils/dates.js';
 
 const shapeEmployee = (e) => e && ({
@@ -74,4 +74,89 @@ export function buildTimetable({ courseId, start, end, department, employeeId, s
       priorities: ['High', 'Medium', 'Low'],
     },
   };
+}
+
+/**
+ * Same dated-occurrence expansion as buildTimetable, but across every course
+ * (or one, if courseId is given) instead of a single student's course - this
+ * is what the Admin "Timetable / Lecture Reassignment" module lists.
+ */
+export function buildAdminTimetable({ start, end, department, employeeId, courseId }) {
+  const data = db();
+  const courses = new Map(data.courses.map((c) => [c.id, c]));
+  const employees = new Map(data.employees.map((e) => [e.id, e]));
+  const slots = courseId ? data.timetableSlots.filter((s) => s.courseId === courseId) : data.timetableSlots;
+  const duties = courseId ? data.duties.filter((d) => d.courseId === courseId) : data.duties;
+
+  const holidayDates = new Set();
+  for (const ev of data.events.filter((e) => e.type === 'holiday')) {
+    for (let d = parseISO(ev.start); d <= parseISO(ev.end); d = addDays(d, 1)) holidayDates.add(toISO(d));
+  }
+  const reassigned = new Map(data.reassignments.map((r) => [`${r.slotId}|${r.date}`, r]));
+
+  let items = [];
+  for (let d = parseISO(start); d <= parseISO(end); d = addDays(d, 1)) {
+    const iso = toISO(d);
+    if (holidayDates.has(iso)) continue;
+    for (const s of slots.filter((x) => x.weekday === d.getDay())) {
+      const emp = employees.get(s.employeeId);
+      const course = courses.get(s.courseId);
+      const re = reassigned.get(`${s.id}|${iso}`);
+      items.push({
+        id: `${s.id}@${iso}`, slotId: s.id, type: 'lecture', mode: s.mode, date: iso, start: s.start, end: s.end,
+        title: s.subject, employee: shapeEmployee(emp), department: emp.department, course: course?.name || s.courseId,
+        location: s.location, priority: null,
+        reassignedTo: re ? shapeEmployee(employees.get(re.toEmployeeId)) : null,
+        reassignReason: re?.reason || null,
+      });
+    }
+  }
+  for (const du of duties.filter((x) => x.date >= start && x.date <= end)) {
+    const emp = employees.get(du.employeeId);
+    const course = courses.get(du.courseId);
+    items.push({
+      id: du.id, slotId: null, type: 'duty', mode: null, date: du.date, start: du.start, end: du.end,
+      title: du.title, employee: shapeEmployee(emp), department: emp.department, course: course?.name || du.courseId,
+      location: du.location, priority: du.priority, reassignedTo: null, reassignReason: null,
+    });
+  }
+
+  if (department) items = items.filter((i) => i.department === department);
+  if (employeeId) items = items.filter((i) => i.employee.id === employeeId);
+
+  items.sort((a, b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start) || a.id.localeCompare(b.id));
+
+  return {
+    items,
+    summary: {
+      lectures: items.filter((i) => i.type === 'lecture').length,
+      duties: items.filter((i) => i.type === 'duty').length,
+      timeSlots: new Set(items.filter((i) => i.type === 'lecture').map((i) => `${i.start}-${i.end}`)).size,
+      start, end,
+    },
+  };
+}
+
+/** Reassigns a single dated lecture occurrence to another employee. */
+export function reassignLecture({ slotId, date, toEmployeeId, reason }) {
+  const data = db();
+  const slot = data.timetableSlots.find((s) => s.id === slotId);
+  if (!slot) throw new Error('Lecture slot not found');
+  if (!data.employees.find((e) => e.id === toEmployeeId)) throw new Error('Employee not found');
+
+  const existing = data.reassignments.find((r) => r.slotId === slotId && r.date === date);
+  if (existing) {
+    existing.toEmployeeId = toEmployeeId;
+    existing.reason = reason || existing.reason;
+  } else {
+    data.reassignments.push({ slotId, date, toEmployeeId, reason: reason || '' });
+  }
+  save();
+}
+
+/** Reverts a lecture occurrence back to its original weekly-slot employee. */
+export function clearReassignment({ slotId, date }) {
+  const data = db();
+  data.reassignments = data.reassignments.filter((r) => !(r.slotId === slotId && r.date === date));
+  save();
 }

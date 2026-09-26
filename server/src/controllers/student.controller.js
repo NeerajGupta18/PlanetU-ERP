@@ -56,8 +56,12 @@ export function profile(req, res) {
 }
 
 /* ---------- Institute ---------- */
+// Students only see the public profile - internal records (stakeholders,
+// authorized persons' PAN/Aadhaar, documents, bank beneficiaries, stamp/
+// signature) are Admin-only and are stripped out here.
 export function institute(req, res) {
-  res.json({ institute: db().institute });
+  const { authorizedPersons, stakeholders, documents, beneficiaries, stamp, ...publicInfo } = db().institute;
+  res.json({ institute: publicInfo });
 }
 
 /* ---------- Calendar ---------- */

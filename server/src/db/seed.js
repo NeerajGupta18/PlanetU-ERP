@@ -81,6 +81,25 @@ export function buildSeed() {
     { id: 'EMP006', name: 'Kavita Sharma', designation: 'Associate Professor', department: 'Mathematics', shift: 'General shift', email: 'kavita.sharma@erp.com' },
   ];
 
+  // Departments & Designations are reference lists managed from the Admin
+  // portal. Employees still store department/designation as plain strings
+  // (unchanged, so the existing timetable service and student pages keep
+  // working untouched) - these names must match here.
+  const departments = [
+    { id: 'DEPT-CS', name: 'Computer Science', description: 'All Computer Science courses', createdDate: `${year}-01-15` },
+    { id: 'DEPT-EN', name: 'English', description: 'English language and communication', createdDate: `${year}-01-15` },
+    { id: 'DEPT-MA', name: 'Mathematics', description: 'Mathematics and applied sciences', createdDate: `${year}-01-15` },
+    { id: 'DEPT-AD', name: 'Administration', description: 'Administrative and support staff', createdDate: `${year}-01-15` },
+  ];
+
+  const designations = [
+    { id: 'DESG-1', name: 'Professor', department: 'Computer Science' },
+    { id: 'DESG-2', name: 'Associate Professor', department: 'Computer Science' },
+    { id: 'DESG-3', name: 'Assistant Professor', department: 'Computer Science' },
+    { id: 'DESG-4', name: 'Head of Department', department: 'English' },
+    { id: 'DESG-5', name: 'Associate Professor', department: 'Mathematics' },
+  ];
+
   const students = [
     {
       id: 'STU2026001', rollNo: 'BCA24-001', enrollmentNo: 'ENR2024BCA001',
@@ -237,7 +256,34 @@ export function buildSeed() {
   return refreshDemoDates({
     meta: { version: 1, seededAt: new Date().toISOString() },
     institute, courses, employees, students, users, timetableSlots, duties, events, notices, reassignments: [],
+    departments, designations,
   });
+}
+
+/**
+ * Fills in collections that didn't exist in an already-seeded db.json from
+ * before the Admin module was added, so upgrading never wipes existing data.
+ * Safe to call on every load - a no-op once the fields are present.
+ */
+export function migrate(data) {
+  if (!data.departments) {
+    const names = [...new Set(data.employees.map((e) => e.department))];
+    data.departments = names.map((name, i) => ({
+      id: `DEPT-${i + 1}`, name, description: '', createdDate: toISO(new Date()),
+    }));
+  }
+  if (!data.designations) {
+    const seen = new Set();
+    data.designations = [];
+    let n = 1;
+    for (const e of data.employees) {
+      const key = `${e.designation}|${e.department}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      data.designations.push({ id: `DESG-${n++}`, name: e.designation, department: e.department });
+    }
+  }
+  return data;
 }
 
 /**

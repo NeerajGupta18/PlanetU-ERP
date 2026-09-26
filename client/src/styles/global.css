@@ -111,7 +111,7 @@ a { color: var(--brand-600); }
 .login__aside::before { width: 420px; height: 420px; right: -160px; top: -120px; }
 .login__aside::after { width: 300px; height: 300px; left: -110px; bottom: -110px; }
 .login__aside-inner { position: relative; max-width: 440px; }
-.login__mark { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 16px; background: rgba(255, 255, 255, 0.16); margin-bottom: 26px; }
+.login__mark { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 16px; background: #fff; padding: 8px; margin-bottom: 26px; }
 .login__aside h1 { font-size: 30px; line-height: 1.2; letter-spacing: -0.01em; }
 .login__lead { margin-top: 12px; font-size: 16px; color: rgba(255, 255, 255, 0.82); }
 .login__points { margin-top: 34px; display: grid; gap: 16px; }
@@ -162,7 +162,7 @@ a { color: var(--brand-600); }
 .shell { min-height: 100%; }
 .sidebar { position: fixed; inset: 0 auto 0 0; width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 40; transition: width 0.2s ease, transform 0.2s ease; overflow: hidden; }
 .sidebar__brand { height: var(--topbar-h); display: flex; align-items: center; gap: 12px; padding: 0 16px; border-bottom: 1px solid var(--border); flex: none; }
-.sidebar__logo { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; color: #fff; background: var(--grad); }
+.sidebar__logo { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: #fff; border: 1px solid var(--border); padding: 4px; }
 .sidebar__brand-text { display: grid; line-height: 1.25; min-width: 0; }
 .sidebar__brand-text strong { font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sidebar__brand-text small { color: var(--muted); font-size: 11.5px; }
@@ -456,3 +456,28 @@ a { color: var(--brand-600); }
 .tt-card--compact { overflow: hidden; overflow-wrap: anywhere; }
 .tt-card--compact .nowrap { white-space: normal; }
 .tt-card--compact .badge--wide { white-space: normal; border-radius: 10px; }
+
+/* =========================================================
+   Modal (Admin CRUD forms)
+   ========================================================= */
+.modal-backdrop { position: fixed; inset: 0; background: rgba(20, 20, 40, 0.45); display: grid; place-items: center; z-index: 80; padding: 20px; }
+.modal { width: 100%; background: var(--surface); border-radius: 16px; box-shadow: 0 20px 60px rgba(20, 20, 60, 0.3); max-height: 90vh; overflow-y: auto; }
+.modal__head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+.modal__head h3 { font-size: 16px; }
+.modal__body { padding: 18px 20px 20px; }
+.modal__body .fields { margin-bottom: 4px; }
+.form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+.form-error { margin: 0 0 14px; padding: 10px 12px; border-radius: 10px; background: var(--red-bg); color: #991b1b; font-size: 13px; }
+
+/* =========================================================
+   Admin - departments / designations / employees / calendar
+   ========================================================= */
+.toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
+.toolbar__filters { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.toolbar__filters input, .toolbar__filters select { padding: 9px 10px; border: 1px solid var(--border); border-radius: 8px; background: #fff; font-size: 13px; min-width: 170px; }
+.count-pill { display: inline-flex; align-items: center; justify-content: center; min-width: 26px; padding: 2px 8px; border-radius: 999px; background: var(--brand-50); color: var(--brand-700); font-weight: 700; font-size: 12px; }
+.row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.row-actions .btn { padding: 6px 10px; font-size: 12px; }
+.form-field { display: grid; gap: 5px; }
+.form-field .label { margin: 0; }
+.form-field--full { grid-column: 1 / -1; }

@@ -1,4 +1,4 @@
-import { Building2, CalendarDays, LayoutDashboard, Table2, UserRound } from 'lucide-react';
+import { Building2, CalendarDays, LayoutDashboard, Network, Table2, UserRound, Users } from 'lucide-react';
 
 /**
  * Sidebar menus per role. To add a module later: build its page, add a <Route>
@@ -15,7 +15,14 @@ export const MENU = {
     { label: 'Calendar', to: '/student/calendar', icon: CalendarDays },
     { label: 'Timetable', to: '/student/timetable', icon: Table2 },
   ],
-  admin: [{ label: 'Dashboard', to: '/admin/dashboard', icon: LayoutDashboard }],
+  admin: [
+    { label: 'Admin Dashboard', to: '/admin/dashboard', icon: LayoutDashboard },
+    { label: 'Institute', to: '/admin/institute', icon: Building2 },
+    { label: 'Departments & Designations', to: '/admin/departments', icon: Network },
+    { label: 'Employees', to: '/admin/employees', icon: Users },
+    { label: 'Calendar', to: '/admin/calendar', icon: CalendarDays },
+    { label: 'Timetable', to: '/admin/timetable', icon: Table2 },
+  ],
   super_admin: [{ label: 'Dashboard', to: '/super-admin/dashboard', icon: LayoutDashboard }],
   employee: [{ label: 'Dashboard', to: '/employee/dashboard', icon: LayoutDashboard }],
 };

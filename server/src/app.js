@@ -8,6 +8,7 @@ import { env } from './config/env.js';
 import { errorHandler, notFound } from './middleware/error.js';
 import authRoutes from './routes/auth.routes.js';
 import studentRoutes from './routes/student.routes.js';
+import adminRoutes from './routes/admin.routes.js';
 import { publicInstitute } from './controllers/auth.controller.js';
 
 export function createApp() {
@@ -39,7 +40,8 @@ export function createApp() {
   app.get('/api/public/institute', publicInstitute);
   app.use('/api/auth', authRoutes);
   app.use('/api/student', studentRoutes);
-  // Next phases: /api/admin, /api/employee, /api/super-admin ...
+  app.use('/api/admin', adminRoutes);
+  // Next phases: /api/employee, /api/super-admin ...
 
   app.use('/api', notFound);
 

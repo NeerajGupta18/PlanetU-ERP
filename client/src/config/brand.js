@@ -5,7 +5,7 @@ export const BRAND = {
   name: 'PlanetU Technovision',
   short: 'PlanetU',
   tagline: 'Elevating ideas into digital success',
-  // Drop your official logo at client/public/logo.svg (white-on-transparent
-  // works best on the gradient tiles) to replace this placeholder mark.
-  logo: '/logo.svg',
+  // Official PlanetU mark (blue-on-white) - shown in the sidebar and on the
+  // login page. Swap client/public/logo-mark.png to replace it.
+  logo: '/logo-mark.png',
 };
