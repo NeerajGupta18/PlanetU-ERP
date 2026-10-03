@@ -1,4 +1,7 @@
-import { db, save } from '../db/store.js';
+import { q } from '../db/pool.js';
+import {
+  loadCourses, loadDuties, loadEmployees, loadHolidayEvents, loadReassignments, loadSlots,
+} from '../db/repo.js';
 import { addDays, parseISO, toISO } from '../utils/dates.js';
 
 const shapeEmployee = (e) => e && ({
@@ -7,23 +10,27 @@ const shapeEmployee = (e) => e && ({
 
 const uniqueSorted = (arr) => [...new Set(arr)].sort((a, b) => a.localeCompare(b));
 
+async function holidaySet() {
+  const set = new Set();
+  for (const ev of await loadHolidayEvents()) {
+    for (let d = parseISO(ev.start); d <= parseISO(ev.end); d = addDays(d, 1)) set.add(toISO(d));
+  }
+  return set;
+}
+
 /**
  * Builds the dated list of lectures + duties for one course between two dates.
  * Lectures come from the weekly template, skip holidays, and show a
  * "reassigned to" tag when a lecture was handed to another employee for that day.
  */
-export function buildTimetable({ courseId, start, end, department, employeeId, subject, priority }) {
-  const data = db();
-  const course = data.courses.find((c) => c.id === courseId);
-  const employees = new Map(data.employees.map((e) => [e.id, e]));
-  const slots = data.timetableSlots.filter((s) => s.courseId === courseId);
-  const duties = data.duties.filter((d) => d.courseId === courseId);
-
-  const holidayDates = new Set();
-  for (const ev of data.events.filter((e) => e.type === 'holiday')) {
-    for (let d = parseISO(ev.start); d <= parseISO(ev.end); d = addDays(d, 1)) holidayDates.add(toISO(d));
-  }
-  const reassigned = new Map(data.reassignments.map((r) => [`${r.slotId}|${r.date}`, r]));
+export async function buildTimetable({ courseId, start, end, department, employeeId, subject, priority }) {
+  const courses = await loadCourses();
+  const course = courses.find((c) => c.id === courseId);
+  const employees = new Map((await loadEmployees()).map((e) => [e.id, e]));
+  const slots = await loadSlots(courseId);
+  const duties = await loadDuties(courseId);
+  const holidayDates = await holidaySet();
+  const reassigned = new Map((await loadReassignments()).map((r) => [`${r.slotId}|${r.date}`, r]));
 
   let items = [];
   for (let d = parseISO(start); d <= parseISO(end); d = addDays(d, 1)) {
@@ -78,21 +85,16 @@ export function buildTimetable({ courseId, start, end, department, employeeId, s
 
 /**
  * Same dated-occurrence expansion as buildTimetable, but across every course
- * (or one, if courseId is given) instead of a single student's course - this
- * is what the Admin "Timetable / Lecture Reassignment" module lists.
+ * (or one, if courseId is given) - this is what the Admin "Timetable /
+ * Lecture Reassignment" module lists.
  */
-export function buildAdminTimetable({ start, end, department, employeeId, courseId }) {
-  const data = db();
-  const courses = new Map(data.courses.map((c) => [c.id, c]));
-  const employees = new Map(data.employees.map((e) => [e.id, e]));
-  const slots = courseId ? data.timetableSlots.filter((s) => s.courseId === courseId) : data.timetableSlots;
-  const duties = courseId ? data.duties.filter((d) => d.courseId === courseId) : data.duties;
-
-  const holidayDates = new Set();
-  for (const ev of data.events.filter((e) => e.type === 'holiday')) {
-    for (let d = parseISO(ev.start); d <= parseISO(ev.end); d = addDays(d, 1)) holidayDates.add(toISO(d));
-  }
-  const reassigned = new Map(data.reassignments.map((r) => [`${r.slotId}|${r.date}`, r]));
+export async function buildAdminTimetable({ start, end, department, employeeId, courseId }) {
+  const courses = new Map((await loadCourses()).map((c) => [c.id, c]));
+  const employees = new Map((await loadEmployees()).map((e) => [e.id, e]));
+  const slots = await loadSlots(courseId);
+  const duties = await loadDuties(courseId);
+  const holidayDates = await holidaySet();
+  const reassigned = new Map((await loadReassignments()).map((r) => [`${r.slotId}|${r.date}`, r]));
 
   let items = [];
   for (let d = parseISO(start); d <= parseISO(end); d = addDays(d, 1)) {
@@ -138,25 +140,22 @@ export function buildAdminTimetable({ start, end, department, employeeId, course
 }
 
 /** Reassigns a single dated lecture occurrence to another employee. */
-export function reassignLecture({ slotId, date, toEmployeeId, reason }) {
-  const data = db();
-  const slot = data.timetableSlots.find((s) => s.id === slotId);
-  if (!slot) throw new Error('Lecture slot not found');
-  if (!data.employees.find((e) => e.id === toEmployeeId)) throw new Error('Employee not found');
+export async function reassignLecture({ slotId, date, toEmployeeId, reason }) {
+  const { rowCount: slotOk } = await q('select 1 from timetable_slots where id = $1', [slotId]);
+  if (!slotOk) throw new Error('Lecture slot not found');
+  const { rowCount: empOk } = await q('select 1 from employees where id = $1', [toEmployeeId]);
+  if (!empOk) throw new Error('Employee not found');
 
-  const existing = data.reassignments.find((r) => r.slotId === slotId && r.date === date);
-  if (existing) {
-    existing.toEmployeeId = toEmployeeId;
-    existing.reason = reason || existing.reason;
-  } else {
-    data.reassignments.push({ slotId, date, toEmployeeId, reason: reason || '' });
-  }
-  save();
+  await q(
+    `insert into reassignments (slot_id, on_date, to_employee_id, reason) values ($1, $2, $3, $4)
+     on conflict (tenant_id, slot_id, on_date)
+     do update set to_employee_id = excluded.to_employee_id,
+                   reason = coalesce(nullif(excluded.reason, ''), reassignments.reason), seed_key = null`,
+    [slotId, date, toEmployeeId, reason || ''],
+  );
 }
 
 /** Reverts a lecture occurrence back to its original weekly-slot employee. */
-export function clearReassignment({ slotId, date }) {
-  const data = db();
-  data.reassignments = data.reassignments.filter((r) => !(r.slotId === slotId && r.date === date));
-  save();
+export async function clearReassignment({ slotId, date }) {
+  await q('delete from reassignments where slot_id = $1 and on_date = $2', [slotId, date]);
 }

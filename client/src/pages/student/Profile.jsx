@@ -1,4 +1,5 @@
-import { BadgeCheck, GraduationCap, Mail, Phone, UserRound, Users } from 'lucide-react';
+import { BadgeCheck, CreditCard, GraduationCap, Mail, Phone, UserRound, Users } from 'lucide-react';
+import { useTenantConfig } from '../../hooks/useTenantConfig.js';
 import { useFetch } from '../../hooks/useFetch.js';
 import { Badge, Card, Field, PageBanner } from '../../components/ui/Ui.jsx';
 import { DataBoundary } from '../../components/ui/Feedback.jsx';
@@ -17,6 +18,7 @@ export default function Profile() {
 }
 
 function ProfileView({ s }) {
+  const { hasModule } = useTenantConfig();
   const initials = s.name.split(' ').map((p) => p[0]).slice(0, 2).join('');
   return (
     <>
@@ -34,6 +36,11 @@ function ProfileView({ s }) {
         <div className="idcard__contact">
           <span><Mail size={14} /> {s.email}</span>
           <span><Phone size={14} /> {s.phone}</span>
+          {hasModule('id_cards') && (
+            <a className="btn btn--outline btn--sm" href="/api/student/id-card.pdf" target="_blank" rel="noreferrer" style={{ marginTop: 6 }}>
+              <CreditCard size={13} /> Download ID card
+            </a>
+          )}
         </div>
       </section>
 

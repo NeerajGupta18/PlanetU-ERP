@@ -10,7 +10,7 @@ const nowHHMM = () => {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 };
 
-const attendanceTone = (pct) => (pct >= 85 ? 'good' : pct >= 75 ? 'warn' : 'bad');
+const attendanceTone = (pct, t = 75) => (pct >= t + 10 ? 'good' : pct >= t ? 'warn' : 'bad');
 
 export default function Dashboard() {
   const { data, loading, error, reload } = useFetch('/student/dashboard');
@@ -110,16 +110,16 @@ function DashboardView({ d }) {
               <li key={a.subject}>
                 <div className="bars__row">
                   <span>{a.subject}</span>
-                  <span className={`bars__pct bars__pct--${attendanceTone(a.pct)}`}>{a.pct}%</span>
+                  <span className={`bars__pct bars__pct--${attendanceTone(a.pct, d.attendanceThreshold)}`}>{a.pct}%</span>
                 </div>
                 <div className="bars__track" role="img" aria-label={`${a.subject}: ${a.attended} of ${a.total} classes attended`}>
-                  <div className={`bars__fill bars__fill--${attendanceTone(a.pct)}`} style={{ width: `${a.pct}%` }} />
+                  <div className={`bars__fill bars__fill--${attendanceTone(a.pct, d.attendanceThreshold)}`} style={{ width: `${a.pct}%` }} />
                 </div>
                 <small className="muted">{a.attended} of {a.total} classes</small>
               </li>
             ))}
           </ul>
-          <p className="note">Subjects below 75% are shown in red.</p>
+          <p className="note">Subjects below {d.attendanceThreshold}% are shown in red.</p>
         </Card>
 
         <Card title="Notices" icon={Megaphone}>
