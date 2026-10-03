@@ -1,322 +1,381 @@
 /**
- * Demo data. Everything here is FICTIONAL sample data (except the organisation
- * name and tagline) - replace it with real records once a real database is
- * connected. Address / phone are intentionally blank: fill them in below when
- * the real details are available and they will appear in the top bar and on
- * the Institute page automatically.
+ * Demo data. Everything here is FICTIONAL sample data.
+ *
+ * seedDemoTenants() provisions the demo clients through the SAME service the
+ * vendor console uses (provisionTenant), then fills each with sample records.
+ * It connects as the restricted application role like the API does, so Row
+ * Level Security applies to seeding too (nothing here bypasses tenant isolation).
  */
+import { gradeAttempt } from '../services/quizGrading.js';
 import bcrypt from 'bcryptjs';
-import { toISO, addDays } from '../utils/dates.js';
+import { q, switchTenant, withTx } from './pool.js';
+import { provisionTenant } from '../services/tenant.service.js';
+import { DEMO_PASSWORDS, DEMO_TENANTS } from './demo-data.js';
+import { addDays, parseISO, toISO } from '../utils/dates.js';
 
-const hash = (plain) => bcrypt.hashSync(plain, 10);
+/* ---------- rolling demo data (dates re-anchored to "today") ---------- */
 
-export const DEMO_ACCOUNTS = [
-  { role: 'super_admin', loginId: 'SA001', email: 'superadmin@erp.com', password: 'SuperAdmin@123' },
-  { role: 'admin', loginId: 'ADM001', email: 'admin@erp.com', password: 'Admin@123' },
-  { role: 'student', loginId: 'STU2026001', email: 'aarav.sharma@student.erp.com', password: 'Student@123' },
-  { role: 'employee', loginId: 'EMP001', email: 'amandeep.kaur@erp.com', password: 'Employee@123' },
+const FIXED_HOLIDAYS = [
+  ['01-26', 'Republic Day'], ['04-14', 'Dr. B. R. Ambedkar Jayanti'], ['08-15', 'Independence Day'],
+  ['10-02', 'Gandhi Jayanti'], ['12-25', 'Christmas'],
+];
+const LUNAR_2026 = [['2026-10-20', 'Dussehra'], ['2026-11-08', 'Diwali'], ['2026-11-24', 'Guru Nanak Gurpurab']];
+
+const ROLLING_EVENTS = [
+  { key: 'ptm', title: 'Parent-Teacher Meeting', type: 'academic', rel: [-5], time: ['10:00', '13:00'], location: 'Main Auditorium', description: 'Progress discussion with parents and guardians.' },
+  { key: 'guest', title: 'Guest Lecture: Applied AI in Industry', type: 'event', rel: [3], time: ['11:00', '12:30'], location: 'Seminar Hall', description: 'Industry speaker session open to everyone.' },
+  { key: 'fee', title: 'Fee Payment - Last Date', type: 'deadline', rel: [7], time: null, location: null, description: 'Pay the fee before this date to avoid a late fine.' },
+  { key: 'mid', title: 'Mid-Term Examinations', type: 'exam', rel: [10, 15], time: ['10:00', '13:00'], location: 'Exam Halls 1-3', description: 'Admit cards will be available a week before the exams.' },
+  { key: 'synopsis', title: 'Project Synopsis Submission', type: 'deadline', rel: [14], time: null, location: null, description: 'Submit the synopsis to your project guide.' },
+  { key: 'fest', title: 'Annual Tech Fest', type: 'event', rel: [21, 22], time: ['09:30', '17:00'], location: 'Main Campus', description: 'Hackathon, project showcase and coding contests.' },
+  { key: 'sports', title: 'Annual Sports Day', type: 'event', rel: [32], time: ['08:00', '16:00'], location: 'Campus Ground', description: 'Track and field events and inter-department matches.' },
+  { key: 'end', title: 'End-Term Examinations', type: 'exam', rel: [62, 74], time: ['10:00', '13:00'], location: 'Exam Halls 1-3', description: 'Detailed date sheet will be shared by the exam cell.' },
 ];
 
-export function buildSeed() {
-  const year = new Date().getFullYear();
+const ROLLING_DUTIES = [
+  { key: 'd1', title: 'Mid-Term Exam Invigilation', emp: 'EMP002', start: '10:00', end: '13:00', priority: 'High', location: 'Exam Hall 1', rel: 10 },
+  { key: 'd2', title: 'Lab Inspection', emp: 'EMP004', start: '14:00', end: '15:00', priority: 'Medium', location: 'Main Lab', rel: 4 },
+  { key: 'd3', title: 'Internal Marks Moderation', emp: 'EMP001', start: '11:00', end: '12:00', priority: 'Low', location: 'Staff Room', rel: 12 },
+];
 
-  const institute = {
-    id: 'INST-001',
-    name: 'PlanetU Technovision',
-    shortName: 'PlanetU',
-    tagline: 'Elevating ideas into digital success',
-    address: '',
-    city: '',
-    state: '',
-    pincode: '',
-    phone: '',
-    email: 'info@planetu.example',
-    website: 'www.planetu.example',
-    details: {
-      'Organisation Type': 'Technology & Training Organisation',
-      'Organisation Code': 'PUT-001',
-      'Registration No.': 'SAMPLE/0001',
-      'Working Model': 'Hybrid (Online + Offline)',
-      'Program Session': `${year}-${String(year + 1).slice(2)}`,
-    },
-    stakeholders: [
-      { name: 'Mr. Harjinder Singh', role: 'Director', email: 'director@planetu.example', phone: '+91 90000 11111' },
-      { name: 'Dr. Manpreet Kaur', role: 'Program Head', email: 'programs@planetu.example', phone: '+91 90000 22222' },
-      { name: 'Mr. Sandeep Verma', role: 'Operations Manager', email: 'operations@planetu.example', phone: '+91 90000 33333' },
-      { name: 'Ms. Navneet Kaur', role: 'Accounts Officer', email: 'accounts@planetu.example', phone: '+91 90000 44444' },
-    ],
-    authorizedPersons: [
-      { name: 'Dr. Manpreet Kaur', designation: 'Program Head', email: 'programs@planetu.example', phone: '+91 90000 22222', pan: 'ABCDE****F', aadhaar: 'XXXX-XXXX-1234' },
-      { name: 'Mr. Sandeep Verma', designation: 'Operations Manager', email: 'operations@planetu.example', phone: '+91 90000 33333', pan: 'FGHIJ****K', aadhaar: 'XXXX-XXXX-5678' },
-    ],
-    documents: [
-      { name: 'Certificate of Incorporation', issuedBy: 'Registrar of Companies', validTill: null, status: 'Verified' },
-      { name: 'GST Registration', issuedBy: 'GST Department', validTill: null, status: 'Verified' },
-      { name: 'Shops & Establishment Licence', issuedBy: 'Local Authority', validTill: `${year + 1}-06-30`, status: 'Verified' },
-      { name: 'Fire Safety NOC', issuedBy: 'Fire Department', validTill: `${year + 1}-01-15`, status: 'Expiring soon' },
-      { name: 'PAN Card (Organisation)', issuedBy: 'Income Tax Department', validTill: null, status: 'Verified' },
-    ],
-    beneficiaries: [
-      { accountName: 'PlanetU Technovision - Fee Collection', bank: 'State Bank of India', branch: 'Main Branch', accountNumber: 'XXXXXX4821', ifsc: 'SBIN0001234', type: 'Current' },
-      { accountName: 'PlanetU Technovision - Scholarship', bank: 'Punjab National Bank', branch: 'Main Branch', accountNumber: 'XXXXXX9057', ifsc: 'PUNB0123400', type: 'Savings' },
-    ],
-    stamp: {
-      stampText: 'PLANETU TECHNOVISION',
-      stampSub: 'ELEVATING IDEAS',
-      signatory: 'Dr. Manpreet Kaur',
-      signatoryTitle: 'Program Head',
-    },
-  };
-
-  const courses = [
-    { id: 'BCA', name: 'BCA', fullName: 'Bachelor of Computer Applications', department: 'Computer Science', years: 3 },
-  ];
-
-  const employees = [
-    { id: 'EMP001', name: 'Amandeep Kaur', designation: 'Professor', department: 'Computer Science', shift: 'Employee shift', email: 'amandeep.kaur@erp.com' },
-    { id: 'EMP002', name: 'Rohit Verma', designation: 'Associate Professor', department: 'Computer Science', shift: 'Employee shift', email: 'rohit.verma@erp.com' },
-    { id: 'EMP003', name: 'Simran Kaur', designation: 'Assistant Professor', department: 'Computer Science', shift: 'Employee shift', email: 'simran.kaur@erp.com' },
-    { id: 'EMP004', name: 'Harshit Rana', designation: 'Assistant Professor', department: 'Computer Science', shift: 'Employee shift', email: 'harshit.rana@erp.com' },
-    { id: 'EMP005', name: 'Muskaan Arora', designation: 'Head of Department', department: 'English', shift: 'General shift', email: 'muskaan.arora@erp.com' },
-    { id: 'EMP006', name: 'Kavita Sharma', designation: 'Associate Professor', department: 'Mathematics', shift: 'General shift', email: 'kavita.sharma@erp.com' },
-  ];
-
-  // Departments & Designations are reference lists managed from the Admin
-  // portal. Employees still store department/designation as plain strings
-  // (unchanged, so the existing timetable service and student pages keep
-  // working untouched) - these names must match here.
-  const departments = [
-    { id: 'DEPT-CS', name: 'Computer Science', description: 'All Computer Science courses', createdDate: `${year}-01-15` },
-    { id: 'DEPT-EN', name: 'English', description: 'English language and communication', createdDate: `${year}-01-15` },
-    { id: 'DEPT-MA', name: 'Mathematics', description: 'Mathematics and applied sciences', createdDate: `${year}-01-15` },
-    { id: 'DEPT-AD', name: 'Administration', description: 'Administrative and support staff', createdDate: `${year}-01-15` },
-  ];
-
-  const designations = [
-    { id: 'DESG-1', name: 'Professor', department: 'Computer Science' },
-    { id: 'DESG-2', name: 'Associate Professor', department: 'Computer Science' },
-    { id: 'DESG-3', name: 'Assistant Professor', department: 'Computer Science' },
-    { id: 'DESG-4', name: 'Head of Department', department: 'English' },
-    { id: 'DESG-5', name: 'Associate Professor', department: 'Mathematics' },
-  ];
-
-  const students = [
-    {
-      id: 'STU2026001', rollNo: 'BCA24-001', enrollmentNo: 'ENR2024BCA001',
-      name: 'Aarav Sharma', email: 'aarav.sharma@student.erp.com', phone: '+91 98123 45601',
-      dob: '2005-03-14', gender: 'Male', bloodGroup: 'B+', nationality: 'Indian',
-      courseId: 'BCA', semester: 3, section: 'A', batch: '2024 - 2027', admissionDate: '2024-07-15',
-      status: 'Active',
-      address: '#214, Karve Nagar, Pune, Maharashtra - 411052',
-      guardian: { name: 'Rajesh Sharma', relation: 'Father', phone: '+91 98123 45600', email: 'rajesh.sharma@example.com' },
-      attendance: [
-        { subject: 'Python Programming', attended: 34, total: 38 },
-        { subject: 'Data Structures', attended: 30, total: 36 },
-        { subject: 'Database Management', attended: 28, total: 34 },
-        { subject: 'Web Technologies', attended: 26, total: 32 },
-        { subject: 'English Communication', attended: 20, total: 22 },
-        { subject: 'Discrete Mathematics', attended: 24, total: 30 },
-      ],
-    },
-    {
-      id: 'STU2026002', rollNo: 'BCA24-002', enrollmentNo: 'ENR2024BCA002',
-      name: 'Simran Gill', email: 'simran.gill@student.erp.com', phone: '+91 98123 45602',
-      dob: '2005-08-02', gender: 'Female', bloodGroup: 'O+', nationality: 'Indian',
-      courseId: 'BCA', semester: 3, section: 'A', batch: '2024 - 2027', admissionDate: '2024-07-15',
-      status: 'Active', address: '#12, Green Avenue, Wakad, Pune, Maharashtra - 411057',
-      guardian: { name: 'Gurdeep Gill', relation: 'Father', phone: '+91 98123 45610', email: 'gurdeep.gill@example.com' },
-      attendance: [
-        { subject: 'Python Programming', attended: 36, total: 38 },
-        { subject: 'Data Structures', attended: 33, total: 36 },
-        { subject: 'Database Management', attended: 31, total: 34 },
-        { subject: 'Web Technologies', attended: 30, total: 32 },
-        { subject: 'English Communication', attended: 21, total: 22 },
-        { subject: 'Discrete Mathematics', attended: 27, total: 30 },
-      ],
-    },
-    {
-      id: 'STU2026003', rollNo: 'BCA24-003', enrollmentNo: 'ENR2024BCA003',
-      name: 'Karan Mehta', email: 'karan.mehta@student.erp.com', phone: '+91 98123 45603',
-      dob: '2004-12-21', gender: 'Male', bloodGroup: 'A+', nationality: 'Indian',
-      courseId: 'BCA', semester: 3, section: 'A', batch: '2024 - 2027', admissionDate: '2024-07-16',
-      status: 'Active', address: '#88, Sector 4, Pimpri, Pune, Maharashtra - 411018',
-      guardian: { name: 'Anil Mehta', relation: 'Father', phone: '+91 98123 45620', email: 'anil.mehta@example.com' },
-      attendance: [
-        { subject: 'Python Programming', attended: 30, total: 38 },
-        { subject: 'Data Structures', attended: 27, total: 36 },
-        { subject: 'Database Management', attended: 25, total: 34 },
-        { subject: 'Web Technologies', attended: 24, total: 32 },
-        { subject: 'English Communication', attended: 18, total: 22 },
-        { subject: 'Discrete Mathematics', attended: 22, total: 30 },
-      ],
-    },
-  ];
-
-  const users = [
-    { id: 'U-SA-1', role: 'super_admin', loginId: 'SA001', email: 'superadmin@erp.com', name: 'Super Admin', passwordHash: hash('SuperAdmin@123'), profileId: null, status: 'active' },
-    { id: 'U-AD-1', role: 'admin', loginId: 'ADM001', email: 'admin@erp.com', name: 'Institute Admin', passwordHash: hash('Admin@123'), profileId: null, status: 'active' },
-    ...students.map((s) => ({
-      id: `U-${s.id}`, role: 'student', loginId: s.id, email: s.email, name: s.name,
-      passwordHash: hash('Student@123'), profileId: s.id, status: 'active',
-    })),
-    ...employees.map((e) => ({
-      id: `U-${e.id}`, role: 'employee', loginId: e.id, email: e.email, name: e.name,
-      passwordHash: hash('Employee@123'), profileId: e.id, status: 'active',
-    })),
-  ];
-
-  // Weekly repeating timetable for BCA / Semester 3 / Section A. weekday: 1 = Mon ... 5 = Fri
-  const periods = [
-    ['09:00', '10:00'], ['10:00', '11:00'], ['11:15', '12:15'], ['12:15', '13:15'],
-  ];
-  const subjects = {
-    py: { title: 'Python Programming', emp: 'EMP001' },
-    ds: { title: 'Data Structures', emp: 'EMP002' },
-    db: { title: 'Database Management', emp: 'EMP003' },
-    wt: { title: 'Web Technologies', emp: 'EMP004' },
-    en: { title: 'English Communication', emp: 'EMP005' },
-    ma: { title: 'Discrete Mathematics', emp: 'EMP006' },
-  };
-  const grid = {
-    1: ['py', 'ds', 'ma', 'en'],
-    2: ['db', 'py', 'wt', 'ds'],
-    3: ['ma', 'db', 'en', 'wt'],
-    4: ['ds', 'wt', 'py', 'db'],
-    5: ['en', 'ma', 'py', 'ds'],
-  };
-  const labs = new Set(['3-3', '4-2', '4-3']); // "weekday-period" combos that are lab sessions
-  const timetableSlots = [];
-  Object.entries(grid).forEach(([weekday, keys]) => {
-    keys.forEach((key, i) => {
-      const s = subjects[key];
-      const isLab = labs.has(`${weekday}-${i + 1}`);
-      const online = key === 'en';
-      timetableSlots.push({
-        id: `SLOT-${weekday}${i + 1}`,
-        courseId: 'BCA',
-        weekday: Number(weekday),
-        start: periods[i][0],
-        end: periods[i][1],
-        subject: isLab ? `${s.title} (Lab)` : s.title,
-        employeeId: s.emp,
-        mode: online ? 'Online' : 'Offline',
-        location: online ? 'Google Meet' : isLab ? 'Computer Lab 2 - Block C' : 'Room 112-A3 - Main Block',
-        type: 'lecture',
-      });
-    });
-  });
-
-  const duties = [
-    { id: 'DUTY-1', courseId: 'BCA', title: 'Mid-Semester Exam Invigilation', employeeId: 'EMP002', start: '10:00', end: '13:00', priority: 'High', location: 'Exam Hall 1', rel: 10 },
-    { id: 'DUTY-2', courseId: 'BCA', title: 'Computer Lab Inspection', employeeId: 'EMP004', start: '14:00', end: '15:00', priority: 'Medium', location: 'Computer Lab 2 - Block C', rel: 4 },
-    { id: 'DUTY-3', courseId: 'BCA', title: 'Internal Marks Moderation', employeeId: 'EMP001', start: '11:00', end: '12:00', priority: 'Low', location: 'Staff Room', rel: 12 },
-  ];
-
-  // Fixed-date national holidays for last / this / next year
-  const fixedHolidays = [
-    ['01-26', 'Republic Day'], ['04-14', 'Dr. B. R. Ambedkar Jayanti'], ['08-15', 'Independence Day'],
-    ['10-02', 'Gandhi Jayanti'], ['12-25', 'Christmas'],
-  ];
-  const events = [];
-  let n = 1;
-  for (const y of [year - 1, year, year + 1]) {
-    for (const [md, title] of fixedHolidays) {
-      events.push({ id: `EVT-${n++}`, title, type: 'holiday', start: `${y}-${md}`, end: `${y}-${md}`, allDay: true, location: null, description: 'Institute closed. Public holiday.', audience: 'all' });
-    }
-  }
-  // A few lunar-calendar holidays (sample dates for 2026)
-  [['2026-10-20', 'Dussehra'], ['2026-11-08', 'Diwali'], ['2026-11-24', 'Guru Nanak Gurpurab']].forEach(([d, title]) => {
-    events.push({ id: `EVT-${n++}`, title, type: 'holiday', start: d, end: d, allDay: true, location: null, description: 'Institute closed. Public holiday.', audience: 'all' });
-  });
-  // Rolling events, always relative to today (see refreshDemoDates)
-  [
-    { title: 'Parent-Teacher Meeting', type: 'academic', rel: [-5], time: ['10:00', '13:00'], location: 'Main Auditorium', description: 'Semester 3 progress discussion with parents.' },
-    { title: 'Guest Lecture: Applied AI in Industry', type: 'event', rel: [3], time: ['11:00', '12:30'], location: 'Seminar Hall', description: 'Industry speaker session open to all BCA and MCA students.' },
-    { title: 'Fee Payment - Last Date', type: 'deadline', rel: [7], time: null, location: null, description: 'Pay the semester fee before this date to avoid a late fine.' },
-    { title: 'Mid-Semester Examinations', type: 'exam', rel: [10, 15], time: ['10:00', '13:00'], location: 'Exam Halls 1-3', description: 'Admit cards will be available a week before the exams.' },
-    { title: 'Project Synopsis Submission', type: 'deadline', rel: [14], time: null, location: null, description: 'Submit the synopsis to your project guide.' },
-    { title: 'Technovision Tech Fest', type: 'event', rel: [21, 22], time: ['09:30', '17:00'], location: 'Main Campus', description: 'Hackathon, project showcase and coding contests.' },
-    { title: 'Annual Sports Day', type: 'event', rel: [32], time: ['08:00', '16:00'], location: 'Campus Ground', description: 'Track and field events and inter-department matches.' },
-    { title: 'End-Semester Examinations', type: 'exam', rel: [62, 74], time: ['10:00', '13:00'], location: 'Exam Halls 1-3', description: 'Detailed date sheet will be shared by the exam cell.' },
-  ].forEach((e) => {
-    events.push({
-      id: `EVT-${n++}`, title: e.title, type: e.type, rel: e.rel, start: null, end: null,
-      allDay: !e.time, startTime: e.time?.[0] ?? null, endTime: e.time?.[1] ?? null,
-      location: e.location, description: e.description, audience: 'student',
-    });
-  });
-
-  const notices = [
-    { id: 'NTC-1', title: 'Mid-semester examination schedule released', body: 'The date sheet for the mid-semester examinations is available on the Calendar page.', category: 'Exam', rel: -1 },
-    { id: 'NTC-2', title: 'Library timings extended', body: 'The central library will stay open until 7:00 PM on all working days during exam preparation.', category: 'General', rel: -3 },
-    { id: 'NTC-3', title: 'Technovision registrations open', body: 'Register your team for the hackathon at the department office.', category: 'Event', rel: -4 },
-    { id: 'NTC-4', title: 'Semester fee reminder', body: 'Please clear pending dues before the last date shown on the Calendar.', category: 'Fees', rel: -6 },
-  ];
-
-  return refreshDemoDates({
-    meta: { version: 1, seededAt: new Date().toISOString() },
-    institute, courses, employees, students, users, timetableSlots, duties, events, notices, reassignments: [],
-    departments, designations,
-  });
-}
+const ROLLING_NOTICES = [
+  { key: 'n1', title: 'Mid-term examination schedule released', body: 'The date sheet is available on the Calendar page.', category: 'Exam', rel: -1 },
+  { key: 'n2', title: 'Library timings extended', body: 'The library stays open until 7:00 PM on all working days during exam preparation.', category: 'General', rel: -3 },
+  { key: 'n3', title: 'Tech fest registrations open', body: 'Register your team at the department office.', category: 'Event', rel: -4 },
+  { key: 'n4', title: 'Fee reminder', body: 'Please clear pending dues before the last date shown on the Calendar.', category: 'Fees', rel: -6 },
+];
 
 /**
- * Fills in collections that didn't exist in an already-seeded db.json from
- * before the Admin module was added, so upgrading never wipes existing data.
- * Safe to call on every load - a no-op once the fields are present.
+ * Re-anchors the rolling sample data (relative events, duties, notices and the
+ * sample lecture reassignment) for the CURRENT tenant to today's date. Rows are
+ * matched by seed_key, so anything an admin added by hand is left alone.
  */
-export function migrate(data) {
-  if (!data.departments) {
-    const names = [...new Set(data.employees.map((e) => e.department))];
-    data.departments = names.map((name, i) => ({
-      id: `DEPT-${i + 1}`, name, description: '', createdDate: toISO(new Date()),
-    }));
-  }
-  if (!data.designations) {
-    const seen = new Set();
-    data.designations = [];
-    let n = 1;
-    for (const e of data.employees) {
-      const key = `${e.designation}|${e.department}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      data.designations.push({ id: `DESG-${n++}`, name: e.designation, department: e.department });
-    }
-  }
-  return data;
-}
-
-/**
- * Re-anchors rolling demo data (relative events, duties, notices and the sample
- * lecture reassignment) to today's date so the UI always has something to show.
- * Remove this once the app is connected to real data.
- */
-export function refreshDemoDates(data) {
+export async function refreshRollingData() {
   const now = new Date();
-  const at = (offset) => toISO(addDays(now, offset));
+  const at = (o) => toISO(addDays(now, o));
+  const year = now.getFullYear();
 
-  for (const e of data.events) {
-    if (e.rel) {
-      e.start = at(e.rel[0]);
-      e.end = at(e.rel[1] ?? e.rel[0]);
+  const upsertEvent = (key, e) => q(
+    `insert into events (title, type, start_date, end_date, all_day, start_time, end_time, location, description, audience, seed_key)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+     on conflict (tenant_id, seed_key) where seed_key is not null
+     do update set start_date = excluded.start_date, end_date = excluded.end_date`,
+    [e.title, e.type, e.start, e.end, !e.time, e.time?.[0] ?? null, e.time?.[1] ?? null, e.location ?? null, e.description, e.audience, key],
+  );
+
+  for (const y of [year - 1, year, year + 1]) {
+    for (const [md, title] of FIXED_HOLIDAYS) {
+      await upsertEvent(`hol:${y}-${md}`, { title, type: 'holiday', start: `${y}-${md}`, end: `${y}-${md}`, description: 'Institute closed. Public holiday.', audience: 'all' });
     }
   }
-  for (const d of data.duties) if (d.rel != null) d.date = at(d.rel);
-  for (const n of data.notices) if (n.rel != null) n.date = at(n.rel);
+  for (const [d, title] of LUNAR_2026) {
+    await upsertEvent(`hol:${d}`, { title, type: 'holiday', start: d, end: d, description: 'Institute closed. Public holiday.', audience: 'all' });
+  }
+  for (const e of ROLLING_EVENTS) {
+    await upsertEvent(`roll:${e.key}`, { ...e, start: at(e.rel[0]), end: at(e.rel[1] ?? e.rel[0]), audience: 'student' });
+  }
+
+  const { rows: [course] } = await q('select id from courses order by code limit 1');
+  if (course) {
+    for (const d of ROLLING_DUTIES) {
+      await q(
+        `insert into duties (course_id, title, employee_id, duty_date, start_time, end_time, priority, location, seed_key)
+         select $1, $2, e.id, $3, $4, $5, $6, $7, $8 from employees e where e.emp_code = $9
+         on conflict (tenant_id, seed_key) where seed_key is not null do update set duty_date = excluded.duty_date`,
+        [course.id, d.title, at(d.rel), d.start, d.end, d.priority, d.location, `roll:${d.key}`, d.emp],
+      );
+    }
+  }
+  for (const n of ROLLING_NOTICES) {
+    await q(
+      `insert into notices (title, body, category, notice_date, seed_key) values ($1, $2, $3, $4, $5)
+       on conflict (tenant_id, seed_key) where seed_key is not null do update set notice_date = excluded.notice_date`,
+      [n.title, n.body, n.category, at(n.rel), `roll:${n.key}`],
+    );
+  }
 
   // Sample "lecture reassigned" case on the next working day (second period of the day)
-  const holidays = new Set(data.events.filter((e) => e.type === 'holiday').map((e) => e.start));
+  await q('delete from reassignments where seed_key is not null');
+  const { rows: hol } = await q("select start_date as d from events where type = 'holiday'");
+  const holidays = new Set(hol.map((h) => h.d));
   let day = new Date(now);
   for (let i = 0; i < 10; i += 1) {
     const wd = day.getDay();
     if (wd >= 1 && wd <= 5 && !holidays.has(toISO(day))) break;
     day = addDays(day, 1);
   }
-  const target = data.timetableSlots
-    .filter((s) => s.courseId === 'BCA' && s.weekday === day.getDay())
-    .sort((a, b) => a.start.localeCompare(b.start))[1];
-  data.reassignments = target
-    ? [{ slotId: target.id, date: toISO(day), toEmployeeId: target.employeeId === 'EMP004' ? 'EMP003' : 'EMP004', reason: 'Faculty on leave' }]
-    : [];
-  return data;
+  const { rows: slots } = await q(
+    `select s.id, e.emp_code from timetable_slots s join employees e on e.id = s.employee_id
+     where s.weekday = $1 order by s.start_time`,
+    [day.getDay()],
+  );
+  const target = slots[1];
+  if (target) {
+    const toCode = target.emp_code === 'EMP004' ? 'EMP003' : 'EMP004';
+    await q(
+      `insert into reassignments (slot_id, on_date, to_employee_id, reason, seed_key)
+       select $1, $2, e.id, 'Faculty on leave', 'roll:reassign' from employees e where e.emp_code = $3
+       on conflict (tenant_id, slot_id, on_date) do nothing`,
+      [target.id, toISO(day), toCode],
+    );
+  }
+}
+
+/** Startup hook: keep every demo tenant's rolling dates current. */
+export async function refreshDemoTenants() {
+  const tenants = await withTx({ platform: true }, async () => (
+    await q("select id from tenants where settings->>'demo' = 'true'")
+  ).rows);
+  for (const t of tenants) await withTx({ tenantId: t.id }, refreshRollingData);
+}
+
+/* ---------- seeding ---------- */
+
+async function seedTenant(spec, hashes) {
+  const { tenantId } = await provisionTenant({
+    code: spec.code, name: spec.name, type: spec.type, shortName: spec.shortName, plan: 'demo',
+    settings: { demo: true }, admin: { ...spec.admin, password: DEMO_PASSWORDS.admin },
+  });
+  await switchTenant(tenantId);
+
+  const i = spec.institute;
+  await q(
+    `update institute_profiles set tagline = $1, email = $2, website = $3, details = $4, stakeholders = $5,
+       authorized_persons = $6, documents = $7, beneficiaries = $8, stamp = $9`,
+    [i.tagline, i.email, i.website, i.details, JSON.stringify(i.stakeholders), JSON.stringify(i.authorizedPersons),
+      JSON.stringify(i.documents), JSON.stringify(i.beneficiaries), i.stamp],
+  );
+
+  const dept = {};
+  for (const [name, description] of spec.departments) {
+    dept[name] = (await q('insert into departments (name, description) values ($1, $2) returning id', [name, description])).rows[0].id;
+  }
+  const desig = {};
+  for (const [name, d] of spec.designations) {
+    desig[`${d}|${name}`] = (await q('insert into designations (department_id, name) values ($1, $2) returning id', [dept[d], name])).rows[0].id;
+  }
+
+  const emp = [];
+  for (const [code, name, designation, department, shift] of spec.employees) {
+    const email = `${name.toLowerCase().replace(/[^a-z]+/g, '.')}@${spec.code.replace('demo-', '')}.example`;
+    const { rows: [e] } = await q(
+      `insert into employees (emp_code, name, email, department_id, designation_id, shift)
+       values ($1, $2, $3, $4, $5, $6) returning id`,
+      [code, name, email, dept[department], desig[`${department}|${designation}`], shift],
+    );
+    emp.push(e.id);
+    await q(
+      `insert into users (role, login_id, email, name, password_hash, employee_id) values ('employee', $1, $2, $3, $4, $5)`,
+      [code, email, name, hashes.employee, e.id],
+    );
+  }
+  await q("insert into number_series (key, prefix, padding, next_value) values ('employee', 'EMP', 3, $1)", [spec.employees.length + 1]);
+
+  const c = spec.course;
+  const { rows: [course] } = await q(
+    'insert into courses (code, name, full_name, department_id, years) values ($1, $2, $3, $4, $5) returning id',
+    [c.code, c.name, c.fullName, dept[c.department], c.years],
+  );
+
+  for (const s of spec.students) {
+    const attendance = s.att.map(([attended, total], k) => ({ subject: spec.subjects[k], attended, total }));
+    const { rows: [st] } = await q(
+      `insert into students (student_code, roll_no, enrollment_no, name, email, phone, dob, gender, blood_group, nationality,
+         course_id, semester, section, batch, admission_date, status, address, guardian, attendance)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'Indian', $10, $11, $12, $13, $14, 'Active', $15, $16, $17) returning id`,
+      [s.code, s.roll, s.enroll, s.name, s.email, s.phone, s.dob, s.gender, s.blood, course.id, s.semester, s.section,
+        s.batch, s.admitted, s.address, s.guardian, JSON.stringify(attendance)],
+    );
+    await q(
+      `insert into users (role, login_id, email, name, password_hash, student_id) values ('student', $1, $2, $3, $4, $5)`,
+      [s.code, s.email, s.name, hashes.student, st.id],
+    );
+  }
+
+  // Weekly repeating timetable. weekday: 1 = Mon ... 5 = Fri. Subject k is taught by employee k.
+  const periods = [['09:00', '10:00'], ['10:00', '11:00'], ['11:15', '12:15'], ['12:15', '13:15']];
+  const grid = { 1: [0, 1, 5, 4], 2: [2, 0, 3, 1], 3: [5, 2, 4, 3], 4: [1, 3, 0, 2], 5: [4, 5, 0, 1] };
+  const labs = new Set(['3-3', '4-2', '4-3']);
+  for (const [weekday, subjectIdx] of Object.entries(grid)) {
+    for (const [p, k] of subjectIdx.entries()) {
+      const isLab = labs.has(`${weekday}-${p + 1}`);
+      const online = k === 4;
+      await q(
+        `insert into timetable_slots (course_id, weekday, start_time, end_time, subject, employee_id, mode, location)
+         values ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [course.id, Number(weekday), periods[p][0], periods[p][1], isLab ? `${spec.subjects[k]} (Lab)` : spec.subjects[k],
+          emp[k], online ? 'Online' : 'Offline', online ? 'Google Meet' : isLab ? spec.place.lab : spec.place.room],
+      );
+    }
+  }
+
+  await seedExams(spec, course.id, emp);
+  await seedLearningAndQuizzes(spec, course.id, emp);
+  await refreshRollingData();
+}
+
+/**
+ * Sample exams so the Exams & Results module has something to show on day one:
+ *  - last semester's End-Semester exam: PUBLISHED, fully marked (students see grades, GPA and a report card;
+ *    one student fails a paper so the fail path is visible)
+ *  - this semester's Mid-Semester exam: DRAFT with no marks yet, so faculty have papers waiting for them.
+ * Subject k is taught by employee k, exactly as in the timetable.
+ */
+async function seedExams(spec, courseId, emp) {
+  const day = (offset) => { const d = new Date(); d.setDate(d.getDate() + offset); return d.toISOString().slice(0, 10); };
+  const sem = spec.students[0].semester;
+  const credits = [4, 4, 3, 3, 2, 2];
+  const { rows: students } = await q('select id, student_code from students order by student_code');
+  const mkExam = async (name, kind, semester, start, end, published) => (await q(
+    `insert into exams (course_id, semester, name, kind, start_date, end_date, status, published_at)
+     values ($1, $2, $3, $4, $5, $6, $7, $8) returning id`,
+    [courseId, semester, name, kind, start, end, published ? 'published' : 'draft', published ? new Date(Date.now() - 60 * 86400000) : null],
+  )).rows[0].id;
+  const mkPapers = async (examId, max, pass, status) => {
+    const ids = [];
+    for (const [k, subject] of spec.subjects.entries()) {
+      ids.push((await q(
+        `insert into exam_papers (exam_id, subject, max_marks, pass_marks, credits, employee_id, marks_status, submitted_at)
+         values ($1, $2, $3, $4, $5, $6, $7, $8) returning id`,
+        [examId, subject, max, pass, credits[k % credits.length], emp[k], status, status === 'submitted' ? new Date() : null],
+      )).rows[0].id);
+    }
+    return ids;
+  };
+
+  const past = await mkExam('End-Semester Examination', 'term', Math.max(1, sem - 1), day(-170), day(-158), true);
+  const pastPapers = await mkPapers(past, 100, 40, 'submitted');
+  const base = [84, 77, 62, 71, 66, 58];
+  const wobble = [4, -3, 6, -5, 2, -8];
+  for (const [i, st] of students.entries()) {
+    for (const [k, paperId] of pastPapers.entries()) {
+      let marks = Math.max(0, Math.min(100, base[i % base.length] + wobble[(k + i) % wobble.length]));
+      if (i === 2 && k === spec.subjects.length - 1) marks = 36; // one failed paper
+      await q('insert into exam_marks (paper_id, student_id, marks, absent) values ($1, $2, $3, false)', [paperId, st.id, marks]);
+    }
+  }
+
+  const upcoming = await mkExam('Mid-Semester Examination', 'mid_term', sem, day(10), day(15), false);
+  await mkPapers(upcoming, 50, 20, 'draft');
+}
+
+/**
+ * Sample Learning and Quiz data, so both modules are usable straight away:
+ *  - three courses assigned to the class: an NPTEL MOOC (certificate, compulsory), an in-house lessons course (compulsory) and an optional one
+ *  - students in different states: one finished a course and submitted a certificate, one is part-way, one had a certificate sent back
+ *  - an open "Aptitude Warm-up" quiz to attempt, and a closed "Unit Test 1" with graded attempts so internal marks have something in them
+ * The quiz content is general aptitude (it suits any subject); teachers write their own for real use.
+ */
+async function seedLearningAndQuizzes(spec, courseId, emp) {
+  const sem = spec.students[0].semester;
+  const day = (n) => new Date(Date.now() + n * 86400000);
+  const iso = (n) => day(n).toISOString().slice(0, 10);
+  const { rows: students } = await q('select id from students order by student_code');
+  const mkCourse = async (title, provider, completion, subject, credits, hours, url, description, ownerIdx) => (await q(
+    `insert into learning_courses (title, description, provider, url, subject, credits, duration_hours, level, completion, status, created_by_employee)
+     values ($1,$2,$3,$4,$5,$6,$7,'beginner',$8,'published',$9) returning id`,
+    [title, description, provider, url, subject, credits, hours, completion, emp[ownerIdx]],
+  )).rows[0].id;
+  const mkAssign = async (lcId, subject, credits, mandatory, due, ownerIdx, note) => {
+    const id = (await q(
+      `insert into learning_assignments (learning_course_id, target_course_id, target_semester, subject, credits, mandatory, due_date, note, created_by_employee)
+       values ($1,$2,$3,$4,$5,$6,$7,$8,$9) returning id`, [lcId, courseId, sem, subject, credits, mandatory, due, note, emp[ownerIdx]],
+    )).rows[0].id;
+    await q("insert into learning_enrollments (assignment_id, student_id) select $1, id from students where course_id = $2 and semester = $3 and status = 'Active'", [id, courseId, sem]);
+    return id;
+  };
+  const s0 = spec.subjects[0]; const s1 = spec.subjects[1]; const s2 = spec.subjects[2];
+
+  const mooc = await mkCourse('Programming Foundations (NPTEL)', 'NPTEL', 'evidence', s0, 2, 12, 'https://nptel.ac.in/courses', 'A 12-week introductory course on NPTEL. Register on the NPTEL site, complete the assignments and pass the proctored exam, then upload your e-certificate here.', 0);
+  const study = await mkCourse('Effective Study Skills', 'Internal', 'lessons', s1, 1, 2, '', 'A short in-house course on planning, note-taking and revision. Finish all the lessons to earn the credit.', 1);
+  const extra = await mkCourse('Introduction to Data Analysis (SWAYAM)', 'SWAYAM', 'evidence', s2, 1, 8, 'https://swayam.gov.in', 'Optional enrichment course on SWAYAM. Completing it earns bonus credits.', 2);
+  const lessons = [
+    ['Why planning beats cramming', 'reading', '', 'Spread your revision over weeks, not nights. Plan the syllabus backwards from the exam date, and reserve the last week for practice papers.', 10],
+    ['Taking notes that you can use', 'reading', '', 'Write in your own words, leave margins for questions, and rewrite a one-page summary after every chapter.', 15],
+    ['How memory works (video)', 'video', 'https://www.youtube.com/', '', 12],
+    ['Build your revision timetable', 'link', 'https://calendar.google.com/', '', 20],
+  ];
+  for (const [i, [title, kind, link, body, min]] of lessons.entries()) {
+    await q('insert into learning_lessons (course_id, position, title, kind, url, body, duration_min) values ($1,$2,$3,$4,$5,$6,$7)', [study, i + 1, title, kind, link, body, min]);
+  }
+  const aMooc = await mkAssign(mooc, s0, 2, true, iso(30), 0, 'Compulsory credit course for this semester.');
+  const aStudy = await mkAssign(study, s1, 1, true, iso(14), 1, 'Complete before mid-semester.');
+  await mkAssign(extra, s2, 1, false, iso(60), 2, 'Optional: earns bonus credits.');
+
+  const lessonIds = (await q('select id from learning_lessons where course_id = $1 order by position', [study])).rows.map((r) => r.id);
+  const enr = async (a, i) => (await q('select id from learning_enrollments where assignment_id = $1 and student_id = $2', [a, students[i]?.id])).rows[0]?.id;
+  if (students[0]) {
+    const e = await enr(aStudy, 0);
+    for (const l of lessonIds) await q('insert into learning_progress (enrollment_id, lesson_id) values ($1,$2)', [e, l]);
+    await q("update learning_enrollments set status='completed', started_at=now() - interval '5 days', completed_at=now() - interval '1 day', credits_awarded=1 where id=$1", [e]);
+    await q("update learning_enrollments set status='submitted', started_at=now() - interval '20 days', submitted_at=now() - interval '2 days', evidence_url='https://archive.nptel.ac.in/noc/verify/PF-DEMO-001', certificate_id='NPTEL-PF-DEMO-001', score=78, evidence_note='Passed the proctored exam in the July term.' where id=$1", [await enr(aMooc, 0)]);
+  }
+  if (students[1]) {
+    const e = await enr(aStudy, 1);
+    for (const l of lessonIds.slice(0, 2)) await q('insert into learning_progress (enrollment_id, lesson_id) values ($1,$2)', [e, l]);
+    await q("update learning_enrollments set status='in_progress', started_at=now() - interval '2 days' where id=$1", [e]);
+    await q("update learning_enrollments set status='in_progress', started_at=now() - interval '6 days' where id=$1", [await enr(aMooc, 1)]);
+  }
+  if (students[2]) {
+    await q("update learning_enrollments set status='rejected', started_at=now() - interval '12 days', submitted_at=now() - interval '4 days', reviewed_at=now() - interval '3 days', evidence_url='https://example.org/certificate', review_note='The link does not open. Please upload the certificate PDF or share a working verification link.' where id=$1", [await enr(aMooc, 2)]);
+  }
+
+  // ---- quizzes ----
+  const BANK = [
+    { kind: 'single', text: 'A train travels 180 km in 3 hours. What is its average speed?', marks: 2, options: [['40 km/h', false], ['60 km/h', true], ['90 km/h', false], ['540 km/h', false]], answers: [], explanation: 'Speed = distance / time = 180 / 3 = 60 km/h.' },
+    { kind: 'multiple', text: 'Which of these are prime numbers?', marks: 3, options: [['2', true], ['9', false], ['11', true], ['15', false]], answers: [], explanation: '2 and 11 have no divisors other than 1 and themselves.' },
+    { kind: 'truefalse', text: 'The sum of the angles of a triangle is 180 degrees.', marks: 1, options: [['True', true], ['False', false]], answers: [], explanation: 'True in plane geometry.' },
+    { kind: 'short', text: 'What is 15% of 200?', marks: 2, options: [], answers: ['30'], explanation: '0.15 x 200 = 30.' },
+    { kind: 'single', text: 'Which number comes next? 2, 4, 8, 16, ...', marks: 2, options: [['18', false], ['24', false], ['32', true], ['64', false]], answers: [], explanation: 'Each term doubles.' },
+  ];
+  const mkQuiz = async (title, status, openOff, closeOff, bank, weightage, attempts, instr) => {
+    const id = (await q(
+      `insert into quizzes (title, subject, course_id, semester, instructions, duration_minutes, open_at, close_at, max_attempts, weightage, negative_marks, show_results, status, published_at, created_by_employee)
+       values ($1,$2,$3,$4,$5,20,$6,$7,$8,$9,0,'after_submit',$10,now(),$11) returning id`,
+      [title, s0, courseId, sem, instr, day(openOff), day(closeOff), attempts, weightage, status, emp[0]],
+    )).rows[0].id;
+    for (const [i, x] of bank.entries()) {
+      await q('insert into quiz_questions (quiz_id, position, kind, text, marks, options, answers, explanation) values ($1,$2,$3,$4,$5,$6,$7,$8)',
+        [id, i + 1, x.kind, x.text, x.marks, JSON.stringify(x.options.map(([text, correct]) => ({ text, correct }))), JSON.stringify(x.answers), x.explanation]);
+    }
+    return id;
+  };
+  await mkQuiz('Aptitude Warm-up', 'published', -1, 10, BANK.slice(0, 4), 5, 2, 'Answer every question. You have 20 minutes and two attempts; your best attempt counts.');
+  const closed = await mkQuiz('Unit Test 1', 'closed', -14, -7, BANK, 10, 1, 'Closed quiz kept for the internal marks sheet.');
+  const qs = (await q('select id, kind, marks::float8 as marks, options, answers from quiz_questions where quiz_id = $1 order by position', [closed])).rows;
+  const answerSets = [
+    { 0: 1, 1: [0, 2], 2: 0, 3: '30', 4: 2 }, // student 1: everything right
+    { 0: 1, 1: [0, 1], 2: 0, 3: '25', 4: 3 }, // student 2: a mix
+  ];
+  for (const [i, set] of answerSets.entries()) {
+    if (!students[i]) continue;
+    const answers = Object.fromEntries(qs.map((x, k) => [x.id, set[k]]));
+    const r = gradeAttempt(qs, answers, 0);
+    await q(
+      `insert into quiz_attempts (quiz_id, student_id, attempt_no, status, started_at, deadline_at, submitted_at, answers, score, max_score)
+       values ($1,$2,1,'submitted', now() - interval '10 days', now() - interval '10 days' + interval '20 minutes', now() - interval '10 days' + interval '12 minutes', $3, $4, $5)`,
+      [closed, students[i].id, JSON.stringify(answers), r.score, r.max],
+    );
+  }
+}
+
+export async function seedDemoTenants({ log = console.log } = {}) {
+  const hashes = {
+    employee: bcrypt.hashSync(DEMO_PASSWORDS.employee, 10),
+    student: bcrypt.hashSync(DEMO_PASSWORDS.student, 10),
+    super_admin: bcrypt.hashSync(DEMO_PASSWORDS.super_admin, 10),
+  };
+  await withTx({ platform: true }, async () => {
+    await q("delete from tenants where settings->>'demo' = 'true'");
+    await q("delete from users where role = 'super_admin' and lower(login_id) = 'sa001'");
+    await q(
+      `insert into users (role, login_id, email, name, password_hash)
+       values ('super_admin', 'SA001', 'superadmin@planetu.example', 'Platform Admin', $1)`,
+      [hashes.super_admin],
+    );
+    for (const spec of DEMO_TENANTS) {
+      await seedTenant(spec, hashes);
+      log(`[seed] ${spec.type.padEnd(7)} ${spec.code}  (${spec.name})`);
+    }
+  });
 }
