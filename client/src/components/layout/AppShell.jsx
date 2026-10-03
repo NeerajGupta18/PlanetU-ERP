@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Bell, ChevronDown, LogOut, MapPin, Menu, Phone } from 'lucide-react';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Bell, ChevronDown, KeyRound, LogOut, MapPin, Menu, Phone } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { useTenantConfig } from '../../hooks/useTenantConfig.js';
 import { MENU, ROLE_LABEL } from '../../config/menu.config.js';
 import { useOutsideClick } from '../../hooks/useOutsideClick.js';
 import { fmtDate } from '../../utils/dates.js';
@@ -21,8 +22,29 @@ function Dropdown({ button, children, align = 'right' }) {
   );
 }
 
+const money = (n) => `₹${Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+/** A slim strip across the admin's screens: an invoice is due or overdue, or the trial is ending. */
+function BillingBanner({ b }) {
+  const plural = (n) => `${n} day${n === 1 ? '' : 's'}`;
+  // Only the message for this kind is built: formatting a date this kind does not have would throw
+  let text = '';
+  if (b.kind === 'overdue') text = `Invoice ${b.number} (${money(b.total || 0)}) is ${plural(b.daysOverdue)} overdue. Please pay to avoid an interruption.`;
+  else if (b.kind === 'due') text = `Invoice ${b.number} (${money(b.total || 0)}) is due ${b.daysLeft === 0 ? 'today' : `in ${plural(b.daysLeft)}`}.`;
+  else if (b.kind === 'trial') text = `Your free trial ends ${b.daysLeft === 0 ? 'today' : `in ${plural(b.daysLeft)}`}. Choose a plan to carry on without interruption.`;
+  else if (b.kind === 'cancelling') text = `Your subscription ends on ${fmtDate(b.endsOn)}.`;
+  else return null;
+  return (
+    <div className={`billing-banner billing-banner--${b.kind === 'overdue' ? 'overdue' : b.kind === 'cancelling' ? 'info' : 'due'}`} role="status">
+      <span>{text}</span>
+      <Link to="/admin/billing">{b.kind === 'trial' ? 'Choose a plan' : b.kind === 'cancelling' ? 'Manage' : 'Pay now'}</Link>
+    </div>
+  );
+}
+
 export default function AppShell() {
-  const { user, institute, notifications, logout } = useAuth();
+  const { user, tenant, billing, institute, notifications, logout } = useAuth();
+  const { hasModule, t } = useTenantConfig();
   const navigate = useNavigate();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('erp.sidebar') === 'collapsed');
@@ -46,7 +68,10 @@ export default function AppShell() {
     navigate('/login', { replace: true });
   };
 
-  const menu = MENU[user.role] || [];
+  // Hide modules the institute doesn't have, and use the institute's own words for labels
+  // While access is paused for an unpaid subscription the admin sees Billing and nothing else
+  const locked = Boolean(tenant?.billingLocked);
+  const menu = (MENU[user.role] || []).filter((m) => hasModule(m.module)).filter((m) => !locked || m.to === '/admin/billing');
 
   return (
     <div className={`shell ${collapsed ? 'is-collapsed' : ''} ${drawer ? 'is-drawer-open' : ''}`}>
@@ -55,16 +80,19 @@ export default function AppShell() {
           <span className="sidebar__logo"><BrandMark size={26} /></span>
           <span className="sidebar__brand-text">
             <strong>{institute?.shortName || BRAND.short}</strong>
-            <small>{ROLE_LABEL[user.role]} Portal</small>
+            <small>{user.role === 'student' ? `${t('student', 'Student')} Portal` : `${ROLE_LABEL[user.role]} Portal`}</small>
           </span>
         </div>
         <nav className="sidebar__nav">
-          {menu.map(({ label, to, icon: Icon }) => (
-            <NavLink key={to} to={to} className={({ isActive }) => `navlink ${isActive ? 'is-active' : ''}`} title={label}>
-              <Icon size={18} />
-              <span>{label}</span>
-            </NavLink>
-          ))}
+          {menu.map(({ label, to, icon: Icon, term }) => {
+            const text = term ? t(term[0], term[1]) : label;
+            return (
+              <NavLink key={to} to={to} className={({ isActive }) => `navlink ${isActive ? 'is-active' : ''}`} title={text}>
+                <Icon size={18} />
+                <span>{text}</span>
+              </NavLink>
+            );
+          })}
         </nav>
       </aside>
       <div className="scrim" onClick={() => setDrawer(false)} />
@@ -121,13 +149,15 @@ export default function AppShell() {
             >
               <div className="menu">
                 <div className="menu__who"><strong>{user.name}</strong><small>{user.loginId}</small></div>
+                <button type="button" className="menu__item" onClick={() => navigate('/change-password')}><KeyRound size={15} /> Change password</button>
                 <button type="button" className="menu__item" onClick={onLogout}><LogOut size={15} /> Sign out</button>
               </div>
             </Dropdown>
           </div>
         </header>
 
-        <main className="content"><Outlet /></main>
+        <main className="content">{user.role === 'admin' && billing && !locked && location.pathname !== '/admin/billing' && <BillingBanner b={billing} />}
+          <Outlet /></main>
 
         <footer className="footer">
           Copyright &copy; {new Date().getFullYear()} {institute?.name}. All rights reserved.
