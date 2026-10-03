@@ -14,8 +14,9 @@ async function request(path, { method = 'GET', body, signal } = {}) {
   try {
     res = await fetch(`${BASE}${path}`, {
       method,
-      headers: body ? { 'Content-Type': 'application/json' } : undefined,
-      body: body ? JSON.stringify(body) : undefined,
+      // FormData (file uploads) must go out untouched: the browser sets the multipart boundary itself
+      headers: body && !(body instanceof FormData) ? { 'Content-Type': 'application/json' } : undefined,
+      body: !body ? undefined : body instanceof FormData ? body : JSON.stringify(body),
       credentials: 'include',
       signal,
     });

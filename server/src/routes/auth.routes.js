@@ -16,7 +16,11 @@ router.post('/captcha/verify', limiter, asyncHandler(auth.captchaVerify));
 router.get('/captcha/challenge', limiter, auth.captchaNewChallenge);
 router.post('/captcha/challenge', limiter, auth.captchaAnswer);
 router.post('/login', limiter, asyncHandler(auth.login));
-router.get('/me', requireAuth, auth.me);
+router.get('/me', requireAuth, asyncHandler(auth.me));
+router.get('/tenant/:code', limiter, asyncHandler(auth.publicTenantInfo));
+router.post('/forgot-password', limiter, asyncHandler(auth.forgotPassword));
+router.post('/reset-password', limiter, asyncHandler(auth.resetPassword));
+router.post('/change-password', requireAuth, asyncHandler(auth.changePassword));
 router.post('/logout', auth.logout);
 
 export default router;
