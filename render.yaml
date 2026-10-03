@@ -1,0 +1,61 @@
+# Render Blueprint: creates the web service AND its PostgreSQL database in one go.
+# Dashboard: New + > Blueprint > pick this repository. Full guide: RENDER.md
+#
+# Why the odd-looking settings:
+#  - buildCommand uses --include=dev: Render sets NODE_ENV=production while building, which would otherwise skip Vite and fail.
+#  - startCommand migrates first: the free plan has no Shell and no pre-deploy step, so tables are created/updated at startup.
+#  - DB_SINGLE_ROLE: Render gives one database login. The app runs as that login; Row Level Security is still forced on every table.
+#  - STORAGE_DRIVER=db: a free web service's disk is wiped on every restart, so uploaded documents live inside PostgreSQL.
+#  - The free database EXPIRES 30 DAYS after creation (see RENDER.md, Part F).
+
+databases:
+  - name: planetu-erp-db
+    databaseName: planetu_erp
+    user: planetu_erp
+    plan: free
+    region: singapore          # nearest to India. The web service must be in the same region.
+    postgresMajorVersion: "16" # the version this project is tested on
+
+services:
+  - type: web
+    name: planetu-erp
+    runtime: node
+    plan: free                 # change to "starter" for an always-on service (no sleeping)
+    region: singapore
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm run db:migrate && npm start
+    healthCheckPath: /api/health
+    autoDeploy: true           # every push to the main branch redeploys
+    envVars:
+      - key: NODE_VERSION
+        value: 24.21.0
+      - key: NODE_ENV
+        value: production
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: planetu-erp-db
+          property: connectionString
+      - key: MIGRATE_DATABASE_URL
+        fromDatabase:
+          name: planetu-erp-db
+          property: connectionString
+      - key: DB_SINGLE_ROLE
+        value: "true"
+      - key: STORAGE_DRIVER
+        value: db
+      - key: JWT_SECRET
+        generateValue: true     # Render makes a strong random secret; it never appears in Git
+      - key: TRUST_PROXY_HOPS
+        value: "1"              # check it after the first deploy (RENDER.md, Part D)
+      - key: MAIL_TRANSPORT
+        value: log              # emails only appear in the logs until you add SMTP (RENDER.md, Part H)
+      # Your owner (platform vendor) account. Render asks for these three when you create the Blueprint.
+      # The free plan has no Shell, so the account is created from these settings the first time the app starts.
+      - key: VENDOR_LOGIN
+        sync: false
+      - key: VENDOR_EMAIL
+        sync: false
+      - key: VENDOR_PASSWORD
+        sync: false             # delete this setting after your first login (RENDER.md, Part D)
