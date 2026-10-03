@@ -48,7 +48,7 @@ services:
       - key: JWT_SECRET
         generateValue: true     # Render makes a strong random secret; it never appears in Git
       - key: TRUST_PROXY_HOPS
-        value: "1"              # check it after the first deploy (RENDER.md, Part D)
+        value: "3"              # client -> Cloudflare -> Render -> app (checked on Render)
       - key: MAIL_TRANSPORT
         value: log              # emails only appear in the logs until you add SMTP (RENDER.md, Part H)
       # Your owner (platform vendor) account. Render asks for these three when you create the Blueprint.
