@@ -7,7 +7,12 @@
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
-    "seed": "node src/db/seed-cli.js"
+    "db:migrate": "node src/db/migrate.js",
+    "db:seed": "node src/db/seed-cli.js",
+    "create-vendor": "node src/db/create-vendor-cli.js",
+    "db:setup": "node src/db/seed-cli.js",
+    "seed": "node src/db/seed-cli.js",
+    "test": "node --test --test-concurrency=1 test/isolation.test.js test/files.test.js test/admissions.test.js test/accounts.test.js test/students.test.js test/fees.test.js test/library.test.js test/assets.test.js test/onlinePayments.test.js test/attendance.test.js test/exams.test.js test/studentImport.test.js test/reports.test.js test/billing.test.js test/learning.test.js test/quizzes.test.js test/vendor.test.js test/migrate.test.js test/storage.test.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -17,6 +22,13 @@
     "express-rate-limit": "^7.4.0",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
-    "morgan": "^1.10.0"
+    "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^10.0.12",
+    "pdfkit": "^0.15.2",
+    "pg": "^8.23.0"
+  },
+  "devDependencies": {
+    "smtp-server": "^3.19.15"
   }
 }

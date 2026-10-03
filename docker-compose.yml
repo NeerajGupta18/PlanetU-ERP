@@ -1,0 +1,22 @@
+# Local PostgreSQL for development:  docker compose up -d
+# (Already have PostgreSQL installed? See "Quick start" in the README - Docker is optional.)
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: erp_owner          # owns the tables; used ONLY for migrations
+      POSTGRES_PASSWORD: erp_owner_dev
+      POSTGRES_DB: planetu_erp
+    ports:
+      - "5432:5432"
+    volumes:
+      - erp_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U erp_owner -d planetu_erp"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  erp_pgdata:

@@ -1,6 +1,22 @@
 node_modules
 client/dist
-server/data/db.json
+server/data/
 server/.env
 .DS_Store
 *.log
+
+# Secrets and machine-specific files: NEVER commit these
+.env
+.env.*
+!.env.example
+!deploy/erp.env.example
+server/.env.*
+!server/.env.example
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+backups/
+uploads/
+.vscode/
+.idea/
