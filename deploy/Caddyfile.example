@@ -1,0 +1,9 @@
+# Install: sudo cp deploy/Caddyfile.example /etc/caddy/Caddyfile   (then edit the first line)  &&  sudo systemctl reload caddy
+# Caddy gets and renews the HTTPS certificate by itself. Ports 80 and 443 must be open (see DEPLOY.md, Part C).
+CHANGE-ME.duckdns.org {
+	encode zstd gzip
+	request_body {
+		max_size 10MB
+	}
+	reverse_proxy 127.0.0.1:5000
+}

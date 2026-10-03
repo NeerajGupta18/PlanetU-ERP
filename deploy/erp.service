@@ -1,0 +1,25 @@
+# Install: sudo cp deploy/erp.service /etc/systemd/system/erp.service && sudo systemctl daemon-reload && sudo systemctl enable --now erp
+[Unit]
+Description=PlanetU ERP (Node.js)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=erp
+Group=erp
+WorkingDirectory=/opt/erp/app/server
+EnvironmentFile=/etc/erp/erp.env
+ExecStart=/usr/bin/node src/server.js
+Restart=always
+RestartSec=5
+
+# The app only needs to write to its uploads folder
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/var/lib/erp
+
+[Install]
+WantedBy=multi-user.target
