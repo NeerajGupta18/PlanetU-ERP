@@ -118,13 +118,12 @@ To change the password later, add `VENDOR_RESET` = `true` and a new `VENDOR_PASS
 ```
 https://YOUR-SERVICE.onrender.com/api/super-admin/diagnostics/network
 ```
-Compare the `ip` it shows with your real public IP (search "what is my IP"). If they match, you are done.
-If `ip` is a different, internal-looking address, the proxy count is off (everyone would share one login-attempt limit): set `TRUST_PROXY_HOPS` to `2`, then `3` in **Environment**, Save, and re-check.
+Compare the `ip` it shows with your real public IP (search "what is my IP"). On Render the correct setting is `TRUST_PROXY_HOPS` = `3` (your request passes through Cloudflare and Render's own proxy before reaching the app), and `render.yaml` already says so. If `ip` is a different, internal-looking address (it starts with `10.` or `172.`), the number is too low: change it in `render.yaml`, **not** only in the dashboard (the Blueprint would put the old value back), push, and check again.
 
 **D4. Create an institute and test an upload.**
 1. **Institutes, Add institute.** Code (for example `demo-school`), name, type, first admin name and email. A **temporary password is shown once**: copy it.
 2. Sign out, sign in as that institute's **Admin** with the temporary password, and set a new password when asked.
-3. Add a class, then open `https://YOUR-SERVICE.onrender.com/apply/demo-school` in a private window and submit an application **with a photo and a PDF**.
+3. Open **Classes** (or **Courses** / **Programmes**, whatever your institute type calls them) in the menu and add at least one. Then open `https://YOUR-SERVICE.onrender.com/apply/demo-school` in a private window and submit an application **with a photo and a PDF**.
 4. Back in the admin, **Admissions, Review, View**. The document should open on screen. Restart the service (**Manual Deploy, Deploy latest commit**) and view it again: it is still there, because it lives in the database.
 
 ---
@@ -180,6 +179,23 @@ The free database has no backups. Every week or two, run the `pg_dump` command f
 * For real use: switch `plan: free` to `plan: starter` in `render.yaml`, push, and it never sleeps.
 
 ---
+
+## Public demo mode (what to send to HR)
+
+`render.yaml` sets `DEMO_MODE=true`. On every start the app loads the three sample institutes (a college, a school and a university, with students, staff, timetable, attendance, exams, fees, quizzes and more) **if they are missing**, and the login page shows a **Demo logins** panel. A visitor clicks Admin, Employee or Student under an institute, which fills in the form; they then tick "I'm not a robot" and sign in. So you can send HR one link:
+
+```
+https://planetu-erp.onrender.com/login
+```
+
+What it does and does not do:
+
+* The panel lists **only the sample institutes**. Your owner (Super Admin) login is never shown and is not created by this. Keep it private.
+* Visitors **cannot change** the passwords of the sample accounts (otherwise one person could lock everyone else out). Your own institutes are unaffected.
+* Visitors **can** add, edit and delete data inside the sample institutes. Everything in them is fictional, so do not type real people's details there. Other institutes stay separate (each institute's data is isolated by the database).
+* To put the samples back to how they started each time the site wakes up, add the setting `DEMO_RESET_ON_START` = `true` in **Environment**.
+* To hide the panel: change `DEMO_MODE` to `"false"` in `render.yaml` and push. To hide a sample institute only, **suspend** it in the owner console (**Institutes**).
+* The free plan sleeps after 15 idle minutes, so tell HR the first page can take up to a minute.
 
 ## Part H. When something does not work
 

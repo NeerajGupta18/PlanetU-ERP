@@ -51,6 +51,21 @@ services:
         value: "3"              # client -> Cloudflare -> Render -> app (checked on Render)
       - key: MAIL_TRANSPORT
         value: log              # emails only appear in the logs until you add SMTP (RENDER.md, Part H)
+      # Public demo: loads the 3 sample institutes at start-up and shows one-click sign-ins on the login page.
+      # Everything in them is fictional. Set to "false" (and push) to turn it off. See RENDER.md, "Public demo mode".
+      - key: DEMO_MODE
+        value: "true"
+      # Optional keys. Only the names live here; paste the values in the Render dashboard, Environment tab.
+      - key: RECAPTCHA_SITE_KEY
+        sync: false
+      - key: RECAPTCHA_SECRET_KEY
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
       # Your owner (platform vendor) account. Render asks for these three when you create the Blueprint.
       # The free plan has no Shell, so the account is created from these settings the first time the app starts.
       - key: VENDOR_LOGIN

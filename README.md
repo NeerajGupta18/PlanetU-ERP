@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/PostgreSQL-16%20%2B%20RLS-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" />
   <img src="https://img.shields.io/badge/Auth-JWT%20%2B%20bcrypt-EC1C24?style=for-the-badge&logo=jsonwebtokens&logoColor=white" />
   <img src="https://img.shields.io/badge/Multi--tenant-SaaS-7C3AED?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/Tests-396%20passing-2ea44f?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Tests-417%20passing-2ea44f?style=for-the-badge" />
   <img src="https://img.shields.io/badge/Deploy-Render%20%7C%20Oracle%20Cloud-46E3B7?style=for-the-badge" />
   <img src="https://img.shields.io/badge/STATUS-PHASE%207-2ea44f?style=for-the-badge" />
 </p>
@@ -48,7 +48,7 @@ subscription billing, and the learning platform with quizzes. See *What's built*
 | 1 | 🎓 Student | Dashboard · Profile · Institute *(public info only)* · Calendar · Timetable |
 | 2 | 🛠️ Admin | Admin Dashboard · Institute *(details, stakeholders, authorized persons, documents, bank accounts, stamp & e-sign)* · Departments & Designations · Employees · Calendar *(full month-grid view)* · Timetable / Lecture Reassignment |
 | 3 | 👑 Super Admin *(vendor console)* | Platform Dashboard · Institutes *(onboard a client, pick its type and modules, suspend / activate, reset its admin's password)* · multi-tenant core on PostgreSQL with Row Level Security · accounts, password reset and an email outbox |
-| 4 | 🛠️ Admin · 📝 Applicant · 🎓 Student | **Admissions** *(public form at `/apply/<institute-code>`, document review, enrolment)* · **Students** *(PRN, photo, status, bulk CSV import)* · **ID cards** *(print-ready PDF)* · **Fees & Payments** *(structures, instalments, PDF receipts, online payment via Razorpay)* · **Library** · **Assets** |
+| 4 | 🛠️ Admin · 📝 Applicant · 🎓 Student | **Courses** *(classes / programmes: add, edit, delete only when unused)* · **Admissions** *(public form at `/apply/<institute-code>`, document review, enrolment)* · **Students** *(PRN, photo, status, bulk CSV import)* · **ID cards** *(print-ready PDF)* · **Fees & Payments** *(structures, instalments, PDF receipts, online payment via Razorpay)* · **Library** · **Assets** |
 | 5 | 🛠️ Admin · 👔 Employee / Faculty · 🎓 Student | **Attendance** *(faculty mark per lecture; admin corrections; student percentages)* · **Exams & Results** *(papers, marks entry, grading scale, GPA, report-card PDFs)* · **Reports & Exports** *(Excel / PDF / CSV)* |
 | 6 | 👑 Super Admin · 🛠️ Admin | **Vendor billing** — plans and trials, recurring GST tax invoices, Razorpay payment, reminders, access pause for non-payment, revenue and receivables |
 | 7 | 🎓 Student · 👔 Faculty · 🛠️ Admin | **Learning platform** *(NPTEL / SWAYAM / in-house courses assigned for compulsory credits)* · **Quizzes** *(timed, auto-graded, scaled into internal marks)* · on-screen document viewer for admission review |
@@ -90,7 +90,7 @@ tables, run `npm run db:migrate` instead.
 ### Tests
 
 ```bash
-npm test             # 396 tests against a real PostgreSQL (run db:setup first)
+npm test             # 417 tests against a real PostgreSQL (run db:setup first)
 ```
 
 They cover tenant isolation, uploads, admissions, accounts and email, students and ID cards, fees, online payments
@@ -529,6 +529,7 @@ planetu-erp/
 | GET/PUT| `/api/admin/institute`            | admin           |
 | POST/PUT/DELETE | `/api/admin/institute/{authorized-persons\|stakeholders\|documents\|beneficiaries}/:index` | admin |
 | PUT    | `/api/admin/institute/stamp`      | admin           |
+| GET/POST/PUT/DELETE | `/api/admin/courses`, `/api/admin/courses/:id` | admin *(classes / courses / programmes; DELETE is refused while anything still uses the course)* |
 | GET/POST/PUT/DELETE | `/api/admin/departments`, `/api/admin/departments/:id` | admin |
 | GET/POST/DELETE | `/api/admin/designations`, `/api/admin/designations/:id` | admin |
 | GET/POST/PUT/DELETE | `/api/admin/employees`, `/api/admin/employees/:id` | admin |
@@ -676,6 +677,7 @@ Hostel · Transport · Notice Board · Certificates · Visitor Management.
   (this re-creates the demo institutes) or `npm run db:migrate` (keeps your data).
 - Demo institutes' calendar/timetable dates are re-anchored to today on every start in development
   (`DEMO_REFRESH`), so the demo always looks current. Records an admin adds by hand are left alone.
+- **Public demo mode** (`DEMO_MODE=true`, on in `render.yaml`): loads the three sample institutes at start-up if they are missing and shows one-click sample sign-ins on the login page. It never offers or creates the platform-owner login, and the shared demo passwords cannot be changed. See [`RENDER.md`](RENDER.md).
 - Learning and Quizzes are modules like the others: new institutes have them on by default, **existing institutes
   must have them switched on** in the vendor console.
 - **Not built yet:** SMS, per-institute sender domains for email, malware scanning of uploads, automatic purge of
