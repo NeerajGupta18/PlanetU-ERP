@@ -332,6 +332,7 @@ df -h /                            # free disk space
 | `git clone` / `git pull`: Permission denied (publickey) | The deploy key was not added to the repository (E2), or you ran git as the wrong user. Always use `sudo -u erp -H git ...`. |
 | `db:migrate` says "permission denied to alter role" | `erp_app` was marked as a superuser or able to bypass security by someone. Do not work around it: fix it as the postgres superuser with `sudo -u postgres psql -c "alter role erp_app nosuperuser nobypassrls nocreatedb nocreaterole"`. |
 | Forgot your owner password | `... npm run create-vendor -- --login=YOURLOGIN --email=you@example.com --reset` (same command as F3 plus `--reset`). |
+| Want to change your owner login ID | `sudo -u erp -H bash -c 'cd /opt/erp/app && set -a && . /etc/erp/erp.env && set +a && npm run create-vendor -- --rename-from=OLDLOGIN --login=NEWLOGIN'`. It is the same account with the same password; add `VENDOR_PASSWORD=...` before the command to change the password too. |
 | Can't create the VM ("Out of capacity") | See the note under B2. |
 | Not receiving emails | `MAIL_TRANSPORT=log` only prints them (`journalctl -u erp`). Set up SMTP in `/etc/erp/erp.env`, then `sudo systemctl restart erp`. |
 

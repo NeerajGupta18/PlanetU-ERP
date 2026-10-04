@@ -4,7 +4,7 @@ import { after, before, describe, it } from 'node:test';
 import { env } from '../src/config/env.js';
 import { createApp } from '../src/app.js';
 import { closePool, q, withTx } from '../src/db/pool.js';
-import { bootstrapVendorFromEnv, createVendor, passwordProblem } from '../src/db/vendor.js';
+import { bootstrapVendorFromEnv, createVendor, passwordProblem, renameVendor } from '../src/db/vendor.js';
 import { issueCaptchaToken } from '../src/services/captcha.service.js';
 
 let server; let base;
@@ -146,6 +146,75 @@ describe('Network diagnostics (vendor only)', () => {
     const admin = await fetch(`${base}/api/auth/login`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ tenantCode: 'demo-college', role: 'admin', identifier: 'ADM001', password: 'Admin@123', captchaToken: issueCaptchaToken() }) });
     const c = admin.headers.getSetCookie().map((x) => x.split(';')[0]).find((x) => x.startsWith(`${env.COOKIE_NAME}=`));
     assert.equal((await fetch(`${base}/api/super-admin/diagnostics/network`, { headers: { cookie: c } })).status, 403);
+  });
+});
+
+describe('Changing the owner login ID', () => {
+  const signIn = (role, identifier, password, tenantCode) => fetch(`${base}/api/auth/login`, {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ role, identifier, password, tenantCode, captchaToken: issueCaptchaToken() }),
+  });
+  const OLD = 'ren-old-test'; const NEW = 'ren-new-test'; const OTHER = 'ren-other-test';
+  const PW = 'Marble-Canyon-Lantern-4417'; const PW2 = 'Quartz-Meadow-Harbour-9082';
+  const cleanup = () => withTx({ platform: true }, () => q("delete from users where role = 'super_admin' and lower(login_id) in ($1, $2, $3, 'ren-case-test')", [OLD, NEW, OTHER]));
+  const idOf = async (l) => (await withTx({ platform: true }, () => q("select id, email, name from users where role = 'super_admin' and lower(login_id) = lower($1)", [l]))).rows[0];
+  before(async () => { await cleanup(); await createVendor({ login: OLD, name: 'Old Owner', email: 'old-owner@ren.example', password: PW }); });
+  after(cleanup);
+
+  it('refuses nonsense and changes nothing: unknown account, bad login, SA001, weak password, an institute login, a taken login', async () => {
+    const before = await idOf(OLD);
+    await assert.rejects(renameVendor({ from: 'nobody-here', to: NEW }), /no owner account/);
+    await assert.rejects(renameVendor({ from: OLD, to: 'a' }), /Login must be/);
+    await assert.rejects(renameVendor({ from: OLD, to: 'SA001' }), /demo account name/);
+    await assert.rejects(renameVendor({ from: OLD, to: NEW, password: 'weak' }), /too weak/);
+    await assert.rejects(renameVendor({ from: OLD, to: NEW, email: 'not-an-email' }), /valid email/);
+    // an institute admin's ID is never touched, whatever is typed
+    await assert.rejects(renameVendor({ from: 'ADM001', to: NEW }), /no owner account/);
+    assert.equal((await signIn('admin', 'ADM001', 'Admin@123', 'demo-college')).status, 200);
+    // another owner already has the wanted login
+    await createVendor({ login: OTHER, email: 'other@ren.example', password: PW2 });
+    await assert.rejects(renameVendor({ from: OLD, to: OTHER }), /Another owner account already uses/);
+    assert.deepEqual(await idOf(OLD), before, 'the account is exactly as it was');
+    assert.equal((await signIn('super_admin', OLD, PW)).status, 200);
+  });
+
+  it('renames the SAME account: the old login stops, the new one works with the same password', async () => {
+    const before = await idOf(OLD);
+    assert.deepEqual(await renameVendor({ from: OLD, to: NEW }), { renamed: true, login: NEW });
+    assert.equal((await idOf(NEW)).id, before.id, 'same account (same id), not a new one');
+    assert.equal(await idOf(OLD), undefined);
+    assert.equal((await signIn('super_admin', OLD, PW)).status, 401);
+    assert.equal((await signIn('super_admin', NEW, PW)).status, 200);
+    assert.equal((await idOf(NEW)).email, 'old-owner@ren.example', 'email kept when not given');
+  });
+
+  it('is safe to repeat: the second run reports it is already done', async () => {
+    assert.deepEqual(await renameVendor({ from: OLD, to: NEW }), { renamed: false, login: NEW });
+    assert.equal((await signIn('super_admin', NEW, PW)).status, 200);
+  });
+
+  it('can change the email, name and password in the same step', async () => {
+    assert.deepEqual(await renameVendor({ from: NEW, to: 'Ren-Case-Test', email: 'moved@ren.example', name: 'Moved Owner', password: PW2 }), { renamed: true, login: 'Ren-Case-Test' });
+    const row = await idOf('ren-case-test');
+    assert.deepEqual([row.email, row.name], ['moved@ren.example', 'Moved Owner']);
+    assert.equal((await signIn('super_admin', 'Ren-Case-Test', PW2)).status, 200);
+    assert.equal((await signIn('super_admin', 'Ren-Case-Test', PW)).status, 401, 'the old password no longer works');
+    await renameVendor({ from: 'ren-case-test', to: NEW }); // back, for the tests below
+  });
+
+  it('works through the host settings (VENDOR_RENAME_FROM), quietly the second time, and without leaking the password', async () => {
+    const logs = []; const log = (m) => logs.push(m);
+    await renameVendor({ from: NEW, to: OLD });
+    const src = { VENDOR_RENAME_FROM: OLD, VENDOR_LOGIN: NEW, VENDOR_EMAIL: 'env-moved@ren.example', VENDOR_PASSWORD: PW };
+    assert.equal((await bootstrapVendorFromEnv({ log, source: src })).action, 'renamed');
+    assert.equal((await signIn('super_admin', NEW, PW)).status, 200);
+    const n = logs.length;
+    assert.equal((await bootstrapVendorFromEnv({ log, source: src })).action, 'exists', 'on the next start nothing changes');
+    assert.equal(logs.length, n, 'and nothing is printed');
+    assert.ok(!logs.join('\n').includes(PW), 'the password is never printed');
+    const bad = await bootstrapVendorFromEnv({ log, source: { VENDOR_RENAME_FROM: 'nobody-here', VENDOR_LOGIN: 'ren-zzz-test' } });
+    assert.equal(bad.action, 'refused');
+    assert.match(bad.reason, /no owner account/);
+    assert.equal(await idOf('ren-zzz-test'), undefined, 'a failed rename never creates an account');
   });
 });
 

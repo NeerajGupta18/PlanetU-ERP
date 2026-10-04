@@ -41,15 +41,52 @@ export async function createVendor({ login, name, email, password, reset = false
 }
 
 /**
+ * Changes an owner (platform vendor) account's login ID - the SAME account, so its password and history stay.
+ * Optionally changes the email, display name and password at the same time. Safe to repeat: when the account has already
+ * been renamed it simply reports that (so the setting can stay in place across restarts).
+ */
+export async function renameVendor({ from, to, email, name, password }) {
+  const oldLogin = String(from || '').trim(); const newLogin = String(to || '').trim();
+  if (!/^[A-Za-z0-9._-]{3,40}$/.test(newLogin)) throw new Error('Login must be 3 to 40 letters, numbers, dots, dashes or underscores.');
+  if (newLogin.toLowerCase() === 'sa001') throw new Error('SA001 is the demo account name. Choose your own login.');
+  if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(email))) throw new Error('Enter a valid email address.');
+  if (password) { const problem = passwordProblem(password, newLogin); if (problem) throw new Error(`Password too weak. ${problem}`); }
+  const hash = password ? await bcrypt.hash(password, 12) : null;
+
+  return withTx({ platform: true }, async () => {
+    const { rows: [src] } = await q("select id from users where role = 'super_admin' and lower(login_id) = lower($1) for update", [oldLogin]);
+    const { rows: [dst] } = await q("select id from users where role = 'super_admin' and lower(login_id) = lower($1)", [newLogin]);
+    if (!src) {
+      if (dst) return { renamed: false, login: newLogin }; // already done
+      throw new Error(`There is no owner account with the login "${oldLogin}".`);
+    }
+    if (dst && dst.id !== src.id) throw new Error(`Another owner account already uses the login "${newLogin}".`);
+    try {
+      await q('update users set login_id = $2, email = coalesce($3, email), name = coalesce($4, name), password_hash = coalesce($5, password_hash) where id = $1',
+        [src.id, newLogin, email || null, name || null, hash]);
+    } catch (e) { if (e.code === '23505') throw new Error('That login or email is already used by another account.'); throw e; }
+    return { renamed: true, login: newLogin };
+  });
+}
+
+/**
  * For hosts with no shell (a free Render web service): create the owner account at startup from VENDOR_LOGIN,
  * VENDOR_EMAIL and VENDOR_PASSWORD. It only creates a missing account (or, with VENDOR_RESET=true, changes the password
- * of that login), and the same strength rules apply. Remove VENDOR_PASSWORD from the host's settings afterwards.
+ * of that login, or with VENDOR_RENAME_FROM changes its login ID), and the same strength rules apply. Remove VENDOR_PASSWORD from the host's settings afterwards.
  */
 export async function bootstrapVendorFromEnv({ log = console.log, source = process.env } = {}) {
   const { VENDOR_LOGIN: login, VENDOR_EMAIL: email, VENDOR_PASSWORD: password, VENDOR_NAME: name } = source;
   if (!login && !email && !password) return { action: 'none' };
   const reset = source.VENDOR_RESET === 'true';
+  const renameFrom = String(source.VENDOR_RENAME_FROM || '').trim();
   try {
+    // VENDOR_RENAME_FROM=<current login> with VENDOR_LOGIN=<new login>: change the login ID of the existing owner account
+    if (renameFrom && login && renameFrom.toLowerCase() !== login.trim().toLowerCase()) {
+      const r = await renameVendor({ from: renameFrom, to: login, email, name, password });
+      if (!r.renamed) return { action: 'exists' };
+      log(`[vendor] Owner login changed from "${renameFrom}" to "${r.login}". Remove VENDOR_RENAME_FROM${password ? ' and VENDOR_PASSWORD' : ''} from the settings now.`);
+      return { action: 'renamed' };
+    }
     // Once the account exists the settings are left in place harmlessly (and the password may be removed): stay silent
     if (login && !reset) {
       const { rows: [exists] } = await withTx({ platform: true }, () => q("select id from users where role = 'super_admin' and lower(login_id) = lower($1)", [login]));
@@ -63,7 +100,7 @@ export async function bootstrapVendorFromEnv({ log = console.log, source = proce
     log(r.created ? `[vendor] Owner account "${r.login}" created. Remove VENDOR_PASSWORD from the settings now.` : `[vendor] Password for "${r.login}" changed. Remove VENDOR_RESET and VENDOR_PASSWORD from the settings now.`);
     return { action: r.created ? 'created' : 'reset' };
   } catch (e) {
-    log(`[vendor] Owner account NOT created: ${e.message}`);
+    log(`[vendor] Owner account NOT created or changed: ${e.message}`);
     return { action: 'refused', reason: e.message };
   }
 }

@@ -1,11 +1,12 @@
 /**
  *   npm run create-vendor -- --login=owner --email=you@example.com --name="Your Name" [--reset]
+ *   npm run create-vendor -- --rename-from=oldlogin --login=newlogin     # change the login ID of the existing owner account
  *
  * The password is read from the VENDOR_PASSWORD environment variable, or typed at a hidden prompt.
  * It is never taken from the command line (that would end up in shell history) and never printed.
  */
 import readline from 'node:readline';
-import { createVendor } from './vendor.js';
+import { createVendor, renameVendor } from './vendor.js';
 import { closePool } from './pool.js';
 
 const arg = (k) => process.argv.find((a) => a.startsWith(`--${k}=`))?.slice(k.length + 3);
@@ -20,12 +21,20 @@ function ask(prompt, { hidden = false } = {}) {
 }
 
 try {
-  const login = arg('login') || process.env.VENDOR_LOGIN || await ask('Vendor login: ');
-  const email = arg('email') || process.env.VENDOR_EMAIL || await ask('Vendor email: ');
-  const name = arg('name') || process.env.VENDOR_NAME || 'Platform Owner';
-  const password = process.env.VENDOR_PASSWORD || await ask('Password (hidden): ', { hidden: true });
-  const r = await createVendor({ login, name, email, password, reset: flag('reset') });
-  console.log(r.created ? `Vendor account "${r.login}" created. Sign in with no institute code.` : `Password for "${r.login}" changed.`);
+  const renameFrom = arg('rename-from');
+  if (renameFrom) {
+    // Changing the login ID of an existing account: email, name and password are optional and never prompted for
+    const to = arg('login') || process.env.VENDOR_LOGIN || await ask('New login: ');
+    const r = await renameVendor({ from: renameFrom, to, email: arg('email') || process.env.VENDOR_EMAIL, name: arg('name') || process.env.VENDOR_NAME, password: process.env.VENDOR_PASSWORD });
+    console.log(r.renamed ? `Owner login changed from "${renameFrom}" to "${r.login}". Same account and password (unless you also set VENDOR_PASSWORD).` : `Nothing to do: "${r.login}" is already the login.`);
+  } else {
+    const login = arg('login') || process.env.VENDOR_LOGIN || await ask('Vendor login: ');
+    const email = arg('email') || process.env.VENDOR_EMAIL || await ask('Vendor email: ');
+    const name = arg('name') || process.env.VENDOR_NAME || 'Platform Owner';
+    const password = process.env.VENDOR_PASSWORD || await ask('Password (hidden): ', { hidden: true });
+    const r = await createVendor({ login, name, email, password, reset: flag('reset') });
+    console.log(r.created ? `Vendor account "${r.login}" created. Sign in with no institute code.` : `Password for "${r.login}" changed.`);
+  }
 } catch (e) {
   console.error(`Not done: ${e.message}`);
   process.exitCode = 1;

@@ -74,3 +74,6 @@ services:
         sync: false
       - key: VENDOR_PASSWORD
         sync: false             # delete this setting after your first login (RENDER.md, Part D)
+      # Only used to change your owner login ID later (RENDER.md, "Changing your owner login ID later"). Leave empty.
+      - key: VENDOR_RENAME_FROM
+        sync: false

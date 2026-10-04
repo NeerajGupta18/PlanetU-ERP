@@ -128,6 +128,19 @@ Compare the `ip` it shows with your real public IP (search "what is my IP"). On 
 
 ---
 
+## Changing your owner login ID later
+
+Your owner (Super Admin) account keeps its password and history; only the ID you type changes. You can also already sign in with your **email address** in the same box ("Email or Super Admin ID").
+
+1. In Render open the `planetu-erp` service, then **Environment**.
+2. Set **`VENDOR_RENAME_FROM`** to your *current* login, and **`VENDOR_LOGIN`** to the *new* login (3 to 40 letters, numbers, dots, dashes or underscores; not `SA001`).
+   Optionally also set `VENDOR_EMAIL` or `VENDOR_NAME` to change them at the same time, and `VENDOR_PASSWORD` (12+ characters, upper-case, lower-case and a digit, not containing the login) to change the password in the same step. Leave `VENDOR_PASSWORD` out to keep your current password.
+3. **Save.** Render redeploys; in **Logs** you should see `[vendor] Owner login changed from "..." to "..."`.
+4. Sign in with the new login. The old one stops working at once.
+5. Delete `VENDOR_RENAME_FROM` (and `VENDOR_PASSWORD` if you set it). Leaving them does no harm: on later starts nothing changes and nothing is printed.
+
+A rename is refused, and nothing changes, if the new login is already another owner's, the old login does not exist, or a password you supplied is too weak. It can only ever touch an owner account, never an institute admin.
+
 ## Part E. Updating later
 
 Push to GitHub, nothing else:
