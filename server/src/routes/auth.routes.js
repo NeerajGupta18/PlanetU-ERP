@@ -12,6 +12,7 @@ const limiter = rateLimit({
 });
 
 router.get('/captcha/config', auth.captchaConfig);
+router.get('/demo-logins', auth.demoLogins);
 router.post('/captcha/verify', limiter, asyncHandler(auth.captchaVerify));
 router.get('/captcha/challenge', limiter, auth.captchaNewChallenge);
 router.post('/captcha/challenge', limiter, auth.captchaAnswer);

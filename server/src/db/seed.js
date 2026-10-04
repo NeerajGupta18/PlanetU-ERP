@@ -379,3 +379,31 @@ export async function seedDemoTenants({ log = console.log } = {}) {
     }
   });
 }
+
+/**
+ * Loads the sample institutes WITHOUT touching anything else. This is what a public demo uses (DEMO_MODE):
+ *  - it never creates the SA001 platform-owner account (seedDemoTenants does, with a published password)
+ *  - an institute is only created if it is missing; with `reset` the sample ones are rebuilt from scratch
+ *  - a real institute that happens to use a sample code is left completely alone
+ */
+export async function ensureDemoInstitutes({ log = console.log, reset = false, specs = DEMO_TENANTS } = {}) {
+  const hashes = { employee: bcrypt.hashSync(DEMO_PASSWORDS.employee, 10), student: bcrypt.hashSync(DEMO_PASSWORDS.student, 10) };
+  let created = 0;
+  await withTx({ platform: true }, async () => {
+    const { rows } = await q("select code, coalesce(settings->>'demo', 'false') = 'true' as demo from tenants");
+    const known = new Map(rows.map((r) => [r.code, r.demo]));
+    const todo = [];
+    for (const spec of specs) {
+      if (known.has(spec.code) && !known.get(spec.code)) { log(`[demo] "${spec.code}" belongs to a real institute, so it was left alone`); continue; }
+      if (known.has(spec.code) && !reset) continue;
+      todo.push(spec);
+    }
+    if (reset) for (const spec of todo) await q("delete from tenants where code = $1 and settings->>'demo' = 'true'", [spec.code]);
+    for (const spec of todo) {
+      await seedTenant(spec, hashes);
+      created += 1;
+      log(`[demo] loaded ${spec.type.padEnd(7)} ${spec.code}  (${spec.name})`);
+    }
+  });
+  return { created };
+}

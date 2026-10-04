@@ -12,7 +12,7 @@
     "create-vendor": "node src/db/create-vendor-cli.js",
     "db:setup": "node src/db/seed-cli.js",
     "seed": "node src/db/seed-cli.js",
-    "test": "node --test --test-concurrency=1 test/isolation.test.js test/files.test.js test/admissions.test.js test/accounts.test.js test/students.test.js test/fees.test.js test/library.test.js test/assets.test.js test/onlinePayments.test.js test/attendance.test.js test/exams.test.js test/studentImport.test.js test/reports.test.js test/billing.test.js test/learning.test.js test/quizzes.test.js test/vendor.test.js test/migrate.test.js test/storage.test.js"
+    "test": "node --test --test-concurrency=1 test/isolation.test.js test/files.test.js test/admissions.test.js test/accounts.test.js test/students.test.js test/fees.test.js test/library.test.js test/assets.test.js test/onlinePayments.test.js test/attendance.test.js test/exams.test.js test/studentImport.test.js test/reports.test.js test/billing.test.js test/learning.test.js test/quizzes.test.js test/vendor.test.js test/migrate.test.js test/storage.test.js test/courses.test.js test/demo-mode.test.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

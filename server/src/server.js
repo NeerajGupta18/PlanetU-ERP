@@ -5,6 +5,7 @@ import { refreshDemoTenants } from './db/seed.js';
 import { startMailWorker } from './services/notifications.service.js';
 import { startBillingWorker } from './services/billingRun.service.js';
 import { bootstrapVendorFromEnv } from './db/vendor.js';
+import { ensureDemoInstitutes } from './db/seed.js';
 
 // Fail early with a helpful message instead of a stack trace on the first request
 try {
@@ -28,7 +29,11 @@ try {
   process.exit(1);
 }
 
-await bootstrapVendorFromEnv(); // hosts without a shell: create the owner account from VENDOR_* settings (only if missing)
+await bootstrapVendorFromEnv();
+if (env.DEMO_MODE) {
+  // A failure here must not stop the real site from starting
+  try { await ensureDemoInstitutes({ reset: env.DEMO_RESET_ON_START }); } catch (e) { console.error('[demo] could not load the sample institutes:', e.message); }
+} // hosts without a shell: create the owner account from VENDOR_* settings (only if missing)
 if (env.DEMO_REFRESH) await refreshDemoTenants(); // keep demo dates anchored to today (development only)
 
 // Loud on purpose: reCAPTCHA silently falling back to the custom check

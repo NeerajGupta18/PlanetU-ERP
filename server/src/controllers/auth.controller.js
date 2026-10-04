@@ -8,6 +8,7 @@ import { checkPassword, sendResetLink, sha } from '../services/accounts.service.
 import { queueEmail, tenantInfo } from '../services/notifications.service.js';
 import { instituteBrief, loadNotices } from '../db/repo.js';
 import { audit } from '../db/audit.js';
+import { DEMO_PASSWORDS, DEMO_TENANTS } from '../db/demo-data.js';
 import {
   answerChallenge, consumeCaptchaToken, createChallenge, issueCaptchaToken, looksHuman, verifyRecaptcha,
 } from '../services/captcha.service.js';
@@ -229,6 +230,7 @@ export async function resetPassword(req, res) {
       [sha(token)],
     );
     if (!r || r.status !== 'active') throw new HttpError(400, 'This link is invalid or has expired.');
+    if (await isDemoTenant(r.tenantId)) throw new HttpError(403, DEMO_LOCKED);
     checkPassword(password, r);
     if (r.tenantId) {
       const { rows: [t] } = await q('select status, suspension_reason as "suspensionReason" from tenants where id = $1', [r.tenantId]);
@@ -249,7 +251,33 @@ export async function resetPassword(req, res) {
 }
 
 // Signed-in users. Ends every other session (their tokens predate password_changed_at) and keeps this one alive.
+/** In DEMO_MODE the sample institutes' sign-ins are shared and public, so nobody may change their passwords (that would lock everyone else out). */
+const isDemoTenant = async (tenantId) => {
+  if (!env.DEMO_MODE || !tenantId) return false;
+  const { rows: [t] } = await withTx({ platform: true }, () => q("select settings->>'demo' as demo from tenants where id = $1", [tenantId]));
+  return t?.demo === 'true';
+};
+const DEMO_LOCKED = 'This is a shared demo account, so its password cannot be changed.';
+
+/** The sample sign-ins for the login page's one-click buttons. Only when DEMO_MODE is on, only sample institutes that exist, never the platform owner. */
+export async function demoLogins(req, res) {
+  res.set('Cache-Control', 'no-store');
+  if (!env.DEMO_MODE) return res.json({ enabled: false });
+  const { rows } = await withTx({ platform: true }, () => q("select code from tenants where settings->>'demo' = 'true' and status = 'active'"));
+  const live = new Set(rows.map((r) => r.code));
+  const institutes = DEMO_TENANTS.filter((s) => live.has(s.code)).map((s) => ({
+    code: s.code, name: s.name, type: s.type,
+    logins: [
+      { role: 'admin', id: s.admin.loginId, password: DEMO_PASSWORDS.admin },
+      { role: 'employee', id: s.employees[0][0], password: DEMO_PASSWORDS.employee },
+      { role: 'student', id: s.students[0].code, password: DEMO_PASSWORDS.student },
+    ],
+  }));
+  return res.json({ enabled: institutes.length > 0, institutes });
+}
+
 export async function changePassword(req, res) {
+  if (await isDemoTenant(req.tenant?.id)) throw new HttpError(403, DEMO_LOCKED);
   const { currentPassword, newPassword } = req.body || {};
   const { rows: [u] } = await q('select password_hash from users where id = $1', [req.user.id]);
   if (typeof currentPassword !== 'string' || !(await bcrypt.compare(currentPassword, u.password_hash))) {

@@ -40,6 +40,11 @@ export const env = {
   // How many proxies sit between the internet and the app. Wrong values make every visitor look like one IP
   // (shared rate limits) or let a visitor forge their IP. The vendor can check it: /api/super-admin/diagnostics/network
   TRUST_PROXY_HOPS: Math.min(5, Math.max(0, Number.parseInt(process.env.TRUST_PROXY_HOPS ?? '1', 10) || 0)),
+  // Public demo: loads the sample institutes at start-up (only the ones that are missing) and lists their sign-ins on the
+  // login page for one-click filling. Never includes the platform owner. Their passwords cannot be changed while this is on.
+  DEMO_MODE: process.env.DEMO_MODE === 'true',
+  // With DEMO_MODE: rebuild the sample institutes from scratch on every start (the free Render plan restarts when it wakes up)
+  DEMO_RESET_ON_START: process.env.DEMO_RESET_ON_START === 'true',
   MAIL_WORKER: process.env.MAIL_WORKER !== 'false',
   // How often the mail outbox is checked. 15s is right for a normal database; raise it (e.g. 300) on a database that
   // sleeps when idle, so the poll does not keep it awake around the clock.

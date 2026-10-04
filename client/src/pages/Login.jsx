@@ -51,6 +51,11 @@ export default function Login() {
   const [resetKey, setResetKey] = useState(0);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [demo, setDemo] = useState(null); // the sample sign-ins, when the server is in demo mode
+
+  useEffect(() => {
+    api.get('/auth/demo-logins').then((d) => { if (d.enabled) setDemo(d); }).catch(() => {});
+  }, []);
 
   // Show which institute the code belongs to, so a typo is obvious before signing in
   useEffect(() => {
@@ -92,6 +97,12 @@ export default function Login() {
   const onCaptcha = (token) => {
     setCaptchaToken(token);
     if (token) setError((prev) => (prev.includes('not a robot') ? '' : prev));
+  };
+
+  const pickDemo = (inst, l) => {
+    setRole(l.role); setTenantCode(inst.code); setIdentifier(l.id); setPassword(l.password); setError('');
+    // On a small screen the demo list sits below the form: bring the "I'm not a robot" box into view
+    setTimeout(() => document.querySelector('.robot')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60);
   };
 
   const fillDemo = (code = tenantCode) => {
@@ -174,7 +185,24 @@ export default function Login() {
             {busy ? <span className="spinner spinner--sm spinner--light" /> : <LogIn size={17} />} Sign in as {current.label}
           </button>
 
-          {import.meta.env.DEV && (
+          {demo && (
+            <div className="login__demo-panel">
+              <div className="login__demo-head"><ShieldCheck size={15} /> Demo logins <span className="login__demo-tag">TEST MODE</span></div>
+              <p>Click a role to fill in the form, then tick &ldquo;I&apos;m not a robot&rdquo; and sign in. Everything here is fictional sample data.</p>
+              {demo.institutes.map((inst) => (
+                <div key={inst.code} className="login__demo-inst">
+                  <strong>{inst.name}</strong>
+                  <div className="login__demos">
+                    {inst.logins.map((l) => (
+                      <button key={l.role} type="button" className="login__demo" onClick={() => pickDemo(inst, l)}>{ROLES.find((r) => r.value === l.role).label}</button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {!demo && import.meta.env.DEV && (
             <div className="login__demos">
               <span>Development only - fill demo {current.label} credentials for:</span>
               {needsCode ? Object.entries(DEMO_TENANTS).map(([code, t]) => (

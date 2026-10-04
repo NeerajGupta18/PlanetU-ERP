@@ -542,3 +542,11 @@ a { color: var(--brand-600); }
 
 .check-row { display: flex; gap: 8px; align-items: center; font-size: 14px; }
 textarea.input { font-family: inherit; line-height: 1.45; }
+
+/* Public demo: one-click sample sign-ins on the login page (only when the server is in DEMO_MODE) */
+.login__demo-panel { margin-top: 18px; padding: 14px; border: 1px dashed var(--brand-500); border-radius: 12px; background: var(--brand-50, #eef2ff); }
+.login__demo-head { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; color: var(--ink, #111827); }
+.login__demo-tag { margin-left: auto; padding: 2px 8px; border-radius: 6px; background: #dbeafe; color: #1d4ed8; font-size: 10.5px; letter-spacing: .04em; }
+.login__demo-panel > p { margin: 6px 0 10px; font-size: 12.5px; color: var(--muted); }
+.login__demo-inst { padding: 8px 0; border-top: 1px solid rgba(99, 102, 241, .18); font-size: 13px; }
+.login__demo-inst .login__demos { margin-top: 6px; }
