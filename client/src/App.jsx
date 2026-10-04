@@ -37,6 +37,7 @@ import QuizResults from './pages/shared/QuizResults.jsx';
 import AdminDashboard from './pages/admin/Dashboard.jsx';
 import AdminInstitute from './pages/admin/Institute.jsx';
 import AdminDepartments from './pages/admin/Departments.jsx';
+import AdminCourses from './pages/admin/Courses.jsx';
 import AdminEmployees from './pages/admin/Employees.jsx';
 import AdminCalendar from './pages/admin/Calendar.jsx';
 import AdminTimetable from './pages/admin/Timetable.jsx';
@@ -109,6 +110,7 @@ export default function App() {
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="institute" element={<AdminInstitute />} />
           <Route path="departments" element={<AdminDepartments />} />
+          <Route path="courses" element={<AdminCourses />} />
           <Route path="employees" element={<AdminEmployees />} />
           <Route element={<ModuleGate module="admissions" />}><Route path="admissions" element={<AdminAdmissions />} /></Route>
           <Route element={<ModuleGate module="students" />}>

@@ -5,6 +5,7 @@ import { IMPORT_LIMITS } from '../services/studentImport.service.js';
 import { rebindTx, requireAuth, requireModule, requireRole } from '../middleware/auth.js';
 import * as raw from '../controllers/admin.controller.js';
 import * as rawAdmissions from '../controllers/admissions.controller.js';
+import * as rawCourses from '../controllers/courses.controller.js';
 import * as rawStudents from '../controllers/students.controller.js';
 import * as rawFees from '../controllers/fees.controller.js';
 import * as rawOnline from '../controllers/onlinePayments.controller.js';
@@ -20,6 +21,7 @@ import { uuidParam, wrapAll } from './wrap.js';
 
 const admin = wrapAll(raw);
 const admissions = wrapAll(rawAdmissions);
+const courses = wrapAll(rawCourses);
 const students = wrapAll(rawStudents);
 const fees = wrapAll(rawFees);
 const online = wrapAll(rawOnline);
@@ -67,6 +69,12 @@ router.post('/institute/beneficiaries', admin.addBeneficiary);
 router.put('/institute/beneficiaries/:index', admin.updateBeneficiary);
 router.delete('/institute/beneficiaries/:index', admin.removeBeneficiary);
 router.put('/institute/stamp', admin.updateStamp);
+
+// Classes / courses / programmes: core to every institute, so no module switch
+router.get('/courses', courses.list);
+router.post('/courses', courses.create);
+router.put('/courses/:id', courses.update);
+router.delete('/courses/:id', courses.remove);
 
 router.get('/departments', admin.listDepartments);
 router.post('/departments', admin.createDepartment);

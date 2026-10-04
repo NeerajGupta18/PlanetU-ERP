@@ -1,5 +1,5 @@
 import {
-  BookOpen, BookOpenCheck, Boxes, Building2, CalendarCheck, CalendarDays, CircleDollarSign, ClipboardCheck, CreditCard, FileBarChart2, GraduationCap, LayoutDashboard, ListChecks, Network, Server, Table2, UserRound, Users, Users2, Wallet,
+  BookOpen, BookOpenCheck, Boxes, Building2, CalendarCheck, CalendarDays, CircleDollarSign, ClipboardCheck, CreditCard, FileBarChart2, GraduationCap, LayoutDashboard, ListChecks, School, Network, Server, Table2, UserRound, Users, Users2, Wallet,
 } from 'lucide-react';
 
 /**
@@ -30,6 +30,7 @@ export const MENU = {
     { label: 'Admin Dashboard', to: '/admin/dashboard', icon: LayoutDashboard },
     { label: 'Institute', to: '/admin/institute', icon: Building2, term: ['institute', 'Institute'] },
     { label: 'Departments & Designations', to: '/admin/departments', icon: Network },
+    { label: 'Courses', to: '/admin/courses', icon: School, term: ['courses', 'Courses'] },
     { label: 'Employees', to: '/admin/employees', icon: Users, term: ['employees', 'Employees'] },
     { label: 'Admissions', to: '/admin/admissions', icon: ClipboardCheck, module: 'admissions', term: ['admission', 'Admissions'] },
     { label: 'Students', to: '/admin/students', icon: Users2, module: 'students', term: ['students', 'Students'] },
