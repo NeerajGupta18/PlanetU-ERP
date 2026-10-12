@@ -60,7 +60,12 @@ export function createApp() {
 
   // Serve the built React app (npm run build) from the same server in production
   if (fs.existsSync(env.CLIENT_DIST)) {
-    app.use(express.static(env.CLIENT_DIST));
+    app.use(express.static(env.CLIENT_DIST, {
+      setHeaders(res, file) {
+        // The service worker and the page that loads it must always be re-checked, or an update could never reach phones
+        if (/(sw\.js|index\.html|manifest\.webmanifest)$/.test(file)) res.setHeader('Cache-Control', 'no-cache');
+      },
+    }));
     app.get('*', (req, res) => res.sendFile(path.join(env.CLIENT_DIST, 'index.html')));
   }
 

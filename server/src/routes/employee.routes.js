@@ -7,6 +7,8 @@ import * as rawQuizzes from '../controllers/quiz.controller.js';
 import * as rawNotices from '../controllers/notices.controller.js';
 import * as rawGrievance from '../controllers/grievance.controller.js';
 import * as rawLeave from '../controllers/leave.controller.js';
+import * as rawAssignments from '../controllers/assignments.controller.js';
+import * as rawCheckin from '../controllers/checkin.controller.js';
 import * as rawPayroll from '../controllers/payroll.controller.js';
 import { uuidParam, wrapAll } from './wrap.js';
 
@@ -18,6 +20,8 @@ const notices = wrapAll(rawNotices);
 const grievance = wrapAll(rawGrievance);
 const leave = wrapAll(rawLeave);
 const payroll = wrapAll(rawPayroll);
+const checkin = wrapAll(rawCheckin);
+const assignments = wrapAll(rawAssignments);
 const router = Router();
 router.use(requireAuth, requireRole('employee'));
 router.param('paperId', uuidParam);
@@ -38,6 +42,17 @@ router.post('/feedback/:id', requireModule('grievance'), grievance.submitForm);
 router.get('/leave', requireModule('leave'), leave.mine);
 router.post('/leave', requireModule('leave'), leave.apply);
 router.post('/leave/:id/cancel', requireModule('leave'), leave.cancel);
+router.use('/assignments', requireModule('assignments'));
+router.get('/assignments/scope', assignments.scope);
+router.get('/assignments', assignments.list);
+router.post('/assignments', assignments.create);
+router.get('/assignments/:id', assignments.get);
+router.put('/assignments/:id', assignments.update);
+router.delete('/assignments/:id', assignments.remove);
+router.post('/assignments/:id/publish', assignments.publish);
+router.post('/assignments/:id/close', assignments.close);
+router.post('/assignments/:id/reopen', assignments.reopen);
+router.put('/assignments/:id/submissions/:studentId', assignments.grade);
 router.get('/payslips', requireModule('payroll'), payroll.mine);
 router.get('/payslips/:id/pdf', requireModule('payroll'), payroll.myPdf);
 
@@ -46,6 +61,9 @@ router.use('/attendance', requireModule('attendance'), requireModule('timetable'
 router.get('/attendance/today', attendance.myLectures);
 router.get('/attendance/lecture', attendance.getSheet);
 router.put('/attendance/lecture', attendance.saveSheet);
+router.get('/attendance/checkin', checkin.state);
+router.post('/attendance/checkin', checkin.open);
+router.post('/attendance/checkin/close', checkin.close);
 
 // Faculty enter marks only for the papers an admin assigned to them
 router.use('/exams', requireModule('exams'));
