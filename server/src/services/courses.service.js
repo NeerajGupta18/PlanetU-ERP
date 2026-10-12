@@ -19,6 +19,7 @@ export const COURSE_DEPENDANTS = [
   ['applications', 'course_id', 'admission application', 'admission applications'],
   ['fee_structures', 'course_id', 'fee structure', 'fee structures'],
   ['timetable_slots', 'course_id', 'timetable slot', 'timetable slots'],
+  ['assignments', 'course_id', 'assignment', 'assignments'],
   ['duties', 'course_id', 'lecture reassignment', 'lecture reassignments'],
   ['attendance_sessions', 'course_id', 'attendance record', 'attendance records'],
   ['exams', 'course_id', 'exam', 'exams'],
@@ -100,5 +101,6 @@ export async function removeCourse(actor, id) {
     throw new HttpError(409, `Cannot delete "${cur.code}": it still has ${list}. Move or remove those first.`);
   }
   await q('delete from courses where id = $1', [id]);
+  await q('update placement_drives set course_ids = array_remove(course_ids, $1::uuid) where $1::uuid = any (course_ids)', [id]); // drives keep a plain list of course ids
   await audit(actor, 'course.delete', 'course', id, { code: cur.code });
 }

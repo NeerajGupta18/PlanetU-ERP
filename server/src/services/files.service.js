@@ -55,6 +55,24 @@ export async function findAccessible(id, user) {
     );
     return rowCount ? f : null;
   }
+  // Assignment files: the class can open the attachment of work set for them; the teacher can open what students sent
+  if (user.role === 'student' && user.studentId) {
+    const { rowCount } = await q(
+      `select 1 from assignments a join students s on s.course_id = a.course_id and (a.section = '' or a.section = s.section)
+       where a.attachment_file_id = $1 and a.status in ('published', 'closed') and s.id = $2 limit 1`, [id, user.studentId],
+    );
+    if (rowCount) return f;
+  }
+  if (user.role === 'employee' && user.employeeId) {
+    const { rowCount } = await q(
+      `select 1 from assignments a
+       where (a.attachment_file_id = $1 or exists (select 1 from assignment_submissions x where x.assignment_id = a.id and x.file_id = $1))
+         and (a.created_by_employee = $2
+              or exists (select 1 from timetable_slots t where t.employee_id = $2 and t.course_id = a.course_id and lower(trim(t.subject)) = lower(trim(a.subject))))
+       limit 1`, [id, user.employeeId],
+    );
+    if (rowCount) return f;
+  }
   // A faculty member can open the certificate a student attached to a learning assignment they created
   // or teach the subject of - and nothing else of the student's.
   if (user.role === 'employee' && user.employeeId) {
