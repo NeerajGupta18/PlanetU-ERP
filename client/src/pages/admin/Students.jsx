@@ -1,3 +1,4 @@
+import { useSearchParams } from 'react-router-dom';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CreditCard, Download, GraduationCap, Search, Upload, Users2 } from 'lucide-react';
@@ -13,7 +14,8 @@ const STATUS_TONE = { Active: 'green', Inactive: 'gray', Alumni: 'purple' };
 
 export default function Students() {
   const { t, hasModule } = useTenantConfig();
-  const [search, setSearch] = useState('');
+  const [params] = useSearchParams();
+  const [search, setSearch] = useState(params.get('search') || '');
   const [status, setStatus] = useState('');
   const [openId, setOpenId] = useState(null);
   const qs = new URLSearchParams();

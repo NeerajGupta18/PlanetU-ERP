@@ -1,3 +1,4 @@
+import { useSearchParams } from 'react-router-dom';
 import { useMemo, useState } from 'react';
 import { Pencil, Plus, Search, Trash2, Users } from 'lucide-react';
 import { useFetch } from '../../hooks/useFetch.js';
@@ -5,10 +6,13 @@ import { api } from '../../api/http.js';
 import { Badge, Card, PageBanner } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import Modal from '../../components/ui/Modal.jsx';
+import { useDialogs } from '../../components/ui/Dialogs.jsx';
 
 export default function Employees() {
+  const { confirm, toast } = useDialogs();
   const [department, setDepartment] = useState('');
-  const [search, setSearch] = useState('');
+  const [params] = useSearchParams();
+  const [search, setSearch] = useState(params.get('search') || '');
   const depts = useFetch('/admin/departments');
   const desigs = useFetch('/admin/designations');
 
@@ -69,9 +73,9 @@ export default function Employees() {
                             <button
                               type="button" className="btn btn--outline btn--sm"
                               onClick={async () => {
-                                if (!confirm(`Delete ${e.name}?`)) return;
+                                if (!(await confirm(`Delete ${e.name}?`, { danger: true, confirmLabel: 'Delete' } ))) return;
                                 try { await api.del(`/admin/employees/${e.id}`); emps.reload(); }
-                                catch (err) { alert(err.message); }
+                                catch (err) { toast.error(err); }
                               }}
                             >
                               <Trash2 size={13} />

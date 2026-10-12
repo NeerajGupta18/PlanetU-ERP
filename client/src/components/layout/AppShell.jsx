@@ -1,13 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Bell, ChevronDown, KeyRound, LogOut, MapPin, Menu, Phone } from 'lucide-react';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Bell, ChevronDown, KeyRound, LogOut, MapPin, Menu, Phone, Search } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useTenantConfig } from '../../hooks/useTenantConfig.js';
-import { MENU, ROLE_LABEL } from '../../config/menu.config.js';
+import { useNav } from '../../hooks/useNav.js';
+import { ROLE_LABEL } from '../../config/menu.config.js';
 import { useOutsideClick } from '../../hooks/useOutsideClick.js';
 import { fmtDate } from '../../utils/dates.js';
 import { BRAND } from '../../config/brand.js';
 import BrandMark from '../ui/BrandMark.jsx';
+import SidebarNav from './SidebarNav.jsx';
+import Breadcrumbs from './Breadcrumbs.jsx';
+import SearchPalette from './SearchPalette.jsx';
 
 function Dropdown({ button, children, align = 'right' }) {
   const [open, setOpen] = useState(false);
@@ -44,13 +48,24 @@ function BillingBanner({ b }) {
 
 export default function AppShell() {
   const { user, tenant, billing, institute, notifications, logout } = useAuth();
-  const { hasModule, t } = useTenantConfig();
+  const { t } = useTenantConfig();
+  const { tree, flat } = useNav();
   const navigate = useNavigate();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('erp.sidebar') === 'collapsed');
   const [drawer, setDrawer] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => { setDrawer(false); }, [location.pathname]);
+
+  // Ctrl+K / Cmd+K opens quick search from anywhere
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setSearchOpen((o) => !o); }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
 
   const toggleSidebar = () => {
     if (window.matchMedia('(max-width: 900px)').matches) {
@@ -68,10 +83,8 @@ export default function AppShell() {
     navigate('/login', { replace: true });
   };
 
-  // Hide modules the institute doesn't have, and use the institute's own words for labels
-  // While access is paused for an unpaid subscription the admin sees Billing and nothing else
+  // useNav() already hides switched-off modules, applies the institute's own words and the billing lock
   const locked = Boolean(tenant?.billingLocked);
-  const menu = (MENU[user.role] || []).filter((m) => hasModule(m.module)).filter((m) => !locked || m.to === '/admin/billing');
 
   return (
     <div className={`shell ${collapsed ? 'is-collapsed' : ''} ${drawer ? 'is-drawer-open' : ''}`}>
@@ -83,17 +96,7 @@ export default function AppShell() {
             <small>{user.role === 'student' ? `${t('student', 'Student')} Portal` : `${ROLE_LABEL[user.role]} Portal`}</small>
           </span>
         </div>
-        <nav className="sidebar__nav">
-          {menu.map(({ label, to, icon: Icon, term }) => {
-            const text = term ? t(term[0], term[1]) : label;
-            return (
-              <NavLink key={to} to={to} className={({ isActive }) => `navlink ${isActive ? 'is-active' : ''}`} title={text}>
-                <Icon size={18} />
-                <span>{text}</span>
-              </NavLink>
-            );
-          })}
-        </nav>
+        <SidebarNav tree={tree} flat={flat} />
       </aside>
       <div className="scrim" onClick={() => setDrawer(false)} />
 
@@ -115,6 +118,9 @@ export default function AppShell() {
           </div>
 
           <div className="topbar__right">
+            <button type="button" className="searchbtn" onClick={() => setSearchOpen(true)} aria-label="Search (Ctrl+K)">
+              <Search size={16} /><span>Search</span><kbd>Ctrl K</kbd>
+            </button>
             <Dropdown
               button={({ toggle }) => (
                 <button type="button" className="icon-btn bell" onClick={toggle} aria-label={`Notifications (${notifications.length})`}>
@@ -156,8 +162,12 @@ export default function AppShell() {
           </div>
         </header>
 
-        <main className="content">{user.role === 'admin' && billing && !locked && location.pathname !== '/admin/billing' && <BillingBanner b={billing} />}
-          <Outlet /></main>
+        <main className="content">
+          <Breadcrumbs flat={flat} />
+          {user.role === 'admin' && billing && !locked && location.pathname !== '/admin/billing' && <BillingBanner b={billing} />}
+          <Outlet />
+        </main>
+        <SearchPalette open={searchOpen} onClose={() => setSearchOpen(false)} flat={flat} />
 
         <footer className="footer">
           Copyright &copy; {new Date().getFullYear()} {institute?.name}. All rights reserved.
