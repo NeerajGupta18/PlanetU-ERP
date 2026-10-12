@@ -92,7 +92,7 @@ export async function daySheet(date, courseId) {
  * Whether `actor` may change this lecture's attendance right now. Admins can correct any past or
  * present date; an employee only their own lecture, on the day itself.
  */
-function permission(actor, lecture, date) {
+export function permission(actor, lecture, date) {
   if (date > today()) return { ok: false, reason: 'Attendance cannot be marked for a future date.' };
   if (actor.role === 'admin') return { ok: true };
   if (actor.employeeId !== lecture.facultyId) {
@@ -105,7 +105,7 @@ function permission(actor, lecture, date) {
 }
 
 /** An employee who neither teaches the lecture that day nor owns the slot sees it as nonexistent. */
-function hideFromOthers(actor, lecture) {
+export function hideFromOthers(actor, lecture) {
   if (actor.role === 'employee' && actor.employeeId !== lecture.facultyId && actor.employeeId !== lecture.ownerId) {
     throw new HttpError(404, 'No such lecture on that date.');
   }
