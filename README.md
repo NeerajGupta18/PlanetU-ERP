@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/PostgreSQL-16%20%2B%20RLS-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" />
   <img src="https://img.shields.io/badge/Auth-JWT%20%2B%20bcrypt-EC1C24?style=for-the-badge&logo=jsonwebtokens&logoColor=white" />
   <img src="https://img.shields.io/badge/Multi--tenant-SaaS-7C3AED?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/Tests-617%20passing-2ea44f?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Tests-625%20passing-2ea44f?style=for-the-badge" />
   <img src="https://img.shields.io/badge/Deploy-Render%20%7C%20Oracle%20Cloud-46E3B7?style=for-the-badge" />
   <img src="https://img.shields.io/badge/STATUS-PHASE%207-2ea44f?style=for-the-badge" />
 </p>
@@ -92,7 +92,7 @@ tables, run `npm run db:migrate` instead.
 ### Tests
 
 ```bash
-npm test             # 617 tests against a real PostgreSQL (run db:setup first)
+npm test             # 625 tests against a real PostgreSQL (run db:setup first)
 ```
 
 They cover tenant isolation, uploads, admissions, accounts and email, students and ID cards, fees, online payments
@@ -627,6 +627,8 @@ planetu-erp/
 | GET/POST | `/api/student/checkin/today`, `/api/student/checkin` | student *(rate limited; wrong codes are counted)* |
 | GET/POST/PUT/DELETE | `/api/admin/placement/companies`, `/drives`, `/drives/:id/open|close`, `/applications/:id`, `/stats` | admin *(placement module)* |
 | GET/POST | `/api/student/placement`, `/:id/apply`, `/:id/withdraw` | student *(placement module)* |
+| GET/POST | `/api/admin/visitors`, `/meta`, `/summary`, `/:id/check-in`, `/:id/check-out`, `/:id/cancel` | admin *(visitors module)* |
+| GET/POST | `/api/employee/visitors`, `/meta`, `/:id/cancel` | staff *(only visitors they host)* |
 | GET    | `/api/super-admin/diagnostics/network` | super admin *(shows the IP the app sees; use it to check `TRUST_PROXY_HOPS`)* |
 
 Calendar and Timetable routes (admin and student) answer `403 MODULE_DISABLED` when the institute's plan doesn't include them.
@@ -751,7 +753,17 @@ average and highest package and the placement rate by course.
 opens like a phone app. Only the app shell is kept for offline use; records are always loaded live, so nothing from the
 past is shown. It is a web app, not a Play Store or App Store listing.
 
-**On the roadmap** (switchable in the vendor console, marked "coming soon" until built): Visitor Management.
+## Visitor management
+
+The gate desk logs everyone who comes in. The office adds a visitor either as *expected* (a visit date, and the staff member
+they are meeting) or as a *walk-in* who is checked in on the spot. Each visit gets a pass number (such as VIS00012), a purpose,
+the number of people, an optional vehicle number and which kind of ID was shown. The ID number itself is never recorded.
+*At the gate* shows who is inside and who is expected; *Visitor log* searches every visit by name, company, phone, pass or
+date. Check-in and check-out are one click each, a printable pass opens for visitors who are inside, and anyone inside for
+more than eight hours is flagged. The staff member being visited is emailed when their visitor arrives. Staff can also expect
+a visitor themselves from *My visitors*; they see and can cancel only their own, and cannot check anyone in.
+
+All planned modules are now built.
 
 
 ---

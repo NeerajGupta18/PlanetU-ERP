@@ -1,5 +1,5 @@
 import {
-  BedDouble, Banknote, Briefcase, NotebookPen, QrCode, BookOpen, BookOpenCheck, Boxes, Bus, Building2, CalendarCheck, CalendarOff, CalendarDays, CircleDollarSign, ClipboardCheck, CreditCard, FileBarChart2, FileText, LifeBuoy, Star, GraduationCap, LayoutDashboard, ListChecks, Megaphone, School, Network, Server, Settings2, Table2, UserRound, Users, Users2, Wallet,
+  BedDouble, Banknote, DoorOpen, Briefcase, NotebookPen, QrCode, BookOpen, BookOpenCheck, Boxes, Bus, Building2, CalendarCheck, CalendarOff, CalendarDays, CircleDollarSign, ClipboardCheck, CreditCard, FileBarChart2, FileText, LifeBuoy, Star, GraduationCap, LayoutDashboard, ListChecks, Megaphone, School, Network, Server, Settings2, Table2, UserRound, Users, Users2, Wallet,
 } from 'lucide-react';
 
 /**
@@ -93,6 +93,7 @@ export const MENU_TREE = {
         { label: 'Hostel', to: '/admin/hostel', icon: BedDouble, module: 'hostel' },
         { label: 'Transport', to: '/admin/transport', icon: Bus, module: 'transport' },
         { label: 'Placement', to: '/admin/placement', icon: Briefcase, module: 'placement' },
+        { label: 'Visitors', to: '/admin/visitors', icon: DoorOpen, module: 'visitors' },
       ],
     },
     {
@@ -133,6 +134,7 @@ export const MENU_TREE = {
     { label: 'Notice board', to: '/employee/notices', icon: Megaphone, module: 'notices' },
     { label: 'My leave', to: '/employee/leave', icon: CalendarOff, module: 'leave' },
     { label: 'My payslips', to: '/employee/payslips', icon: Banknote, module: 'payroll' },
+    { label: 'My visitors', to: '/employee/visitors', icon: DoorOpen, module: 'visitors' },
     { label: 'Help and feedback', to: '/employee/support', icon: LifeBuoy, module: 'grievance' },
     {
       group: 'Teaching', icon: ClipboardCheck, items: [
