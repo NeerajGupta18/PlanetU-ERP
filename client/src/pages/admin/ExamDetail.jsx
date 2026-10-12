@@ -1,3 +1,4 @@
+import { useTabParam } from '../../hooks/useTabParam.js';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Download, Eye, EyeOff, FileText, GraduationCap, Pencil, PenLine, Plus, Printer, Trash2 } from 'lucide-react';
@@ -6,13 +7,15 @@ import { api } from '../../api/http.js';
 import { Badge, Card, PageBanner, StatCard, Tabs } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import Modal from '../../components/ui/Modal.jsx';
+import { useDialogs } from '../../components/ui/Dialogs.jsx';
 import { fmtDate } from '../../utils/dates.js';
 import { KIND_LABEL, RESULT_LABEL, RESULT_TONE, gradeTone, num } from '../../utils/exams.js';
 
 export default function ExamDetail() {
+  const { confirm } = useDialogs();
   const { id } = useParams();
   const navigate = useNavigate();
-  const [tab, setTab] = useState('papers');
+  const [tab, setTab] = useTabParam('papers');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const exam = useFetch(`/admin/exams/${id}`);
@@ -47,11 +50,11 @@ export default function ExamDetail() {
                       <button
                         type="button" className="btn btn--primary btn--sm" disabled={busy || !allSubmitted}
                         title={allSubmitted ? '' : 'Every paper needs its marks submitted first'}
-                        onClick={() => { if (window.confirm('Publish these results? Students will see their marks, grades and report cards.')) act(() => api.post(`/admin/exams/${id}/publish`)); }}
+                        onClick={async () => { if (await confirm('Publish these results? Students will see their marks, grades and report cards.', { confirmLabel: 'Publish' })) act(() => api.post(`/admin/exams/${id}/publish`)); }}
                       ><Eye size={14} /> Publish results</button>
                       <button
                         type="button" className="btn btn--outline btn--sm" disabled={busy}
-                        onClick={() => { if (window.confirm('Delete this exam and all its marks? This cannot be undone.')) act(async () => { await api.del(`/admin/exams/${id}`); navigate('/admin/exams'); }); }}
+                        onClick={async () => { if (await confirm('Delete this exam and all its marks? This cannot be undone.', { danger: true, confirmLabel: 'Delete exam' })) act(async () => { await api.del(`/admin/exams/${id}`); navigate('/admin/exams'); }); }}
                       ><Trash2 size={14} /> Delete</button>
                     </>
                   )}
@@ -83,10 +86,11 @@ export default function ExamDetail() {
 }
 
 function Papers({ examId, papers, roster, published, onChanged }) {
+  const { confirm, toast } = useDialogs();
   const [editing, setEditing] = useState(null); // null | 'new' | paper
   const remove = async (p) => {
-    if (!window.confirm(`Remove the ${p.subject} paper and any marks entered for it?`)) return;
-    try { await api.del(`/admin/exams/${examId}/papers/${p.id}`); onChanged(); } catch (e) { window.alert(e.message); }
+    if (!(await confirm(`Remove the ${p.subject} paper and any marks entered for it?`, { danger: true, confirmLabel: 'Remove' } ))) return;
+    try { await api.del(`/admin/exams/${examId}/papers/${p.id}`); onChanged(); } catch (e) { toast.error(e); }
   };
   return (
     <>

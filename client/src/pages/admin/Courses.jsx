@@ -6,18 +6,20 @@ import { api } from '../../api/http.js';
 import { Card, PageBanner } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import Modal from '../../components/ui/Modal.jsx';
+import { useDialogs } from '../../components/ui/Dialogs.jsx';
 
 /** Classes / courses / programmes (the institute's own word). Everything else - admissions, students, fees, timetable, exams - hangs off these. */
 export default function Courses() {
   const { t } = useTenantConfig();
+  const { confirm, toast } = useDialogs();
   const one = t('course', 'Course'); const many = t('courses', 'Courses');
   const list = useFetch('/admin/courses');
   const depts = useFetch('/admin/departments');
   const [modal, setModal] = useState(null); // a course, or {} for a new one
 
   const remove = async (c) => {
-    if (!window.confirm(`Delete "${c.code}"?`)) return;
-    try { await api.del(`/admin/courses/${c.id}`); list.reload(); } catch (e) { window.alert(e.message); }
+    if (!(await confirm(`Delete "${c.code}"?`, { danger: true, confirmLabel: 'Delete' } ))) return;
+    try { await api.del(`/admin/courses/${c.id}`); list.reload(); } catch (e) { toast.error(e); }
   };
 
   return (

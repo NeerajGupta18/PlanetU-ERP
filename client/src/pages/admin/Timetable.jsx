@@ -1,3 +1,4 @@
+import { useTabParam } from '../../hooks/useTabParam.js';
 import { useMemo, useState } from 'react';
 import {
   ArrowLeftRight, Building, CalendarDays, Pencil, Plus, RotateCcw, Table2, Trash2, User, Video, MapPin,
@@ -7,6 +8,7 @@ import { api } from '../../api/http.js';
 import { Badge, Card, PageBanner, Tabs } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import Modal from '../../components/ui/Modal.jsx';
+import { useDialogs } from '../../components/ui/Dialogs.jsx';
 import { addDays, fmtRange, isToday, toISO, todayISO, WEEKDAYS_SHORT } from '../../utils/dates.js';
 
 const TABS = [
@@ -16,7 +18,8 @@ const TABS = [
 const EMPTY_FILTERS = { department: '', employeeId: '' };
 
 export default function Timetable() {
-  const [tab, setTab] = useState('schedule');
+  const { confirm, toast } = useDialogs();
+  const [tab, setTab] = useTabParam('schedule');
   const [range, setRange] = useState(() => ({ start: todayISO(), end: toISO(addDays(new Date(), 6)) }));
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const filterOpts = useFetch('/admin/timetable/filters');
@@ -166,9 +169,8 @@ export default function Timetable() {
                             <button
                               type="button" className="btn btn--outline btn--sm"
                               onClick={async () => {
-                                if (!confirm(`Delete the "${s.subject}" slot?`)) return;
-                                await api.del(`/admin/timetable/slots/${s.id}`);
-                                slots.reload();
+                                if (!(await confirm(`Delete the "${s.subject}" slot?`, { danger: true, confirmLabel: 'Delete' } ))) return;
+                                try { await api.del(`/admin/timetable/slots/${s.id}`); slots.reload(); } catch (err) { toast.error(err); }
                               }}
                             >
                               <Trash2 size={13} />

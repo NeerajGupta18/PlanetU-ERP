@@ -5,11 +5,13 @@ import { useFetch } from '../../hooks/useFetch.js';
 import { api } from '../../api/http.js';
 import { Badge, Card, PageBanner, StatCard } from '../../components/ui/Ui.jsx';
 import { DataBoundary } from '../../components/ui/Feedback.jsx';
+import { useDialogs } from '../../components/ui/Dialogs.jsx';
 import Modal from '../../components/ui/Modal.jsx';
 import { fmtDate } from '../../utils/dates.js';
 import { ENROLL_STATUS, cr, fileHref } from '../../utils/learning.js';
 
 export default function LearningAssignment({ role }) {
+  const { confirm } = useDialogs();
   const { id } = useParams();
   const nav = useNavigate();
   const { data, loading, error, reload } = useFetch(`/${role}/learning/assignments/${id}`);
@@ -19,7 +21,7 @@ export default function LearningAssignment({ role }) {
   const review = (s, decision) => run(s.id, async () => { await api.post(`/${role}/learning/enrollments/${s.id}/review`, { decision, note: decision === 'reject' ? note : undefined }); setReject(null); setNote(''); });
   const sync = () => run('sync', async () => { const r = await api.post(`/${role}/learning/assignments/${id}/sync`); setMsg(r.added ? `Added ${r.added} new student${r.added === 1 ? '' : 's'}.` : 'Everyone in the class is already included.'); });
   const withdraw = async () => {
-    if (!window.confirm('Withdraw this assignment? Students will no longer see it.')) return;
+    if (!(await confirm('Withdraw this assignment? Students will no longer see it.', { danger: true, confirmLabel: 'Withdraw' }))) return;
     try { await api.del(`/${role}/learning/assignments/${id}`); nav(`/${role}/learning`); } catch (e) { setErr(e.message); }
   };
 

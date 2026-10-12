@@ -1,3 +1,4 @@
+import { useTabParam } from '../../hooks/useTabParam.js';
 import { useState } from 'react';
 import { BookOpen, Plus, Search, Trash2 } from 'lucide-react';
 import { useFetch } from '../../hooks/useFetch.js';
@@ -5,12 +6,13 @@ import { api } from '../../api/http.js';
 import { Badge, Card, PageBanner, Tabs } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import Modal from '../../components/ui/Modal.jsx';
+import { useDialogs } from '../../components/ui/Dialogs.jsx';
 import { fmtDate } from '../../utils/dates.js';
 
 const inr = (n) => `₹${Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
 
 export default function Library() {
-  const [tab, setTab] = useState('catalogue');
+  const [tab, setTab] = useTabParam('catalogue');
   const [newBook, setNewBook] = useState(false);
   const [issuing, setIssuing] = useState(false);
   const books = useFetch(tab === 'catalogue' ? '/admin/library/books' : null);
@@ -71,9 +73,10 @@ export default function Library() {
 }
 
 function BookRow({ b, onChanged }) {
+  const { confirm, toast } = useDialogs();
   const remove = async () => {
-    if (!confirm(`Delete "${b.title}"?`)) return;
-    try { await api.del(`/admin/library/books/${b.id}`); onChanged(); } catch (e) { alert(e.message); }
+    if (!(await confirm(`Delete "${b.title}"?`, { danger: true, confirmLabel: 'Delete' } ))) return;
+    try { await api.del(`/admin/library/books/${b.id}`); onChanged(); } catch (e) { toast.error(e); }
   };
   return (
     <tr>
@@ -86,14 +89,16 @@ function BookRow({ b, onChanged }) {
 }
 
 function ReturnButton({ issue, onDone }) {
+  const { toast } = useDialogs();
   const [busy, setBusy] = useState(false);
   const doReturn = async () => {
     setBusy(true);
     try {
       const r = await api.put(`/admin/library/issues/${issue.id}/return`);
-      if (Number(r.issue.fineAmount) > 0) alert(`Returned. Late fine: ${inr(r.issue.fineAmount)}.`);
+      if (Number(r.issue.fineAmount) > 0) toast.info(`Returned. Late fine: ${inr(r.issue.fineAmount)}.`);
+      else toast.success('Book returned.');
       onDone();
-    } catch (e) { alert(e.message); } finally { setBusy(false); }
+    } catch (e) { toast.error(e); } finally { setBusy(false); }
   };
   return <button type="button" className="btn btn--primary btn--sm" disabled={busy} onClick={doReturn}>Return</button>;
 }

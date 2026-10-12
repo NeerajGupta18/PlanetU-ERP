@@ -5,6 +5,7 @@ import { api } from '../../api/http.js';
 import { Badge, Card, PageBanner } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import Modal from '../../components/ui/Modal.jsx';
+import { useDialogs } from '../../components/ui/Dialogs.jsx';
 import { EVENT_TYPES } from '../../utils/eventTypes.js';
 import {
   addDays, addMonths, fmtEventDates, fmtLong, fmtRange, isToday, MONTHS, startOfMonth, toISO, todayISO, WEEKDAYS_SHORT,
@@ -19,6 +20,7 @@ function buildGrid(cursor) {
 }
 
 export default function Calendar() {
+  const { confirm, toast } = useDialogs();
   const [cursor, setCursor] = useState(() => startOfMonth(new Date()));
   const [selected, setSelected] = useState(todayISO());
   const [hidden, setHidden] = useState(() => new Set());
@@ -38,9 +40,8 @@ export default function Calendar() {
   const toggleType = (t) => setHidden((h) => { const n = new Set(h); if (n.has(t)) n.delete(t); else n.add(t); return n; });
 
   const removeEvent = async (e) => {
-    if (!confirm(`Delete "${e.title}"?`)) return;
-    await api.del(`/admin/calendar/${e.id}`);
-    reload();
+    if (!(await confirm(`Delete "${e.title}"?`, { danger: true, confirmLabel: 'Delete' } ))) return;
+    try { await api.del(`/admin/calendar/${e.id}`); reload(); } catch (err) { toast.error(err); }
   };
 
   return (

@@ -7,6 +7,7 @@ import { loadRazorpay } from '../../hooks/useRazorpay.js';
 import { Badge, Card, PageBanner } from '../../components/ui/Ui.jsx';
 import { DataBoundary } from '../../components/ui/Feedback.jsx';
 import Modal from '../../components/ui/Modal.jsx';
+import { useDialogs } from '../../components/ui/Dialogs.jsx';
 import PlanPicker from '../../components/billing/PlanPicker.jsx';
 import { fmtDate } from '../../utils/dates.js';
 import { CYCLE_LABEL, INVOICE_STATUS, SUB_STATUS, inr } from '../../utils/billing.js';
@@ -30,6 +31,7 @@ export default function Billing() {
 }
 
 function View({ d, notice, onChanged }) {
+  const { confirm } = useDialogs();
   const { subscription: s, plan, students, estimate } = d;
   const [planModal, setPlanModal] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -42,7 +44,7 @@ function View({ d, notice, onChanged }) {
     setBusy(true); setErr('');
     try { await fn(); await onChanged(msg); } catch (e) { setErr(e.message); } finally { setBusy(false); }
   };
-  const cancel = () => { if (window.confirm(`Cancel your subscription? You keep full access until ${fmtDate(s.paidUntil)}, and are not invoiced again. You can change your mind before then.`)) act(() => api.put('/admin/billing/change', { cancelAtPeriodEnd: true }), 'Your subscription will end on ' + fmtDate(s.paidUntil) + '.'); };
+  const cancel = async () => { if (await confirm(`Cancel your subscription? You keep full access until ${fmtDate(s.paidUntil)}, and are not invoiced again. You can change your mind before then.`, { danger: true, confirmLabel: 'Cancel subscription', cancelLabel: 'Keep it' })) act(() => api.put('/admin/billing/change', { cancelAtPeriodEnd: true }), 'Your subscription will end on ' + fmtDate(s.paidUntil) + '.'); };
 
   return (
     <>

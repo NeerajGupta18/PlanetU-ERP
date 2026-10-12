@@ -1,3 +1,4 @@
+import { useTabParam } from '../../hooks/useTabParam.js';
 import { useState } from 'react';
 import {
   Building2, FileText, Landmark, Mail, MapPin, Pencil, PenLine, Phone, Plus, Stamp, Trash2, UserCheck, Users,
@@ -7,6 +8,7 @@ import { api } from '../../api/http.js';
 import { Badge, Card, Field, PageBanner, Tabs } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import Modal from '../../components/ui/Modal.jsx';
+import { useDialogs } from '../../components/ui/Dialogs.jsx';
 import { fmtDate } from '../../utils/dates.js';
 
 const TABS = [
@@ -20,7 +22,7 @@ const TABS = [
 
 export default function Institute() {
   const { data, loading, error, reload } = useFetch('/admin/institute');
-  const [tab, setTab] = useState('details');
+  const [tab, setTab] = useTabParam('details');
 
   return (
     <>
@@ -126,6 +128,7 @@ function DetailsModal({ open, institute, onClose, onSaved }) {
    Stakeholders
    ========================================================= */
 function StakeholdersTab({ i, reload }) {
+  const { confirm } = useDialogs();
   const [modal, setModal] = useState(null);
   return (
     <Card
@@ -148,7 +151,7 @@ function StakeholdersTab({ i, reload }) {
                       <button type="button" className="btn btn--outline btn--sm" onClick={() => setModal({ index: idx, data: s })}><Pencil size={13} /></button>
                       <button
                         type="button" className="btn btn--outline btn--sm"
-                        onClick={async () => { if (confirm(`Remove ${s.name}?`)) { await api.del(`/admin/institute/stakeholders/${idx}`); reload(); } }}
+                        onClick={async () => { if (await confirm(`Remove ${s.name}?`, { danger: true, confirmLabel: 'Remove' })) { await api.del(`/admin/institute/stakeholders/${idx}`); reload(); } }}
                       >
                         <Trash2 size={13} />
                       </button>
@@ -208,6 +211,7 @@ function StakeholderModal({ state, onClose, onSaved }) {
    Authorized persons
    ========================================================= */
 function AuthorizedTab({ i, reload }) {
+  const { confirm, toast } = useDialogs();
   const [person, setPerson] = useState(0);
   const [modal, setModal] = useState(null);
   const current = i.authorizedPersons[Math.min(person, i.authorizedPersons.length - 1)];
@@ -239,9 +243,9 @@ function AuthorizedTab({ i, reload }) {
         <button
           type="button" className="btn btn--outline btn--sm"
           onClick={async () => {
-            if (!confirm(`Remove ${current.name} as an authorized person?`)) return;
+            if (!(await confirm(`Remove ${current.name} as an authorized person?`, { danger: true, confirmLabel: 'Remove' } ))) return;
             try { await api.del(`/admin/institute/authorized-persons/${person}`); setPerson(0); reload(); }
-            catch (err) { alert(err.message); }
+            catch (err) { toast.error(err); }
           }}
         >
           <Trash2 size={13} /> Remove
@@ -299,6 +303,7 @@ function AuthorizedModal({ state, onClose, onSaved }) {
    Documents
    ========================================================= */
 function DocumentsTab({ i, reload }) {
+  const { confirm } = useDialogs();
   const [modal, setModal] = useState(null);
   return (
     <Card
@@ -321,7 +326,7 @@ function DocumentsTab({ i, reload }) {
                       <button type="button" className="btn btn--outline btn--sm" onClick={() => setModal({ index: idx, data: d })}><Pencil size={13} /></button>
                       <button
                         type="button" className="btn btn--outline btn--sm"
-                        onClick={async () => { if (confirm(`Remove "${d.name}"?`)) { await api.del(`/admin/institute/documents/${idx}`); reload(); } }}
+                        onClick={async () => { if (await confirm(`Remove "${d.name}"?`, { danger: true, confirmLabel: 'Remove' })) { await api.del(`/admin/institute/documents/${idx}`); reload(); } }}
                       >
                         <Trash2 size={13} />
                       </button>
@@ -388,6 +393,7 @@ function DocumentModal({ state, onClose, onSaved }) {
    Beneficiaries (bank accounts)
    ========================================================= */
 function BeneficiaryTab({ i, reload }) {
+  const { confirm } = useDialogs();
   const [modal, setModal] = useState(null);
   return (
     <Card
@@ -408,7 +414,7 @@ function BeneficiaryTab({ i, reload }) {
                       <button type="button" className="btn btn--outline btn--sm" onClick={() => setModal({ index: idx, data: b })}><Pencil size={13} /></button>
                       <button
                         type="button" className="btn btn--outline btn--sm"
-                        onClick={async () => { if (confirm(`Remove "${b.accountName}"?`)) { await api.del(`/admin/institute/beneficiaries/${idx}`); reload(); } }}
+                        onClick={async () => { if (await confirm(`Remove "${b.accountName}"?`, { danger: true, confirmLabel: 'Remove' })) { await api.del(`/admin/institute/beneficiaries/${idx}`); reload(); } }}
                       >
                         <Trash2 size={13} />
                       </button>

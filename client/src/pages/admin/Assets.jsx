@@ -5,6 +5,7 @@ import { api } from '../../api/http.js';
 import { Badge, Card, PageBanner } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import Modal from '../../components/ui/Modal.jsx';
+import { useDialogs } from '../../components/ui/Dialogs.jsx';
 import { fmtDate } from '../../utils/dates.js';
 
 const STATUS_TONE = { available: 'green', in_use: 'blue', maintenance: 'amber', retired: 'gray' };
@@ -101,25 +102,31 @@ function NewAssetModal({ onClose, onDone }) {
 }
 
 function Detail({ id, onClose, onChanged }) {
+  const { prompt } = useDialogs();
   const { data, loading, error, reload } = useFetch(`/admin/assets/${id}`);
   const [err, setErr] = useState('');
   const a = data?.asset;
 
   const run = async (fn) => { setErr(''); try { await fn(); reload(); onChanged(); } catch (e) { setErr(e.message); } };
-  const assign = () => {
-    const empId = prompt('Employee id to assign this asset to (use the Employees page to find it):');
+  const assign = async () => {
+    const empId = await prompt('Employee id to assign this asset to (use the Employees page to find it):', { required: true, multiline: false, title: 'Assign asset', confirmLabel: 'Assign' });
     if (!empId) return;
     run(() => api.put(`/admin/assets/${id}/assign`, { employeeId: empId.trim() }));
   };
   const unassign = () => run(() => api.put(`/admin/assets/${id}/unassign`));
-  const setStatus = (status) => {
-    const note = status === 'retired' || status === 'maintenance' ? prompt(`Note for marking this ${status.replace('_', ' ')}:`) : '';
+  const setStatus = async (status) => {
+    let note = '';
+    if (status === 'retired' || status === 'maintenance') {
+      note = await prompt(`Note for marking this ${status.replace('_', ' ')} (optional):`, { title: 'Change status' });
+      if (note === null) return;
+    }
     run(() => api.put(`/admin/assets/${id}/status`, { status, note: note || undefined }));
   };
-  const addMaintenance = () => {
-    const note = prompt('What maintenance was performed?');
+  const addMaintenance = async () => {
+    const note = await prompt('What maintenance was performed?', { required: true, title: 'Log maintenance' });
     if (!note) return;
-    const costStr = prompt('Cost (optional):');
+    const costStr = await prompt('Cost (optional):', { multiline: false, title: 'Log maintenance', placeholder: 'e.g. 1500', confirmLabel: 'Save' });
+    if (costStr === null) return;
     run(() => api.post(`/admin/assets/${id}/maintenance`, { note, cost: costStr ? Number(costStr) : undefined }));
   };
 

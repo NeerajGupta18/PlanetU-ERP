@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Clock, Send } from 'lucide-react';
 import { api } from '../../api/http.js';
 import { Badge, Card } from '../../components/ui/Ui.jsx';
 import { DataBoundary } from '../../components/ui/Feedback.jsx';
+import { useDialogs } from '../../components/ui/Dialogs.jsx';
 import { KIND_LABEL, cr, mmss } from '../../utils/learning.js';
 
 const answered = (v) => (Array.isArray(v) ? v.length > 0 : v !== undefined && v !== null && String(v).trim() !== '');
@@ -29,6 +30,7 @@ export default function QuizTake() {
 }
 
 function Runner({ view, id, onDone }) {
+  const { confirm } = useDialogs();
   const { quiz, attempt, questions } = view;
   // The server's clock decides when time is up; the browser's is only used to count down smoothly from it
   const offset = useMemo(() => new Date(view.serverNow).getTime() - Date.now(), [view.serverNow]);
@@ -96,9 +98,9 @@ function Runner({ view, id, onDone }) {
   const done = questions.filter((x) => answered(answers[x.id])).length;
   const low = remaining < 5 * 60000;
 
-  const confirmSubmit = () => {
+  const confirmSubmit = async () => {
     const left = questions.length - done;
-    if (window.confirm(left ? `You have ${left} unanswered question${left === 1 ? '' : 's'}. Submit anyway?` : 'Submit your answers now?')) submit(false);
+    if (await confirm(left ? `You have ${left} unanswered question${left === 1 ? '' : 's'}. Submit anyway?` : 'Submit your answers now?', { title: 'Submit quiz', confirmLabel: 'Submit' })) submit(false);
   };
 
   return (

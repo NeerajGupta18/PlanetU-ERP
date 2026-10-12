@@ -5,6 +5,7 @@ import { useFetch } from '../../hooks/useFetch.js';
 import { api } from '../../api/http.js';
 import { Badge, Card, PageBanner, StatCard, Tabs } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
+import { useDialogs } from '../../components/ui/Dialogs.jsx';
 import InstituteBilling from '../../components/billing/InstituteBilling.jsx';
 import RecordPayment from '../../components/billing/RecordPayment.jsx';
 import { fmtDate } from '../../utils/dates.js';
@@ -37,6 +38,7 @@ export default function Billing() {
 
 /* ------------------------------------------------------------------ overview */
 function Overview({ onManage }) {
+  const { prompt, toast } = useDialogs();
   const { data, loading, error, reload } = useFetch('/super-admin/billing/overview');
   const [run, setRun] = useState({ busy: false, msg: '', err: '' });
   const review = useFetch('/super-admin/billing/review-orders');
@@ -79,7 +81,7 @@ function Overview({ onManage }) {
               {review.data.orders.map((o) => (
                 <div key={o.id} style={{ marginTop: 6, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                   <span>{o.instituteName} · {o.invoiceNumber} · {inr(o.amount)} · {o.razorpayPaymentId} - {o.failureReason}</span>
-                  <button type="button" className="btn btn--outline btn--sm" onClick={async () => { const note = window.prompt('How was this resolved? (e.g. Refunded in Razorpay)'); if (note) { await api.post(`/super-admin/billing/review-orders/${o.id}/resolve`, { note }); review.reload(); reload(); } }}>Mark resolved</button>
+                  <button type="button" className="btn btn--outline btn--sm" onClick={async () => { const note = await prompt('How was this resolved?', { required: true, title: 'Resolve payment', placeholder: 'e.g. Refunded in Razorpay' }); if (note) { try { await api.post(`/super-admin/billing/review-orders/${o.id}/resolve`, { note }); review.reload(); reload(); } catch (e) { toast.error(e); } } }}>Mark resolved</button>
                 </div>
               ))}
             </div>
@@ -176,6 +178,7 @@ function Institutes({ onManage }) {
 
 /* ------------------------------------------------------------------ invoices */
 function Invoices({ onManage }) {
+  const { prompt, toast } = useDialogs();
   const [f, setF] = useState({ status: '', search: '', from: '', to: '' });
   const qs = new URLSearchParams(Object.entries(f).filter(([, v]) => v)).toString();
   const { data, loading, error, reload } = useFetch(`/super-admin/billing/invoices${qs ? `?${qs}` : ''}`);
@@ -184,12 +187,12 @@ function Invoices({ onManage }) {
   const set = (k) => (e) => setF((c) => ({ ...c, [k]: e.target.value }));
 
   const voidIt = async (i) => {
-    const reason = window.prompt(`Void ${i.number}? Say why (it stays on record):`);
+    const reason = await prompt(`Void ${i.number}? Say why (it stays on record):`, { required: true, title: 'Void invoice', confirmLabel: 'Void invoice', danger: true });
     if (!reason) return;
-    try { await api.post(`/super-admin/billing/invoices/${i.id}/void`, { reason }); reload(); } catch (e) { window.alert(e.message); }
+    try { await api.post(`/super-admin/billing/invoices/${i.id}/void`, { reason }); reload(); } catch (e) { toast.error(e); }
   };
   const remind = async (i) => {
-    try { const r = await api.post(`/super-admin/billing/invoices/${i.id}/remind`); setMsg(`Reminder sent to ${i.instituteName} (${r.sent} recipient${r.sent === 1 ? '' : 's'}).`); } catch (e) { window.alert(e.message); }
+    try { const r = await api.post(`/super-admin/billing/invoices/${i.id}/remind`); setMsg(`Reminder sent to ${i.instituteName} (${r.sent} recipient${r.sent === 1 ? '' : 's'}).`); } catch (e) { toast.error(e); }
   };
 
   return (

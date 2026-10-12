@@ -1,3 +1,4 @@
+import { useTabParam } from '../../hooks/useTabParam.js';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { GraduationCap, Plus, RotateCcw, Save, Trash2 } from 'lucide-react';
@@ -6,11 +7,12 @@ import { api } from '../../api/http.js';
 import { Badge, Card, PageBanner, Tabs } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import Modal from '../../components/ui/Modal.jsx';
+import { useDialogs } from '../../components/ui/Dialogs.jsx';
 import { fmtDate } from '../../utils/dates.js';
 import { KINDS, KIND_LABEL } from '../../utils/exams.js';
 
 export default function Exams() {
-  const [tab, setTab] = useState('exams');
+  const [tab, setTab] = useTabParam('exams');
   const [creating, setCreating] = useState(false);
   const navigate = useNavigate();
 
@@ -129,6 +131,7 @@ function GradingScale() {
 }
 
 function ScaleEditor({ data, onSaved }) {
+  const { confirm } = useDialogs();
   const [rows, setRows] = useState(data.bands.map((b) => ({ ...b })));
   const [err, setErr] = useState(''); const [ok, setOk] = useState(''); const [busy, setBusy] = useState(false);
   const edit = (i, k) => (e) => { setOk(''); setRows((r) => r.map((x, j) => (j === i ? { ...x, [k]: e.target.value } : x))); };
@@ -141,7 +144,7 @@ function ScaleEditor({ data, onSaved }) {
     } catch (ex) { setErr(ex.message); } finally { setBusy(false); }
   };
   const reset = async () => {
-    if (!window.confirm('Go back to the built-in 10-point scale?')) return;
+    if (!(await confirm('Go back to the built-in 10-point scale?', { confirmLabel: 'Reset scale' }))) return;
     setBusy(true); setErr('');
     try { await api.del('/admin/exams/grading'); onSaved(); } catch (ex) { setErr(ex.message); } finally { setBusy(false); }
   };

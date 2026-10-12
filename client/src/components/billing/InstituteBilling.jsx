@@ -4,6 +4,7 @@ import { useFetch } from '../../hooks/useFetch.js';
 import { api } from '../../api/http.js';
 import { Badge } from '../ui/Ui.jsx';
 import { DataBoundary } from '../ui/Feedback.jsx';
+import { useDialogs } from '../ui/Dialogs.jsx';
 import Modal from '../ui/Modal.jsx';
 import RecordPayment from './RecordPayment.jsx';
 import { fmtDate } from '../../utils/dates.js';
@@ -22,6 +23,7 @@ export default function InstituteBilling({ tenantId, onClose }) {
 }
 
 function Body({ d, tenantId, reload }) {
+  const { prompt } = useDialogs();
   const s = d.subscription;
   const st = SUB_STATUS[s.status];
   const [msg, setMsg] = useState('');
@@ -71,7 +73,7 @@ function Body({ d, tenantId, reload }) {
                     <div style={{ display: 'flex', gap: 6 }}>
                       <a className="btn btn--outline btn--sm" href={`/api/super-admin/billing/invoices/${i.id}/pdf`} target="_blank" rel="noreferrer" aria-label={`PDF for ${i.number}`}><FileText size={13} /></a>
                       {i.status === 'open' && <button type="button" className="btn btn--primary btn--sm" onClick={() => setPay(i)}><Receipt size={13} /> Record payment</button>}
-                      {i.status === 'open' && <button type="button" className="btn btn--outline btn--sm" onClick={() => { const reason = window.prompt(`Void ${i.number}? Say why:`); if (reason) run(() => api.post(`/super-admin/billing/invoices/${i.id}/void`, { reason }), 'Invoice voided.'); }}>Void</button>}
+                      {i.status === 'open' && <button type="button" className="btn btn--outline btn--sm" onClick={async () => { const reason = await prompt(`Void ${i.number}? Say why:`, { required: true, title: 'Void invoice', confirmLabel: 'Void invoice', danger: true }); if (reason) run(() => api.post(`/super-admin/billing/invoices/${i.id}/void`, { reason }), 'Invoice voided.'); }}>Void</button>}
                     </div>
                   </td>
                 </tr>

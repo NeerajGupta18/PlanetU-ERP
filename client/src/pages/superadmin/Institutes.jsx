@@ -4,11 +4,13 @@ import { useFetch } from '../../hooks/useFetch.js';
 import { api } from '../../api/http.js';
 import { Badge, Card, PageBanner } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
+import { useDialogs } from '../../components/ui/Dialogs.jsx';
 import Modal from '../../components/ui/Modal.jsx';
 
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
 
 export default function Institutes() {
+  const { confirm, toast } = useDialogs();
   const list = useFetch('/super-admin/tenants');
   const presets = useFetch('/super-admin/presets');
   const [create, setCreate] = useState(false);
@@ -19,10 +21,10 @@ export default function Institutes() {
 
   const toggleStatus = async (t) => {
     const next = t.status === 'active' ? 'suspended' : 'active';
-    if (!confirm(next === 'suspended'
+    if (!(await confirm(next === 'suspended'
       ? `Suspend ${t.name}? Nobody at this institute will be able to sign in until you reactivate it.`
-      : `Reactivate ${t.name}?`)) return;
-    try { await api.put(`/super-admin/tenants/${t.id}`, { status: next }); list.reload(); } catch (err) { alert(err.message); }
+      : `Reactivate ${t.name}?`, { danger: next === 'suspended', confirmLabel: next === 'suspended' ? 'Suspend' : 'Reactivate' }))) return;
+    try { await api.put(`/super-admin/tenants/${t.id}`, { status: next }); list.reload(); } catch (err) { toast.error(err); }
   };
 
   return (
@@ -189,6 +191,7 @@ function CreateModal({ open, presets, onClose, onCreated }) {
 
 /* ---------- configure ---------- */
 function EditModal({ tenant, catalog, plans, onClose, onSaved, onSecret }) {
+  const { confirm } = useDialogs();
   const [name, setName] = useState(tenant.name);
   const [plan, setPlan] = useState(tenant.plan);
   const [modules, setModules] = useState(tenant.modules);
@@ -203,7 +206,7 @@ function EditModal({ tenant, catalog, plans, onClose, onSaved, onSecret }) {
   };
 
   const reset = async () => {
-    if (!confirm('Issue a new one-time password for this institute\'s admin? The old password stops working immediately.')) return;
+    if (!(await confirm('Issue a new one-time password for this institute\'s admin? The old password stops working immediately.', { danger: true, confirmLabel: 'Issue new password' }))) return;
     try {
       const res = await api.post(`/super-admin/tenants/${tenant.id}/reset-admin-password`);
       onSecret({ title: 'New admin password', code: tenant.code, ...res.admin });

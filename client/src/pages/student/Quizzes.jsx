@@ -1,3 +1,4 @@
+import { useTabParam } from '../../hooks/useTabParam.js';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ClipboardCheck, Clock, Play } from 'lucide-react';
@@ -7,7 +8,7 @@ import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import { QUIZ_STATE, cr, fmtDateTime } from '../../utils/learning.js';
 
 export default function Quizzes() {
-  const [tab, setTab] = useState('quizzes');
+  const [tab, setTab] = useTabParam('quizzes');
   return (
     <>
       <PageBanner icon={ClipboardCheck} title="Quizzes" subtitle="Timed quizzes set by your teachers. They count towards your internal marks." />

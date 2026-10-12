@@ -1,3 +1,4 @@
+import { useTabParam } from '../../hooks/useTabParam.js';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ClipboardCheck, Download, FileSpreadsheet } from 'lucide-react';
@@ -10,7 +11,7 @@ import { fmtLong, todayISO } from '../../utils/dates.js';
 const tone = (pct) => (pct >= 85 ? 'green' : pct >= 75 ? 'amber' : 'red');
 
 export default function Attendance() {
-  const [tab, setTab] = useState('day');
+  const [tab, setTab] = useTabParam('day');
   const filters = useFetch('/admin/timetable/filters');
   const courses = filters.data?.courses || [];
 

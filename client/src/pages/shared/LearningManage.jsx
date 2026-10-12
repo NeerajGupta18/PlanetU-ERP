@@ -1,3 +1,4 @@
+import { useTabParam } from '../../hooks/useTabParam.js';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BookOpenCheck, ExternalLink, Plus, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
@@ -11,7 +12,7 @@ import { PROVIDER_TONE, STANDING, cr, fileHref } from '../../utils/learning.js';
 
 /** Learning platform for admins and faculty. `role` is 'admin' or 'employee'; the server decides what each may do. */
 export default function LearningManage({ role }) {
-  const [tab, setTab] = useState('assignments');
+  const [tab, setTab] = useTabParam('assignments');
   const queue = useFetch(`/${role}/learning/review`);
   const pending = queue.data?.queue.length || 0;
   return (

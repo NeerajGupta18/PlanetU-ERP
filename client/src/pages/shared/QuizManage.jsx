@@ -1,3 +1,4 @@
+import { useTabParam } from '../../hooks/useTabParam.js';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ClipboardCheck, Plus } from 'lucide-react';
@@ -10,7 +11,7 @@ const STATUS = { draft: { label: 'Draft', tone: 'amber' }, published: { label: '
 
 /** Quizzes for admins and faculty. `role` is 'admin' or 'employee'. */
 export default function QuizManage({ role }) {
-  const [tab, setTab] = useState('quizzes');
+  const [tab, setTab] = useTabParam('quizzes');
   const nav = useNavigate();
   return (
     <>

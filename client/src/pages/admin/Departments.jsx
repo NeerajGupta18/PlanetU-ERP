@@ -1,3 +1,4 @@
+import { useTabParam } from '../../hooks/useTabParam.js';
 import { useState } from 'react';
 import { Network, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useFetch } from '../../hooks/useFetch.js';
@@ -5,6 +6,7 @@ import { api } from '../../api/http.js';
 import { Card, PageBanner, Tabs } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import Modal from '../../components/ui/Modal.jsx';
+import { useDialogs } from '../../components/ui/Dialogs.jsx';
 
 const TABS = [
   { id: 'departments', label: 'Departments' },
@@ -12,7 +14,8 @@ const TABS = [
 ];
 
 export default function Departments() {
-  const [tab, setTab] = useState('departments');
+  const { confirm, toast } = useDialogs();
+  const [tab, setTab] = useTabParam('departments');
   const depts = useFetch('/admin/departments');
   const desigs = useFetch('/admin/designations');
 
@@ -57,9 +60,9 @@ export default function Departments() {
                               <button
                                 type="button" className="btn btn--outline btn--sm"
                                 onClick={async () => {
-                                  if (!confirm(`Delete "${d.name}"?`)) return;
+                                  if (!(await confirm(`Delete "${d.name}"?`, { danger: true, confirmLabel: 'Delete' } ))) return;
                                   try { await api.del(`/admin/departments/${d.id}`); depts.reload(); }
-                                  catch (err) { alert(err.message); }
+                                  catch (err) { toast.error(err); }
                                 }}
                               >
                                 <Trash2 size={13} />
@@ -96,9 +99,9 @@ export default function Departments() {
                               <button
                                 type="button" className="btn btn--outline btn--sm"
                                 onClick={async () => {
-                                  if (!confirm(`Delete "${g.name}"?`)) return;
+                                  if (!(await confirm(`Delete "${g.name}"?`, { danger: true, confirmLabel: 'Delete' } ))) return;
                                   try { await api.del(`/admin/designations/${g.id}`); desigs.reload(); }
-                                  catch (err) { alert(err.message); }
+                                  catch (err) { toast.error(err); }
                                 }}
                               >
                                 <Trash2 size={13} />

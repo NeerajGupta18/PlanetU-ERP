@@ -1,3 +1,4 @@
+import { useTabParam } from '../../hooks/useTabParam.js';
 import { useState } from 'react';
 import { BookOpen, Search } from 'lucide-react';
 import { useFetch } from '../../hooks/useFetch.js';
@@ -6,7 +7,7 @@ import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import { fmtDate } from '../../utils/dates.js';
 
 export default function Library() {
-  const [tab, setTab] = useState('mine');
+  const [tab, setTab] = useTabParam('mine');
   const [search, setSearch] = useState('');
   const mine = useFetch(tab === 'mine' ? '/student/library/my-issues' : null);
   const catalogue = useFetch(tab === 'catalogue' ? `/student/library/books${search ? `?search=${encodeURIComponent(search)}` : ''}` : null);

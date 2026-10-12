@@ -6,6 +6,7 @@ import { api } from '../../api/http.js';
 import { Badge, Card, PageBanner, Tabs } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import Modal from '../../components/ui/Modal.jsx';
+import { useDialogs } from '../../components/ui/Dialogs.jsx';
 import DocumentViewer from '../../components/ui/DocumentViewer.jsx';
 import { DOC_LABEL, DOC_TONE, STATUS } from '../../components/admissions/status.js';
 import { fmtDate } from '../../utils/dates.js';
@@ -82,6 +83,7 @@ export default function Admissions() {
 }
 
 function Detail({ id, onClose, onChanged, onSecret }) {
+  const { confirm, prompt } = useDialogs();
   const { data, loading, error, reload } = useFetch(`/admin/admissions/${id}`);
   const [err, setErr] = useState('');
   const app = data?.application;
@@ -91,18 +93,18 @@ function Detail({ id, onClose, onChanged, onSecret }) {
     setErr('');
     try { await fn(); reload(); onChanged(); } catch (e) { setErr(e.message); }
   };
-  const review = (d, status) => {
-    const remark = status === 'rejected' ? prompt('Why is this document rejected? The applicant will see this.') : '';
+  const review = async (d, status) => {
+    const remark = status === 'rejected' ? await prompt('Why is this document rejected? The applicant will see this.', { required: true, title: 'Reject document', confirmLabel: 'Reject', danger: true }) : '';
     if (status === 'rejected' && !remark) return;
     run(() => api.put(`/admin/admissions/${id}/documents/${d.id}`, { status, remark }));
   };
-  const decide = (decision) => {
-    const note = decision === 'accept' ? '' : prompt(decision === 'reject' ? 'Reason for rejection (shown to the applicant):' : 'Note for the waitlist (shown to the applicant):');
+  const decide = async (decision) => {
+    const note = decision === 'accept' ? '' : await prompt(decision === 'reject' ? 'Reason for rejection (shown to the applicant):' : 'Note for the waitlist (shown to the applicant):', { required: true, title: decision === 'reject' ? 'Reject application' : 'Waitlist application', confirmLabel: decision === 'reject' ? 'Reject' : 'Waitlist', danger: decision === 'reject' });
     if (decision !== 'accept' && !note) return;
     run(() => api.post(`/admin/admissions/${id}/decision`, { decision, note }));
   };
-  const enroll = () => {
-    if (!confirm('Enrol this applicant? A PRN and a student login will be created.')) return;
+  const enroll = async () => {
+    if (!(await confirm('Enrol this applicant? A PRN and a student login will be created.', { confirmLabel: 'Enrol student' }))) return;
     run(async () => { const r = await api.post(`/admin/admissions/${id}/enroll`); onSecret(r.student); });
   };
 

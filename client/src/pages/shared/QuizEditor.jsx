@@ -5,6 +5,7 @@ import { api } from '../../api/http.js';
 import { useFetch } from '../../hooks/useFetch.js';
 import { Card, PageBanner } from '../../components/ui/Ui.jsx';
 import { DataBoundary } from '../../components/ui/Feedback.jsx';
+import { useDialogs } from '../../components/ui/Dialogs.jsx';
 import { KIND_LABEL, SHOW_LABEL, fromLocalInput, toLocalInput } from '../../utils/learning.js';
 
 const newQuestion = (kind = 'single') => ({
@@ -13,6 +14,7 @@ const newQuestion = (kind = 'single') => ({
 });
 
 export default function QuizEditor({ role }) {
+  const { confirm } = useDialogs();
   const { id } = useParams();
   const isNew = !id;
   const nav = useNavigate();
@@ -57,12 +59,12 @@ export default function QuizEditor({ role }) {
     } catch (e) { setErr(e.message); } finally { setBusy(false); }
   };
   const act = async (path, confirmText) => {
-    if (confirmText && !window.confirm(confirmText)) return;
+    if (confirmText && !(await confirm(confirmText))) return;
     setBusy(true); setErr(''); setMsg('');
     try { const r = await api.post(`/${role}/quizzes/${id}/${path}`); setQuiz(r.quiz); setMsg('Done.'); } catch (e) { setErr(e.message); } finally { setBusy(false); }
   };
   const remove = async () => {
-    if (!window.confirm('Delete this quiz?')) return;
+    if (!(await confirm('Delete this quiz?', { danger: true, confirmLabel: 'Delete quiz' }))) return;
     try { await api.del(`/${role}/quizzes/${id}`); nav(`/${role}/quizzes`); } catch (e) { setErr(e.message); }
   };
 

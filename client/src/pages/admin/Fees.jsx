@@ -1,3 +1,4 @@
+import { useTabParam } from '../../hooks/useTabParam.js';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Banknote, FileBarChart2, FileText, Plus, Receipt, Search, Trash2, Wallet } from 'lucide-react';
@@ -7,6 +8,7 @@ import { api } from '../../api/http.js';
 import { Badge, Card, PageBanner, Tabs } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import Modal from '../../components/ui/Modal.jsx';
+import { useDialogs } from '../../components/ui/Dialogs.jsx';
 import { fmtDate } from '../../utils/dates.js';
 
 const inr = (n) => `₹${Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -15,7 +17,7 @@ const METHODS = [['cash', 'Cash'], ['cheque', 'Cheque'], ['bank_transfer', 'Bank
 
 export default function Fees() {
   const { t } = useTenantConfig();
-  const [tab, setTab] = useState('students');
+  const [tab, setTab] = useTabParam('students');
   const [newStructure, setNewStructure] = useState(false);
   const structures = useFetch('/admin/fees/structures');
 
@@ -59,19 +61,20 @@ export default function Fees() {
 }
 
 function StructureRow({ s, onChanged }) {
+  const { confirm, prompt, toast } = useDialogs();
   const [assigning, setAssigning] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
 
   const bulkAssign = async () => {
-    if (!confirm(`Assign "${s.name}" to every active, unassigned student of ${s.course}?`)) return;
+    if (!(await confirm(`Assign "${s.name}" to every active, unassigned student of ${s.course}?`, { confirmLabel: 'Assign' }))) return;
     setBusy(true); setErr('');
-    try { const r = await api.post(`/admin/fees/structures/${s.id}/bulk-assign`); alert(`Assigned to ${r.studentsAssigned} student(s).`); onChanged(); }
+    try { const r = await api.post(`/admin/fees/structures/${s.id}/bulk-assign`); toast.success(`Assigned to ${r.studentsAssigned} student(s).`); onChanged(); }
     catch (e) { setErr(e.message); } finally { setBusy(false); }
   };
   const remove = async () => {
-    if (!confirm(`Delete "${s.name}"?`)) return;
-    try { await api.del(`/admin/fees/structures/${s.id}`); onChanged(); } catch (e) { alert(e.message); }
+    if (!(await confirm(`Delete "${s.name}"?`, { danger: true, confirmLabel: 'Delete' }))) return;
+    try { await api.del(`/admin/fees/structures/${s.id}`); onChanged(); } catch (e) { toast.error(e); }
   };
 
   return (
@@ -187,14 +190,15 @@ function StudentLedger() {
 }
 
 function StudentLedgerDetail({ student, onBack }) {
+  const { confirm, prompt, toast } = useDialogs();
   const fees = useFetch(`/admin/fees/students/${student.id}`);
   const [paying, setPaying] = useState(false);
   const [addingItem, setAddingItem] = useState(false);
 
   const waive = async (item) => {
-    const reason = prompt(`Reason for waiving "${item.label}" (${inr(item.amount)}):`);
+    const reason = await prompt(`Reason for waiving "${item.label}" (${inr(item.amount)}):`, { required: true, title: 'Waive fee', confirmLabel: 'Waive' });
     if (!reason) return;
-    try { await api.put(`/admin/fees/items/${item.id}/waive`, { reason }); fees.reload(); } catch (e) { alert(e.message); }
+    try { await api.put(`/admin/fees/items/${item.id}/waive`, { reason }); fees.reload(); } catch (e) { toast.error(e); }
   };
 
   return (
@@ -334,13 +338,14 @@ const ORDER_LABEL = { created: 'Pending / abandoned', paid: 'Paid', needs_review
 
 /** Razorpay orders: a reconciliation view. "Needs review" = the gateway took the money but the ledger could not apply it. */
 function OnlinePayments() {
+  const { confirm, prompt, toast } = useDialogs();
   const [status, setStatus] = useState('');
   const list = useFetch(`/admin/fees/online-orders${status ? `?status=${status}` : ''}`);
 
   const resolve = async (o) => {
-    const note = prompt(`How was this resolved?\n(e.g. "Refunded in Razorpay dashboard" or "Recorded manually, receipt RCPT2026-00012")`);
-    if (!note?.trim()) return;
-    try { await api.put(`/admin/fees/online-orders/${o.id}/resolve`, { note }); list.reload(); } catch (e) { alert(e.message); }
+    const note = await prompt('How was this resolved?', { required: true, title: 'Resolve payment', placeholder: 'e.g. Refunded in Razorpay dashboard, or recorded manually with a receipt number' });
+    if (!note) return;
+    try { await api.put(`/admin/fees/online-orders/${o.id}/resolve`, { note }); list.reload(); } catch (e) { toast.error(e); }
   };
 
   return (
