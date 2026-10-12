@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { BookOpen, CheckCircle2, ClipboardCheck, Clock, GraduationCap, LayoutDashboard, Megaphone, PenLine } from 'lucide-react';
+import { BookOpen, CheckCircle2, ClipboardCheck, Clock, GraduationCap, CalendarOff, LayoutDashboard, Megaphone, PenLine } from 'lucide-react';
 import { useFetch } from '../../hooks/useFetch.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useTenantConfig } from '../../hooks/useTenantConfig.js';
@@ -19,6 +19,8 @@ export default function EmployeeDashboard() {
   const waiting = (papersFetch.data?.papers || []).filter((p) => p.examStatus === 'draft' && p.marksStatus !== 'submitted');
   const noticeFetch = useFetch(hasModule('notices') ? '/employee/notices' : null);
   const recent = (noticeFetch.data?.notices || []).slice(0, 3);
+  const leaveFetch = useFetch(hasModule('leave') ? '/employee/leave' : null);
+  const leaveBal = (leaveFetch.data?.balances || []).filter((b) => b.allowance !== null);
   const lectures = data?.lectures || [];
   const pending = lectures.filter((l) => l.sessionStatus !== 'submitted').length;
 
@@ -38,6 +40,11 @@ export default function EmployeeDashboard() {
               </li>
             ))}
           </ul>
+        </Card>
+      )}
+      {leaveBal.length > 0 && (
+        <Card title="My leave" icon={CalendarOff} action={<Link to="/employee/leave" className="btn btn--outline btn--sm">Apply or view</Link>}>
+          <p style={{ margin: 0 }}>{leaveBal.map((b) => `${b.name}: ${b.left} left`).join('  -  ')}</p>
         </Card>
       )}
       {showMarks && papersFetch.data && waiting.length > 0 && (

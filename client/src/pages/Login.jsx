@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import {
-  AlertCircle, Briefcase, Building2, Eye, EyeOff, GraduationCap, LockKeyhole, LogIn, ShieldCheck, UserCog, UserRound,
+  AlertCircle, Briefcase, Building2, Eye, EyeOff, GraduationCap, LockKeyhole, LogIn, ShieldCheck, UserCog, UserRound, Users,
 } from 'lucide-react';
 import { api } from '../api/http.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -15,17 +15,18 @@ const ROLES = [
   { value: 'admin', label: 'Admin', icon: UserCog, idLabel: 'Email or Admin ID' },
   { value: 'student', label: 'Student', icon: GraduationCap, idLabel: 'Student ID or email' },
   { value: 'employee', label: 'Employee', icon: Briefcase, idLabel: 'Employee ID or email' },
+  { value: 'parent', label: 'Parent', icon: Users, idLabel: 'Parent ID or email' },
 ];
 
 // Shown only in development (npm run dev) so you can demo quickly. Never shipped in a production build.
-const DEMO_PW = { super_admin: 'SuperAdmin@123', admin: 'Admin@123', student: 'Student@123', employee: 'Employee@123' };
+const DEMO_PW = { super_admin: 'SuperAdmin@123', admin: 'Admin@123', student: 'Student@123', employee: 'Employee@123', parent: 'Parent@123' };
 const DEMO_TENANTS = {
   'demo-college': { label: 'College', student: 'STU2026001' },
   'demo-school': { label: 'School', student: 'GPS2026001' },
   'demo-university': { label: 'University', student: 'MIT2026001' },
 };
 const demoId = (role, code) => ({
-  super_admin: 'SA001', admin: 'ADM001', employee: 'EMP001', student: DEMO_TENANTS[code]?.student || 'STU2026001',
+  super_admin: 'SA001', admin: 'ADM001', employee: 'EMP001', parent: 'PAR001', student: DEMO_TENANTS[code]?.student || 'STU2026001',
 }[role]);
 
 // A client can be opened at its own address (horizon.planetu.app) or with ?institute=code

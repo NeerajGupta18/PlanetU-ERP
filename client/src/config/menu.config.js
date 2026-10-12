@@ -1,5 +1,5 @@
 import {
-  BookOpen, BookOpenCheck, Boxes, Building2, CalendarCheck, CalendarDays, CircleDollarSign, ClipboardCheck, CreditCard, FileBarChart2, FileText, GraduationCap, LayoutDashboard, ListChecks, Megaphone, School, Network, Server, Settings2, Table2, UserRound, Users, Users2, Wallet,
+  BookOpen, BookOpenCheck, Boxes, Building2, CalendarCheck, CalendarOff, CalendarDays, CircleDollarSign, ClipboardCheck, CreditCard, FileBarChart2, FileText, LifeBuoy, Star, GraduationCap, LayoutDashboard, ListChecks, Megaphone, School, Network, Server, Settings2, Table2, UserRound, Users, Users2, Wallet,
 } from 'lucide-react';
 
 /**
@@ -17,6 +17,19 @@ import {
  * A group with no visible items is hidden automatically.
  */
 export const MENU_TREE = {
+  parent: [
+    { label: 'Home', to: '/parent/home', icon: LayoutDashboard },
+    { label: 'Notice board', to: '/student/notices', icon: Megaphone, module: 'notices' },
+    { group: 'My child', icon: GraduationCap, items: [
+      { label: 'Attendance', to: '/student/attendance', icon: CalendarCheck, module: 'attendance' },
+      { label: 'Timetable', to: '/student/timetable', icon: Table2, module: 'timetable' },
+      { label: 'Results', to: '/student/results', icon: GraduationCap, module: 'exams' },
+      { label: 'Calendar', to: '/student/calendar', icon: CalendarDays, module: 'calendar' },
+      { label: 'Fees', to: '/student/fees', icon: Wallet, module: 'fees' },
+      { label: 'Profile', to: '/student/profile', icon: UserRound },
+    ] },
+    { label: 'Help and feedback', to: '/parent/support', icon: LifeBuoy, module: 'grievance' },
+  ],
   student: [
     { label: 'Dashboard', to: '/student/dashboard', icon: LayoutDashboard },
     { label: 'Notice board', to: '/student/notices', icon: Megaphone, module: 'notices' },
@@ -40,6 +53,7 @@ export const MENU_TREE = {
       group: 'My Account', icon: UserRound, items: [
         { label: 'Profile', to: '/student/profile', icon: UserRound },
         { label: 'Certificates', to: '/student/certificates', icon: FileText, module: 'certificates' },
+        { label: 'Help and feedback', to: '/student/support', icon: LifeBuoy, module: 'grievance' },
         { label: 'Institute', to: '/student/institute', icon: Building2, term: ['institute', 'Institute'] },
       ],
     },
@@ -74,6 +88,7 @@ export const MENU_TREE = {
       group: 'People', icon: Users, items: [
         { label: 'Employees', to: '/admin/employees', icon: Users, term: ['employees', 'Employees'] },
         { label: 'Departments & Designations', to: '/admin/departments', icon: Network },
+        { label: 'Leave', to: '/admin/leave', icon: CalendarOff, module: 'leave' },
       ],
     },
     {
@@ -85,6 +100,8 @@ export const MENU_TREE = {
     {
       group: 'Communication', icon: Megaphone, items: [
         { label: 'Notice board', to: '/admin/notices', icon: Megaphone, module: 'notices' },
+        { label: 'Grievances', to: '/admin/grievances', icon: LifeBuoy, module: 'grievance' },
+        { label: 'Feedback', to: '/admin/feedback', icon: Star, module: 'grievance' },
       ],
     },
     {
@@ -102,6 +119,8 @@ export const MENU_TREE = {
   employee: [
     { label: 'Dashboard', to: '/employee/dashboard', icon: LayoutDashboard },
     { label: 'Notice board', to: '/employee/notices', icon: Megaphone, module: 'notices' },
+    { label: 'My leave', to: '/employee/leave', icon: CalendarOff, module: 'leave' },
+    { label: 'Help and feedback', to: '/employee/support', icon: LifeBuoy, module: 'grievance' },
     {
       group: 'Teaching', icon: ClipboardCheck, items: [
         { label: 'Attendance', to: '/employee/attendance', icon: ClipboardCheck, module: 'attendance' },
@@ -118,6 +137,7 @@ export const ROLE_HOME = {
   admin: '/admin/dashboard',
   super_admin: '/super-admin/dashboard',
   employee: '/employee/dashboard',
+  parent: '/parent/home',
 };
 
 export const ROLE_LABEL = {
@@ -125,4 +145,5 @@ export const ROLE_LABEL = {
   admin: 'Institute Admin',
   super_admin: 'Platform Admin',
   employee: 'Employee',
+  parent: 'Parent',
 };

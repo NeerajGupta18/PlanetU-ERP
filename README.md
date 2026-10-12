@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/PostgreSQL-16%20%2B%20RLS-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" />
   <img src="https://img.shields.io/badge/Auth-JWT%20%2B%20bcrypt-EC1C24?style=for-the-badge&logo=jsonwebtokens&logoColor=white" />
   <img src="https://img.shields.io/badge/Multi--tenant-SaaS-7C3AED?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/Tests-474%20passing-2ea44f?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Tests-540%20passing-2ea44f?style=for-the-badge" />
   <img src="https://img.shields.io/badge/Deploy-Render%20%7C%20Oracle%20Cloud-46E3B7?style=for-the-badge" />
   <img src="https://img.shields.io/badge/STATUS-PHASE%207-2ea44f?style=for-the-badge" />
 </p>
@@ -92,7 +92,7 @@ tables, run `npm run db:migrate` instead.
 ### Tests
 
 ```bash
-npm test             # 474 tests against a real PostgreSQL (run db:setup first)
+npm test             # 540 tests against a real PostgreSQL (run db:setup first)
 ```
 
 They cover tenant isolation, uploads, admissions, accounts and email, students and ID cards, fees, online payments
@@ -121,6 +121,7 @@ case-sensitive. The Super Admin needs no institute code.
 | Admin       | `Admin@123`      |
 | Student     | `Student@123`    |
 | Employee    | `Employee@123`   |
+| Parent (`PAR001`) | `Parent@123` |
 
 Notice that `ADM001` exists in all three institutes but is a different person in each — the institute code
 decides whose data you get. Each institute also speaks its own language: the university calls its courses
@@ -685,7 +686,22 @@ Every new module follows the same recipe, and gets multi-tenancy almost for free
    `config/menu.config.js` with its `module` (and `term` for tenant-specific labels).
 6. **Test:** add a case to `server/test/isolation.test.js` proving client A cannot reach client B's records.
 
-**On the roadmap** (switchable in the vendor console, marked "coming soon" until built): Leave & Shifts · Payroll ·
+## Leave, grievances and parents
+
+**Leave.** The office sets up leave types (with a yearly allowance, or none for unlimited) and employees apply from
+*My leave*. Days are counted without Sundays and institute holidays, and a half day counts as 0.5. The office approves or
+declines with a remark; the employee is emailed, and the dashboard shows who is on leave today.
+
+**Grievances and feedback.** Students and staff raise a ticket (optionally anonymous, in which case the office never sees
+the name) and follow the conversation. The office assigns, replies and closes tickets. Feedback forms can be limited to a
+course; who has answered is stored apart from the answers, so responses cannot be traced to a person.
+
+**Parent portal.** The office adds a parent from the student's record (a one-time password is shown and a link to set a
+password is emailed) or uses *Invite all parents* to create accounts from guardian emails. A parent sees the child's
+attendance, timetable, results, calendar, fees and notices, can pay fees and raise tickets, and switches between children
+from the top bar. Everything else is read-only. A parent's email must differ from any student or staff email.
+
+**On the roadmap** (switchable in the vendor console, marked "coming soon" until built): Payroll ·
 Hostel · Transport · Visitor Management.
 
 

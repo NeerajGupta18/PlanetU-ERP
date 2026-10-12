@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Bell, ChevronDown, KeyRound, LogOut, MapPin, Menu, Phone, Search } from 'lucide-react';
+import { api } from '../../api/http.js';
+import { useFetch } from '../../hooks/useFetch.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useTenantConfig } from '../../hooks/useTenantConfig.js';
 import { useNav } from '../../hooks/useNav.js';
@@ -43,6 +45,24 @@ function BillingBanner({ b }) {
       <span>{text}</span>
       <Link to="/admin/billing">{b.kind === 'trial' ? 'Choose a plan' : b.kind === 'cancelling' ? 'Manage' : 'Pay now'}</Link>
     </div>
+  );
+}
+
+/** A parent with more than one child picks whose records they are looking at. */
+function ChildSwitcher() {
+  const { data } = useFetch('/parent/children');
+  if (!data || data.children.length < 2) return null;
+  const change = async (e) => {
+    await api.post('/parent/child', { childId: e.target.value });
+    window.location.reload();
+  };
+  return (
+    <label className="child-switch">
+      <span>Child</span>
+      <select value={data.selected || ''} onChange={change} aria-label="Choose child">
+        {data.children.map((k) => <option key={k.id} value={k.id}>{k.name}</option>)}
+      </select>
+    </label>
   );
 }
 
@@ -118,6 +138,7 @@ export default function AppShell() {
           </div>
 
           <div className="topbar__right">
+            {user.role === 'parent' && <ChildSwitcher />}
             <button type="button" className="searchbtn" onClick={() => setSearchOpen(true)} aria-label="Search (Ctrl+K)">
               <Search size={16} /><span>Search</span><kbd>Ctrl K</kbd>
             </button>

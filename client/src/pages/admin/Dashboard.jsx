@@ -67,6 +67,8 @@ function DashboardView({ d }) {
                 <li><strong>{w.applicationsToReview}</strong> application{w.applicationsToReview === 1 ? '' : 's'} waiting for review</li>
                 <li><strong>{w.applicationsToEnrol}</strong> accepted, ready to enrol</li>
                 {w.applicationFeesPending > 0 && <li><strong>{w.applicationFeesPending}</strong> application fee{w.applicationFeesPending === 1 ? '' : 's'} not yet received</li>}
+                {hasModule('leave') && (w.leavePending > 0 || w.onLeaveToday > 0) && <li>{w.leavePending > 0 && <><strong>{w.leavePending}</strong> leave request{w.leavePending === 1 ? '' : 's'} <Link to="/admin/leave">waiting</Link></>}{w.leavePending > 0 && w.onLeaveToday > 0 && ' - '}{w.onLeaveToday > 0 && <><strong>{w.onLeaveToday}</strong> on leave today</>}</li>}
+                {hasModule('grievance') && w.grievancesOpen > 0 && <li><strong>{w.grievancesOpen}</strong> open grievance{w.grievancesOpen === 1 ? '' : 's'} <Link to="/admin/grievances">to answer</Link></li>}
                 {hasModule('certificates') && w.certificatesToIssue > 0 && <li><strong>{w.certificatesToIssue}</strong> certificate request{w.certificatesToIssue === 1 ? '' : 's'} <Link to="/admin/certificates">waiting</Link></li>}
                 {att && <li><strong>{w.lecturesNotMarked}</strong> of {w.lecturesToday} lecture{w.lecturesToday === 1 ? '' : 's'} today without attendance</li>}
               </ul>

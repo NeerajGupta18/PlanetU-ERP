@@ -47,6 +47,14 @@ import AdminCertificates from './pages/admin/Certificates.jsx';
 import StudentNotices from './pages/student/Notices.jsx';
 import StudentCertificates from './pages/student/Certificates.jsx';
 import EmployeeNotices from './pages/employee/Notices.jsx';
+import EmployeeLeave from './pages/employee/Leave.jsx';
+import AdminLeave from './pages/admin/Leave.jsx';
+import AdminGrievances from './pages/admin/Grievances.jsx';
+import AdminFeedback from './pages/admin/Feedback.jsx';
+import StudentSupport from './pages/student/Support.jsx';
+import ParentHome from './pages/parent/Home.jsx';
+import Support from './pages/shared/Support.jsx';
+import EmployeeSupport from './pages/employee/Support.jsx';
 import AdminStudents from './pages/admin/Students.jsx';
 import AdminStudentImport from './pages/admin/StudentImport.jsx';
 import AdminFees from './pages/admin/Fees.jsx';
@@ -84,7 +92,15 @@ export default function App() {
       <Route path="/apply/:code/status" element={<ApplyStatus />} />
 
       {/* Phase 1: Student portal */}
-      <Route element={<ProtectedRoute roles={['student']} />}>
+      <Route element={<ProtectedRoute roles={['parent']} />}>
+        <Route path="/parent" element={<AppShell />}>
+          <Route index element={<Navigate to="home" replace />} />
+          <Route path="home" element={<ParentHome />} />
+          <Route element={<ModuleGate module="grievance" />}><Route path="support" element={<Support base="/parent" />} /></Route>
+        </Route>
+      </Route>
+
+      <Route element={<ProtectedRoute roles={['student', 'parent']} />}>
         <Route path="/student" element={<AppShell />}>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<StudentDashboard />} />
@@ -94,6 +110,7 @@ export default function App() {
           <Route element={<ModuleGate module="fees" />}><Route path="fees" element={<StudentFees />} /></Route>
           <Route element={<ModuleGate module="notices" />}><Route path="notices" element={<StudentNotices />} /></Route>
           <Route element={<ModuleGate module="certificates" />}><Route path="certificates" element={<StudentCertificates />} /></Route>
+          <Route element={<ModuleGate module="grievance" />}><Route path="support" element={<StudentSupport />} /></Route>
           <Route element={<ModuleGate module="library" />}><Route path="library" element={<StudentLibrary />} /></Route>
           <Route element={<ModuleGate module="timetable" />}><Route path="timetable" element={<StudentTimetable />} /></Route>
           <Route element={<ModuleGate module="attendance" />}><Route path="attendance" element={<StudentAttendance />} /></Route>
@@ -127,6 +144,11 @@ export default function App() {
           <Route element={<ModuleGate module="fees" />}><Route path="fees" element={<AdminFees />} /></Route>
           <Route element={<ModuleGate module="notices" />}><Route path="notices" element={<AdminNotices />} /></Route>
           <Route element={<ModuleGate module="certificates" />}><Route path="certificates" element={<AdminCertificates />} /></Route>
+          <Route element={<ModuleGate module="leave" />}><Route path="leave" element={<AdminLeave />} /></Route>
+          <Route element={<ModuleGate module="grievance" />}>
+            <Route path="grievances" element={<AdminGrievances />} />
+            <Route path="feedback" element={<AdminFeedback />} />
+          </Route>
           <Route element={<ModuleGate module="library" />}><Route path="library" element={<AdminLibrary />} /></Route>
           <Route element={<ModuleGate module="assets" />}><Route path="assets" element={<AdminAssets />} /></Route>
           <Route element={<ModuleGate module="calendar" />}><Route path="calendar" element={<AdminCalendar />} /></Route>
@@ -169,6 +191,8 @@ export default function App() {
       <Route element={<ProtectedRoute roles={['employee']} />}>
         <Route path="/employee" element={<AppShell />}>
           <Route element={<ModuleGate module="notices" />}><Route path="notices" element={<EmployeeNotices />} /></Route>
+          <Route element={<ModuleGate module="leave" />}><Route path="leave" element={<EmployeeLeave />} /></Route>
+          <Route element={<ModuleGate module="grievance" />}><Route path="support" element={<EmployeeSupport />} /></Route>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<EmployeeDashboard />} />
           <Route element={<ModuleGate module="learning" />}>

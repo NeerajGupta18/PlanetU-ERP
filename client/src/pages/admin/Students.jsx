@@ -1,7 +1,7 @@
 import { useSearchParams } from 'react-router-dom';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CreditCard, Download, GraduationCap, Search, Upload, Users2 } from 'lucide-react';
+import { CreditCard, Download, GraduationCap, Mail, Search, Trash2, Upload, Users2 } from 'lucide-react';
 import { useFetch } from '../../hooks/useFetch.js';
 import { useTenantConfig } from '../../hooks/useTenantConfig.js';
 import { api } from '../../api/http.js';
@@ -9,6 +9,7 @@ import { Badge, Card, Field, PageBanner } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import Modal from '../../components/ui/Modal.jsx';
 import { fmtDate } from '../../utils/dates.js';
+import { useDialogs } from '../../components/ui/Dialogs.jsx';
 
 const STATUS_TONE = { Active: 'green', Inactive: 'gray', Alumni: 'purple' };
 
@@ -22,6 +23,15 @@ export default function Students() {
   if (search) qs.set('search', search);
   if (status) qs.set('status', status);
   const list = useFetch(`/admin/students?${qs}`);
+  const { confirm, toast } = useDialogs();
+
+  const inviteAll = async () => {
+    if (!(await confirm('Create a parent account for every active student who has a guardian email on record and no parent yet? Each parent gets an email to set a password.', { title: 'Invite all parents?', confirmLabel: 'Send invitations' }))) return;
+    try {
+      const r = await api.post('/admin/students/parents/invite-all');
+      toast.success(`${r.created} invited, ${r.linked} linked, ${r.skipped.length} skipped${r.skipped.length ? ` (e.g. ${r.skipped[0].studentCode}: ${r.skipped[0].reason})` : ''}.`);
+    } catch (e) { toast.error(e); }
+  };
 
   return (
     <>
@@ -30,6 +40,7 @@ export default function Students() {
         actions={(
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <Link to={`/admin/reports?report=students${status ? `&status=${status}` : ''}`} className="btn btn--outline btn--sm" style={{ background: '#fff' }}><Download size={14} /> Export list</Link>
+            {hasModule('parent_portal') && <button type="button" className="btn btn--outline btn--sm" style={{ background: '#fff' }} onClick={inviteAll}><Mail size={14} /> Invite all parents</button>}
             <Link to="/admin/students/import" className="btn btn--primary btn--sm" style={{ background: '#fff', color: 'var(--brand-700)', boxShadow: 'none' }}><Upload size={14} /> Import from CSV</Link>
           </div>
         )}
@@ -68,12 +79,12 @@ export default function Students() {
           ))}
         </DataBoundary>
       </Card>
-      {openId && <Detail id={openId} idCards={hasModule('id_cards')} onClose={() => setOpenId(null)} onChanged={list.reload} />}
+      {openId && <Detail id={openId} idCards={hasModule('id_cards')} parentPortal={hasModule('parent_portal')} onClose={() => setOpenId(null)} onChanged={list.reload} />}
     </>
   );
 }
 
-function Detail({ id, idCards, onClose, onChanged }) {
+function Detail({ id, idCards, parentPortal, onClose, onChanged }) {
   const { data, loading, error, reload } = useFetch(`/admin/students/${id}`);
   const [form, setForm] = useState(null);
   const [err, setErr] = useState('');
@@ -151,9 +162,71 @@ function Detail({ id, idCards, onClose, onChanged }) {
                 <button type="submit" className="btn btn--primary" disabled={busy}>{busy ? 'Saving...' : 'Save changes'}</button>
               </div>
             </form>
+            {parentPortal && <Parents studentId={id} guardian={s.guardian} />}
           </>
         )}
       </DataBoundary>
     </Modal>
+  );
+}
+
+function Parents({ studentId, guardian }) {
+  const { data, loading, error, reload } = useFetch(`/admin/students/${studentId}/parents`);
+  const { confirm } = useDialogs();
+  const [form, setForm] = useState({ name: guardian?.name || '', email: guardian?.email || '', relation: guardian?.relation || 'Guardian' });
+  const [err, setErr] = useState('');
+  const [account, setAccount] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  const add = async (e) => {
+    e.preventDefault();
+    setErr(''); setAccount(null); setBusy(true);
+    try {
+      const r = await api.post(`/admin/students/${studentId}/parents`, form);
+      if (r.account) setAccount(r.account);
+      setForm({ name: '', email: '', relation: 'Guardian' });
+      reload();
+    } catch (e2) { setErr(e2.message); } finally { setBusy(false); }
+  };
+  const remove = async (p) => {
+    if (!(await confirm(`${p.name} will no longer see this student.${p.children <= 1 ? ' Their account will be deleted.' : ''}`, { title: 'Remove parent?', confirmLabel: 'Remove', danger: true }))) return;
+    try { await api.del(`/admin/students/${studentId}/parents/${p.userId}`); reload(); } catch (e2) { setErr(e2.message); }
+  };
+
+  return (
+    <div style={{ marginTop: 20, borderTop: '1px solid var(--border)', paddingTop: 16 }}>
+      <h4 style={{ margin: '0 0 8px' }}>Parents</h4>
+      {err && <p className="form-error">{err}</p>}
+      <DataBoundary loading={loading && !data} error={error} data={data} reload={reload}>
+        {data && (data.parents.length === 0 ? <p className="muted" style={{ margin: '0 0 8px' }}>No parent account yet.</p> : (
+          <table className="table">
+            <thead><tr><th>Name</th><th>Login ID</th><th>Relation</th><th /></tr></thead>
+            <tbody>
+              {data.parents.map((p) => (
+                <tr key={p.userId}>
+                  <td><strong>{p.name}</strong><div className="muted">{p.email}</div></td>
+                  <td>{p.loginId}</td>
+                  <td>{p.relation} {p.invited && <Badge tone="amber">Not signed in yet</Badge>}</td>
+                  <td><button type="button" className="icon-btn" aria-label={`Remove ${p.name}`} onClick={() => remove(p)}><Trash2 size={15} /></button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ))}
+      </DataBoundary>
+      {account && (
+        <div className="notice-box" role="status" style={{ margin: '10px 0', padding: 10, background: 'var(--brand-50)', borderRadius: 8 }}>
+          Account created. Login ID <strong>{account.loginId}</strong>, temporary password <strong>{account.temporaryPassword}</strong>. This is shown once; a link to set a password was also emailed.
+        </div>
+      )}
+      <form onSubmit={add} style={{ marginTop: 10 }}>
+        <div className="fields">
+          <div className="form-field"><label className="label" htmlFor="pr-name">Name</label><input id="pr-name" className="input" required value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} /></div>
+          <div className="form-field"><label className="label" htmlFor="pr-email">Email</label><input id="pr-email" className="input" type="email" required value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} /></div>
+          <div className="form-field"><label className="label" htmlFor="pr-rel">Relation</label><input id="pr-rel" className="input" value={form.relation} onChange={(e) => setForm((f) => ({ ...f, relation: e.target.value }))} /></div>
+        </div>
+        <div className="form-actions"><button type="submit" className="btn btn--outline" disabled={busy}>{busy ? 'Adding...' : 'Add parent'}</button></div>
+      </form>
+    </div>
   );
 }
