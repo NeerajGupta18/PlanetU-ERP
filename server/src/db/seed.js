@@ -241,6 +241,47 @@ async function seedTenant(spec, hashes) {
   );
   await q("insert into grievance_messages (grievance_id, from_office, body) values ($1, true, 'Thank you for reporting this. The maintenance team has been asked to repair it this week.')", [grv.id]);
 
+  // Hostel, transport and payroll: a little of each, so the screens are not empty
+  const { rows: [bh] } = await q("insert into hostels (name, kind, warden_id, phone) values ('Boys Hostel A', 'boys', $1, '+91 20 5550 0101') returning id", [emp[0] || null]);
+  const { rows: [gh] } = await q("insert into hostels (name, kind, warden_id, phone) values ('Girls Hostel B', 'girls', $1, '+91 20 5550 0102') returning id", [emp[1] || null]);
+  for (const [hid, nums, fee] of [[bh.id, ['101', '102', '103', '201', '202'], 4500], [gh.id, ['101', '102', '103', '201'], 4800]]) {
+    for (const no of nums) await q('insert into hostel_rooms (hostel_id, room_no, floor, beds, monthly_fee) values ($1, $2, $3, $4, $5)', [hid, no, Number(no[0]) - 1, 3, fee]);
+  }
+  const { rows: people } = await q('select id, gender from students where tenant_id = app_tenant() order by student_code limit 3');
+  for (const st of people) {
+    const girl = String(st.gender).toLowerCase().startsWith('f');
+    const { rows: [room] } = await q('select id from hostel_rooms where hostel_id = $1 and room_no = $2', [girl ? gh.id : bh.id, '101']);
+    await q('insert into hostel_stays (room_id, student_id, from_date) values ($1, $2, $3)', [room.id, st.id, toISO(addDays(new Date(), -60))]);
+  }
+  const routes = [
+    ['Route 1 - City Centre', 'MH 12 AB 1201', 'Ramesh Patil', '+91 98900 11001', 40, 1500, [['Station Road', '07:10'], ['Market Chowk', '07:25'], ['Campus Gate', '07:50']]],
+    ['Route 2 - North Suburbs', 'MH 12 CD 3402', 'Suresh Jadhav', '+91 98900 11002', 32, 1800, [['Green Park', '07:00'], ['Lake View', '07:20'], ['Campus Gate', '07:50']]],
+  ];
+  const stops = [];
+  for (const [name, vehicle, driver, phone, seats, fee, list] of routes) {
+    const { rows: [r] } = await q('insert into transport_routes (name, vehicle_no, driver_name, driver_phone, seats, monthly_fee) values ($1, $2, $3, $4, $5, $6) returning id', [name, vehicle, driver, phone, seats, fee]);
+    for (const [i, [stop, time]] of list.entries()) {
+      const { rows: [sp] } = await q('insert into transport_stops (route_id, name, position, pickup_time) values ($1, $2, $3, $4) returning id', [r.id, stop, i + 1, time]);
+      stops.push({ route: r.id, stop: sp.id });
+    }
+  }
+  for (const [i, st] of people.slice(0, 2).entries()) {
+    await q('insert into transport_rides (route_id, stop_id, student_id, from_date) values ($1, $2, $3, $4)', [stops[i * 3 + 1].route, stops[i * 3 + 1].stop, st.id, toISO(addDays(new Date(), -45))]);
+  }
+  // Salaries for everyone, and last month's payroll already finalised
+  await q("update employees set join_date = '2023-07-01' where tenant_id = app_tenant()");
+  const lastMonth = toISO(new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1)).slice(0, 7);
+  const { rows: run } = await q("insert into payroll_runs (month, status, finalised_at) values ($1, 'finalised', now()) returning id", [lastMonth]);
+  for (const [i, id] of emp.entries()) {
+    const basic = 30000 + i * 4000; const hra = Math.round(basic * 0.4); const allow = 3000;
+    await q('insert into employee_salaries (employee_id, basic, hra, allowances, pf_percent, other_deductions) values ($1, $2, $3, $4, 12, 200)', [id, basic, hra, allow]);
+    const gross = basic + hra + allow; const pf = Math.round(basic * 0.12 * 100) / 100; const total = pf + 200;
+    await q(
+      `insert into payslips (run_id, employee_id, basic, hra, allowances, gross, pf, other_deductions, unpaid_days, unpaid_amount, total_deductions, net)
+       values ($1, $2, $3, $4, $5, $6, $7, 200, 0, 0, $8, $9)`, [run[0].id, id, basic, hra, allow, gross, pf, total, gross - total],
+    );
+  }
+
   // Weekly repeating timetable. weekday: 1 = Mon ... 5 = Fri. Subject k is taught by employee k.
   const periods = [['09:00', '10:00'], ['10:00', '11:00'], ['11:15', '12:15'], ['12:15', '13:15']];
   const grid = { 1: [0, 1, 5, 4], 2: [2, 0, 3, 1], 3: [5, 2, 4, 3], 4: [1, 3, 0, 2], 5: [4, 5, 0, 1] };

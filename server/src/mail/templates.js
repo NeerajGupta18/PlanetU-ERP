@@ -118,6 +118,15 @@ export const templates = {
     },
   ),
 
+  payslipReady: ({ institute, name, month, url }) => mail(
+    `Your payslip for ${month} is ready`,
+    {
+      institute, title: 'Your payslip is ready',
+      lines: [`Hello ${name},`, `Your payslip for ${month} is now available. Sign in to view or download it.`],
+      cta: { label: 'Open payslips', url },
+    },
+  ),
+
   grievanceUpdate: ({ institute, name, ticketNo, subject, status, message, url }) => mail(
     `Update on your ticket ${ticketNo}`,
     {
