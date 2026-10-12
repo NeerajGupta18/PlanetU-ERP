@@ -126,7 +126,7 @@ export async function remove(id, admin) {
 /* ---------------- what a student or staff member sees ---------------- */
 
 async function viewer(user) {
-  if (user.role === 'student') {
+  if (user.role === 'student' || user.role === 'parent') { // a parent reads what their child's class reads
     const { rows: [s] } = await q('select course_id from students where id = $1', [user.studentId]);
     return { audience: 'students', courseId: s?.course_id ?? null };
   }

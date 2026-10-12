@@ -5,6 +5,8 @@ import * as rawExams from '../controllers/exams.controller.js';
 import * as rawLearning from '../controllers/learning.controller.js';
 import * as rawQuizzes from '../controllers/quiz.controller.js';
 import * as rawNotices from '../controllers/notices.controller.js';
+import * as rawGrievance from '../controllers/grievance.controller.js';
+import * as rawLeave from '../controllers/leave.controller.js';
 import { uuidParam, wrapAll } from './wrap.js';
 
 const attendance = wrapAll(rawAttendance);
@@ -12,6 +14,8 @@ const exams = wrapAll(rawExams);
 const learning = wrapAll(rawLearning);
 const quizzes = wrapAll(rawQuizzes);
 const notices = wrapAll(rawNotices);
+const grievance = wrapAll(rawGrievance);
+const leave = wrapAll(rawLeave);
 const router = Router();
 router.use(requireAuth, requireRole('employee'));
 router.param('paperId', uuidParam);
@@ -21,6 +25,17 @@ router.param('enrollmentId', uuidParam);
 router.get('/notices', requireModule('notices'), notices.mine);
 router.post('/notices/read-all', requireModule('notices'), notices.readAll);
 router.post('/notices/:id/read', requireModule('notices'), notices.read);
+router.get('/grievances', requireModule('grievance'), grievance.mine);
+router.post('/grievances', requireModule('grievance'), grievance.create);
+router.get('/grievances/:id', requireModule('grievance'), grievance.one);
+router.post('/grievances/:id/reply', requireModule('grievance'), grievance.reply);
+router.post('/grievances/:id/close', requireModule('grievance'), grievance.close);
+router.get('/feedback', requireModule('grievance'), grievance.myForms);
+router.get('/feedback/:id', requireModule('grievance'), grievance.myForm);
+router.post('/feedback/:id', requireModule('grievance'), grievance.submitForm);
+router.get('/leave', requireModule('leave'), leave.mine);
+router.post('/leave', requireModule('leave'), leave.apply);
+router.post('/leave/:id/cancel', requireModule('leave'), leave.cancel);
 
 // Faculty marking: "today's lectures" come from the Timetable, so both modules must be on
 router.use('/attendance', requireModule('attendance'), requireModule('timetable'));

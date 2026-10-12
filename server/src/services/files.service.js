@@ -49,6 +49,12 @@ export async function findAccessible(id, user) {
   );
   if (!f) return null;
   if (user.role === 'admin' || f.created_by === user.id) return f;
+  if (user.role === 'parent') {
+    const { rowCount } = await q(
+      'select 1 from parent_links l join students s on s.id = l.student_id where l.user_id = $1 and s.photo_file_id = $2', [user.id, id],
+    );
+    return rowCount ? f : null;
+  }
   // A faculty member can open the certificate a student attached to a learning assignment they created
   // or teach the subject of - and nothing else of the student's.
   if (user.role === 'employee' && user.employeeId) {

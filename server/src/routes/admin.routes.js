@@ -20,6 +20,9 @@ import * as rawLearning from '../controllers/learning.controller.js';
 import * as rawQuizzes from '../controllers/quiz.controller.js';
 import * as rawNotices from '../controllers/notices.controller.js';
 import * as rawCertificates from '../controllers/certificates.controller.js';
+import * as rawLeave from '../controllers/leave.controller.js';
+import * as rawGrievance from '../controllers/grievance.controller.js';
+import * as rawParents from '../controllers/parents.controller.js';
 import { uuidParam, wrapAll } from './wrap.js';
 
 const admin = wrapAll(raw);
@@ -38,6 +41,9 @@ const learning = wrapAll(rawLearning);
 const quizzes = wrapAll(rawQuizzes);
 const notices = wrapAll(rawNotices);
 const certificates = wrapAll(rawCertificates);
+const leave = wrapAll(rawLeave);
+const grievance = wrapAll(rawGrievance);
+const parents = wrapAll(rawParents);
 const router = Router();
 
 // CSV uploads for the student import: memory only, one file, hard size cap, with a message that fits
@@ -121,10 +127,15 @@ router.use('/students', requireModule('students'));
 router.get('/students/import/template.csv', students.importTemplate);
 router.post('/students/import/preview', csvUpload, students.importPreview);
 router.post('/students/import', csvUpload, students.importCommit);
+router.post('/students/parents/invite-all', requireModule('parent_portal'), parents.inviteAll);
 router.get('/students', students.list);
 router.get('/students/:id', students.get);
 router.put('/students/:id', students.update);
 router.put('/students/:id/photo', students.setPhoto);
+router.param('userId', uuidParam);
+router.get('/students/:id/parents', requireModule('parent_portal'), parents.list);
+router.post('/students/:id/parents', requireModule('parent_portal'), parents.add);
+router.delete('/students/:id/parents/:userId', requireModule('parent_portal'), parents.remove);
 router.get('/students/:id/id-card.pdf', students.idCard);
 
 router.use('/fees', requireModule('fees'));
@@ -255,6 +266,31 @@ router.get('/certificates', certificates.list);
 router.post('/certificates', certificates.issue);
 router.put('/certificates/:id', certificates.decide);
 router.get('/certificates/:id/pdf', certificates.pdf);
+
+router.use('/leave', requireModule('leave'));
+router.get('/leave', leave.list);
+router.post('/leave', leave.record);
+router.get('/leave/balances', leave.balances);
+router.get('/leave/on-leave', leave.onLeave);
+router.get('/leave/types', leave.types);
+router.post('/leave/types', leave.createType);
+router.post('/leave/types/defaults', leave.standardTypes);
+router.put('/leave/types/:id', leave.updateType);
+router.delete('/leave/types/:id', leave.removeType);
+router.put('/leave/:id', leave.decide);
+
+router.use('/grievances', requireModule('grievance'));
+router.get('/grievances', grievance.list);
+router.get('/grievances/:id', grievance.adminOne);
+router.post('/grievances/:id/reply', grievance.adminReply);
+router.use('/feedback', requireModule('grievance'));
+router.get('/feedback', grievance.forms);
+router.post('/feedback', grievance.createForm);
+router.get('/feedback/:id', grievance.form);
+router.put('/feedback/:id', grievance.updateForm);
+router.put('/feedback/:id/status', grievance.formStatus);
+router.delete('/feedback/:id', grievance.removeForm);
+router.get('/feedback/:id/results', grievance.results);
 
 router.use('/timetable', requireModule('timetable'));
 router.get('/timetable/filters', admin.timetableFilters);

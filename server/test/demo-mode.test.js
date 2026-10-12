@@ -44,7 +44,7 @@ describe('The list of demo sign-ins', () => {
     const r = await json('GET', '/api/auth/demo-logins');
     assert.equal(r.body.enabled, true);
     assert.deepEqual(r.body.institutes.map((i) => i.code).sort(), DEMO_TENANTS.map((t) => t.code).sort());
-    for (const inst of r.body.institutes) assert.deepEqual(inst.logins.map((l) => l.role), ['admin', 'employee', 'student']);
+    for (const inst of r.body.institutes) assert.deepEqual(inst.logins.map((l) => l.role), ['admin', 'employee', 'student', 'parent']);
     const raw = JSON.stringify(r.body);
     assert.ok(!/SA001|super_admin|SuperAdmin/i.test(raw), 'the platform-owner account is never offered');
   });
@@ -59,7 +59,7 @@ describe('The list of demo sign-ins', () => {
       assert.equal((await r.json()).user.role, l.role);
       n += 1;
     }
-    assert.equal(n, 9);
+    assert.equal(n, 12);
   });
 
   it('does not offer a sample institute that is suspended', async () => {

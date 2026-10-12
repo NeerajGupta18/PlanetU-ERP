@@ -13,7 +13,7 @@ import {
   answerChallenge, consumeCaptchaToken, createChallenge, issueCaptchaToken, looksHuman, verifyRecaptcha,
 } from '../services/captcha.service.js';
 
-export const ROLES = ['super_admin', 'admin', 'student', 'employee'];
+export const ROLES = ['super_admin', 'admin', 'student', 'employee', 'parent'];
 
 const MAX_FAILED = 5;
 const LOCK_MS = 15 * 60 * 1000;
@@ -271,6 +271,7 @@ export async function demoLogins(req, res) {
       { role: 'admin', id: s.admin.loginId, password: DEMO_PASSWORDS.admin },
       { role: 'employee', id: s.employees[0][0], password: DEMO_PASSWORDS.employee },
       { role: 'student', id: s.students[0].code, password: DEMO_PASSWORDS.student },
+      { role: 'parent', id: 'PAR001', password: DEMO_PASSWORDS.parent },
     ],
   }));
   return res.json({ enabled: institutes.length > 0, institutes });
