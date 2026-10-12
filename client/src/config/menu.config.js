@@ -1,5 +1,5 @@
 import {
-  BookOpen, BookOpenCheck, Boxes, Building2, CalendarCheck, CalendarDays, CircleDollarSign, ClipboardCheck, CreditCard, FileBarChart2, GraduationCap, LayoutDashboard, ListChecks, School, Network, Server, Settings2, Table2, UserRound, Users, Users2, Wallet,
+  BookOpen, BookOpenCheck, Boxes, Building2, CalendarCheck, CalendarDays, CircleDollarSign, ClipboardCheck, CreditCard, FileBarChart2, FileText, GraduationCap, LayoutDashboard, ListChecks, Megaphone, School, Network, Server, Settings2, Table2, UserRound, Users, Users2, Wallet,
 } from 'lucide-react';
 
 /**
@@ -19,6 +19,7 @@ import {
 export const MENU_TREE = {
   student: [
     { label: 'Dashboard', to: '/student/dashboard', icon: LayoutDashboard },
+    { label: 'Notice board', to: '/student/notices', icon: Megaphone, module: 'notices' },
     {
       group: 'Academics', icon: GraduationCap, items: [
         { label: 'Timetable', to: '/student/timetable', icon: Table2, module: 'timetable' },
@@ -38,6 +39,7 @@ export const MENU_TREE = {
     {
       group: 'My Account', icon: UserRound, items: [
         { label: 'Profile', to: '/student/profile', icon: UserRound },
+        { label: 'Certificates', to: '/student/certificates', icon: FileText, module: 'certificates' },
         { label: 'Institute', to: '/student/institute', icon: Building2, term: ['institute', 'Institute'] },
       ],
     },
@@ -48,6 +50,7 @@ export const MENU_TREE = {
       group: 'Admissions & Students', icon: ClipboardCheck, items: [
         { label: 'Admissions', to: '/admin/admissions', icon: ClipboardCheck, module: 'admissions', term: ['admission', 'Admissions'] },
         { label: 'Students', to: '/admin/students', icon: Users2, module: 'students', term: ['students', 'Students'] },
+        { label: 'Certificates', to: '/admin/certificates', icon: FileText, module: 'certificates' },
       ],
     },
     {
@@ -80,6 +83,11 @@ export const MENU_TREE = {
       ],
     },
     {
+      group: 'Communication', icon: Megaphone, items: [
+        { label: 'Notice board', to: '/admin/notices', icon: Megaphone, module: 'notices' },
+      ],
+    },
+    {
       group: 'Setup & Reports', icon: Settings2, items: [
         { label: 'Institute', to: '/admin/institute', icon: Building2, term: ['institute', 'Institute'] },
         { label: 'Reports & Exports', to: '/admin/reports', icon: FileBarChart2 },
@@ -93,6 +101,7 @@ export const MENU_TREE = {
   ],
   employee: [
     { label: 'Dashboard', to: '/employee/dashboard', icon: LayoutDashboard },
+    { label: 'Notice board', to: '/employee/notices', icon: Megaphone, module: 'notices' },
     {
       group: 'Teaching', icon: ClipboardCheck, items: [
         { label: 'Attendance', to: '/employee/attendance', icon: ClipboardCheck, module: 'attendance' },

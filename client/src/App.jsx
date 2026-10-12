@@ -42,6 +42,11 @@ import AdminEmployees from './pages/admin/Employees.jsx';
 import AdminCalendar from './pages/admin/Calendar.jsx';
 import AdminTimetable from './pages/admin/Timetable.jsx';
 import AdminAdmissions from './pages/admin/Admissions.jsx';
+import AdminNotices from './pages/admin/Notices.jsx';
+import AdminCertificates from './pages/admin/Certificates.jsx';
+import StudentNotices from './pages/student/Notices.jsx';
+import StudentCertificates from './pages/student/Certificates.jsx';
+import EmployeeNotices from './pages/employee/Notices.jsx';
 import AdminStudents from './pages/admin/Students.jsx';
 import AdminStudentImport from './pages/admin/StudentImport.jsx';
 import AdminFees from './pages/admin/Fees.jsx';
@@ -87,6 +92,8 @@ export default function App() {
           <Route path="institute" element={<StudentInstitute />} />
           <Route element={<ModuleGate module="calendar" />}><Route path="calendar" element={<StudentCalendar />} /></Route>
           <Route element={<ModuleGate module="fees" />}><Route path="fees" element={<StudentFees />} /></Route>
+          <Route element={<ModuleGate module="notices" />}><Route path="notices" element={<StudentNotices />} /></Route>
+          <Route element={<ModuleGate module="certificates" />}><Route path="certificates" element={<StudentCertificates />} /></Route>
           <Route element={<ModuleGate module="library" />}><Route path="library" element={<StudentLibrary />} /></Route>
           <Route element={<ModuleGate module="timetable" />}><Route path="timetable" element={<StudentTimetable />} /></Route>
           <Route element={<ModuleGate module="attendance" />}><Route path="attendance" element={<StudentAttendance />} /></Route>
@@ -118,6 +125,8 @@ export default function App() {
             <Route path="students/import" element={<AdminStudentImport />} />
           </Route>
           <Route element={<ModuleGate module="fees" />}><Route path="fees" element={<AdminFees />} /></Route>
+          <Route element={<ModuleGate module="notices" />}><Route path="notices" element={<AdminNotices />} /></Route>
+          <Route element={<ModuleGate module="certificates" />}><Route path="certificates" element={<AdminCertificates />} /></Route>
           <Route element={<ModuleGate module="library" />}><Route path="library" element={<AdminLibrary />} /></Route>
           <Route element={<ModuleGate module="assets" />}><Route path="assets" element={<AdminAssets />} /></Route>
           <Route element={<ModuleGate module="calendar" />}><Route path="calendar" element={<AdminCalendar />} /></Route>
@@ -159,6 +168,7 @@ export default function App() {
       {/* Faculty / employee portal */}
       <Route element={<ProtectedRoute roles={['employee']} />}>
         <Route path="/employee" element={<AppShell />}>
+          <Route element={<ModuleGate module="notices" />}><Route path="notices" element={<EmployeeNotices />} /></Route>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<EmployeeDashboard />} />
           <Route element={<ModuleGate module="learning" />}>

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import {
-  Banknote, Building2, CalendarCheck, CalendarDays, ClipboardCheck, ClipboardList, LayoutDashboard, Network, Plus, Receipt, Upload, UserPlus, Users, Users2, Wallet,
+  Banknote, Building2, CalendarCheck, CalendarDays, ClipboardCheck, ClipboardList, LayoutDashboard, Megaphone, Network, Plus, Receipt, Upload, UserPlus, Users, Users2, Wallet,
 } from 'lucide-react';
 import { useFetch } from '../../hooks/useFetch.js';
 import { useTenantConfig } from '../../hooks/useTenantConfig.js';
@@ -44,6 +44,7 @@ function DashboardView({ d }) {
           {fees && <QuickAction to="/admin/fees" icon={Receipt} label="Record payment" />}
           {att && <QuickAction to="/admin/attendance" icon={CalendarCheck} label="Attendance" />}
           <QuickAction to="/admin/calendar" icon={CalendarDays} label="Add an event" />
+          {hasModule('notices') && <QuickAction to="/admin/notices" icon={Megaphone} label="Post a notice" />}
         </div>
       </Card>
 
@@ -65,6 +66,8 @@ function DashboardView({ d }) {
               <ul className="todo">
                 <li><strong>{w.applicationsToReview}</strong> application{w.applicationsToReview === 1 ? '' : 's'} waiting for review</li>
                 <li><strong>{w.applicationsToEnrol}</strong> accepted, ready to enrol</li>
+                {w.applicationFeesPending > 0 && <li><strong>{w.applicationFeesPending}</strong> application fee{w.applicationFeesPending === 1 ? '' : 's'} not yet received</li>}
+                {hasModule('certificates') && w.certificatesToIssue > 0 && <li><strong>{w.certificatesToIssue}</strong> certificate request{w.certificatesToIssue === 1 ? '' : 's'} <Link to="/admin/certificates">waiting</Link></li>}
                 {att && <li><strong>{w.lecturesNotMarked}</strong> of {w.lecturesToday} lecture{w.lecturesToday === 1 ? '' : 's'} today without attendance</li>}
               </ul>
               {d.recentApplications.length > 0 && (

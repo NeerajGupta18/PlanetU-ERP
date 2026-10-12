@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/PostgreSQL-16%20%2B%20RLS-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" />
   <img src="https://img.shields.io/badge/Auth-JWT%20%2B%20bcrypt-EC1C24?style=for-the-badge&logo=jsonwebtokens&logoColor=white" />
   <img src="https://img.shields.io/badge/Multi--tenant-SaaS-7C3AED?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/Tests-422%20passing-2ea44f?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Tests-474%20passing-2ea44f?style=for-the-badge" />
   <img src="https://img.shields.io/badge/Deploy-Render%20%7C%20Oracle%20Cloud-46E3B7?style=for-the-badge" />
   <img src="https://img.shields.io/badge/STATUS-PHASE%207-2ea44f?style=for-the-badge" />
 </p>
@@ -37,7 +37,8 @@ site/secret key pair — no code change either way).
 **Phase 1** shipped the login + the 5 Student modules. **Phase 2** shipped the full Admin side (6 modules).
 **Phases 3 to 7** moved the data layer from a JSON file to multi-tenant PostgreSQL, and added the institute
 operations (admissions, fees, library, assets), academics (attendance, exams, reports), the vendor's own
-subscription billing, and the learning platform with quizzes. See *What's built* below.
+subscription billing, and the learning platform with quizzes. An improvement round then added a grouped sidebar with
+quick search, a six-step admission wizard, a notice board and certificates. See *What's built* below.
 
 ---
 
@@ -91,7 +92,7 @@ tables, run `npm run db:migrate` instead.
 ### Tests
 
 ```bash
-npm test             # 422 tests against a real PostgreSQL (run db:setup first)
+npm test             # 474 tests against a real PostgreSQL (run db:setup first)
 ```
 
 They cover tenant isolation, uploads, admissions, accounts and email, students and ID cards, fees, online payments
@@ -197,6 +198,29 @@ Protections: per-IP rate limits on the public endpoints (`PUBLIC_RATE_LIMIT`, `P
 `PUBLIC_LOOKUP_LIMIT`), captcha on application creation, the same row-level tenant isolation as everything else
 (another institute's admin — or applicant code — gets a 404), and duplicate-application protection per email and course.
 The module is `admissions`; switching it off for an institute closes its public form and the admin screen.
+
+**Admission wizard (improvement round 2).** The public form is now six steps - Course, Personal details (with photo
+and signature), Parents, Education (10th, last qualification, entrance exam), Documents, Review and pay - saved after
+every step, so an applicant can close the page and continue later with the application number and access code. If the
+institute sets an **application fee** (Admissions > Settings) it is collected online when Razorpay keys are set;
+otherwise the office records it. The admin screen shows pipeline cards (To review, Awaiting documents, Ready to enrol,
+Waitlisted, Enrolled, Rejected, Fee pending), **walk-in applications** typed in at the counter, **bulk accept / waitlist /
+reject** (each application is handled separately and failures are listed), a per-course **merit list** (screen, CSV, PDF)
+and a switch to stop accepting applications.
+
+### 📢 Notice board
+
+Admin > Notice board: title, message, category, audience (everyone, students, staff; students can be limited to one
+course), important flag, pin, show-from and last date, draft or published, and an optional email to the audience.
+Students and staff see their notices on a Notice board page, with an unread dot and "mark all as read"; the admin list
+shows how many people have read each notice. Module key: `notices`.
+
+### 📄 Certificates
+
+Students request a bonafide, character, NOC or transfer certificate; the office issues (numbered `CERT<year>-00001`)
+or rejects with a reason, or issues one directly at the counter. The PDF is built from the saved details, so it reads the
+same every time. A transfer certificate is held back while fees are outstanding unless the office confirms. Issuing a TC
+does not change the student's status. Module key: `certificates`.
 
 **Not built yet:** SMS, automatic purge of abandoned drafts, malware
 scanning of uploads, and per-institute custom form fields / required-document lists.
@@ -662,7 +686,7 @@ Every new module follows the same recipe, and gets multi-tenancy almost for free
 6. **Test:** add a case to `server/test/isolation.test.js` proving client A cannot reach client B's records.
 
 **On the roadmap** (switchable in the vendor console, marked "coming soon" until built): Leave & Shifts · Payroll ·
-Hostel · Transport · Notice Board · Certificates · Visitor Management.
+Hostel · Transport · Visitor Management.
 
 
 ---
