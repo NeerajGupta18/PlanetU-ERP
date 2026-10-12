@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Pencil, Search } from 'lucide-react';
 import RobotCheck from '../../components/auth/RobotCheck.jsx';
 import { pub } from '../../api/public.js';
 import { Badge, Card } from '../../components/ui/Ui.jsx';
@@ -9,6 +9,7 @@ import { STATUS } from '../../components/admissions/status.js';
 
 export default function ApplyStatus() {
   const { code } = useParams();
+  const navigate = useNavigate();
   const [applicationNo, setNo] = useState('');
   const [accessCode, setAccess] = useState('');
   const [app, setApp] = useState(null);
@@ -20,6 +21,12 @@ export default function ApplyStatus() {
     setBusy(true); setError('');
     try { setApp((await pub(code, '/applications/lookup', { method: 'POST', body: { applicationNo, accessCode } })).application); }
     catch (err) { setError(err.message); setApp(null); } finally { setBusy(false); }
+  };
+
+  // Carry on with a form that is not submitted yet (or needs a document fixed) in the step-by-step form
+  const resume = () => {
+    localStorage.setItem(`erp.apply.${code}`, JSON.stringify({ id: app.id, accessCode: accessCode.trim(), applicationNo: app.applicationNo }));
+    navigate(`/apply/${code}`);
   };
 
   const [rec, setRec] = useState({ open: false, email: '', captcha: null, msg: '', err: '', key: 0 });
@@ -64,7 +71,14 @@ export default function ApplyStatus() {
       {app && (
         <Card title={`${app.name} - ${app.course}`} action={<Badge tone={STATUS[app.status].tone}>{STATUS[app.status].label}</Badge>}>
           {app.decisionNote && <p><strong>Message from the institute:</strong> {app.decisionNote}</p>}
-          <DocumentsPanel code={code} app={app} accessCode={accessCode.trim()} onChange={setApp} />
+          {['draft', 'documents_pending'].includes(app.status) ? (
+            <>
+              <p>{app.status === 'draft' ? 'This application has not been submitted yet. You can carry on from where you stopped.' : 'Some documents need to be replaced before the institute can go ahead.'}</p>
+              <div className="form-actions"><button type="button" className="btn btn--primary" onClick={resume}><Pencil size={15} /> {app.status === 'draft' ? 'Continue my application' : 'Fix my documents'}</button></div>
+            </>
+          ) : (
+            <DocumentsPanel code={code} app={app} accessCode={accessCode.trim()} onChange={setApp} />
+          )}
         </Card>
       )}
     </div>

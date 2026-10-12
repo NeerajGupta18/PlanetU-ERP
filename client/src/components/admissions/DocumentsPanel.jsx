@@ -5,11 +5,11 @@ import { Badge } from '../ui/Ui.jsx';
 import { DOC_LABEL, DOC_TONE } from './status.js';
 
 /** Upload / replace documents and submit. Used right after applying and again from the status page. */
-export default function DocumentsPanel({ code, app, accessCode, onChange }) {
+export default function DocumentsPanel({ code, app, accessCode, onChange, types: only, showSubmit = true }) {
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
   const editable = ['draft', 'documents_pending'].includes(app.status);
-  const types = [...app.requiredDocuments, 'other'];
+  const types = only || [...new Set([...app.requiredDocuments, 'signature', 'other'])];
 
   const upload = async (docType, file) => {
     if (!file) return;
@@ -63,7 +63,7 @@ export default function DocumentsPanel({ code, app, accessCode, onChange }) {
         </table>
       </div>
       <p className="muted" style={{ margin: '8px 0 0' }}>PDF, PNG or JPEG, up to 5 MB each. * required</p>
-      {editable && (
+      {editable && showSubmit && (
         <div className="form-actions">
           <button type="button" className="btn btn--primary" disabled={!!busy} onClick={submit}>
             <Send size={15} /> {busy === 'submit' ? 'Submitting...' : app.status === 'documents_pending' ? 'Resubmit application' : 'Submit application'}
