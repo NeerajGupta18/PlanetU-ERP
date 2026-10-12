@@ -151,6 +151,15 @@ export const templates = {
     },
   ),
 
+  visitorArrived: ({ institute, name, visitor, organisation, purpose, passNo, url }) => mail(
+    `${visitor} has arrived to meet you`,
+    {
+      institute, title: 'Your visitor has arrived',
+      lines: [`Hello ${name},`, `${visitor}${organisation ? ` (${organisation})` : ''} has checked in at the gate to see you. Purpose: ${purpose}. Pass ${passNo}.`],
+      cta: { label: 'Open the portal', url },
+    },
+  ),
+
   grievanceUpdate: ({ institute, name, ticketNo, subject, status, message, url }) => mail(
     `Update on your ticket ${ticketNo}`,
     {

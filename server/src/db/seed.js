@@ -302,6 +302,7 @@ async function seedTenant(spec, hashes) {
   await seedExams(spec, course.id, emp);
   await seedLearningAndQuizzes(spec, course.id, emp);
   await seedAssignments(spec, course.id, emp);
+  await seedVisitors(emp);
   if (['college', 'university'].includes(spec.type)) await seedPlacement(course.id);
   await refreshRollingData();
 }
@@ -329,6 +330,25 @@ async function seedAssignments(spec, courseId, emp) {
         i === 0 ? 17 : null, i === 0 ? 'Good working. Check the units in question 4.' : '', addDays(now, -4).toISOString(), i === 0 ? addDays(now, -2).toISOString() : null],
     );
   }
+}
+
+/** A small gate log: one visitor inside, one expected today, one who has left. */
+async function seedVisitors(emp) {
+  const today = toISO(new Date());
+  const rows = [
+    ['VIS00001', 'Rohit Deshmukh', '+91 98220 11223', 'Deshmukh Traders', 'Delivery', emp[0], 'checked_out', -190, -170],
+    ['VIS00002', 'Neha Kulkarni', '+91 98220 33445', '', 'Parent visit', emp[1], 'checked_in', -35, null],
+    ['VIS00003', 'Anil Mehta', '+91 98220 55667', 'Bluepeak Analytics', 'Meeting', emp[0], 'expected', null, null],
+  ];
+  for (const [pass, name, phone, org, purpose, host, status, inMin, outMin] of rows) {
+    await q(
+      `insert into visitor_visits (pass_no, visitor_name, phone, organisation, purpose, host_id, expected_on, status, check_in_at, check_out_at, id_shown)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, case when $9::int is null then null else now() + ($9::int || ' minutes')::interval end,
+               case when $10::int is null then null else now() + ($10::int || ' minutes')::interval end, case when $8 = 'expected' then '' else 'Aadhaar' end)`,
+      [pass, name, phone, org, purpose, host || null, today, status, inMin, outMin],
+    );
+  }
+  await q("insert into number_series (key, prefix, padding, next_value) values ('visitor', 'VIS', 5, 4) on conflict (tenant_id, key) do update set next_value = 4");
 }
 
 /** Companies, drives and a few applications so the Placement screens have something to show. */

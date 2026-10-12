@@ -38,7 +38,7 @@ export const MODULES = [
   { key: 'assignments', label: 'Assignments', core: false, implemented: true },
   { key: 'placement', label: 'Placement', core: false, implemented: true },
   { key: 'parent_portal', label: 'Parent portal', core: false, implemented: true },
-  { key: 'visitors', label: 'Visitor Management', core: false, implemented: false },
+  { key: 'visitors', label: 'Visitor Management', core: false, implemented: true },
 ];
 
 export const MODULE_KEYS = MODULES.map((m) => m.key);
