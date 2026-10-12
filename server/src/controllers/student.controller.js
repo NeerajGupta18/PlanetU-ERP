@@ -4,6 +4,7 @@ import { getInstitute, loadEvents, loadNotices } from '../db/repo.js';
 import { issueIdCard } from './students.controller.js';
 import { buildTimetable } from '../services/timetable.service.js';
 import { studentOverview } from '../services/attendance.service.js';
+import { studentResults } from '../services/exams.service.js';
 import { addDays, daysBetween, isISO, pad, toISO } from '../utils/dates.js';
 
 const MAX_RANGE_DAYS = 93;
@@ -41,7 +42,24 @@ export async function dashboard(req, res) {
   const upcomingEvents = await loadEvents({ audiences: STUDENT_AUDIENCES, from: today, to: toISO(addDays(new Date(), 45)) });
   const notices = await loadNotices();
 
+  // Money still owed, and the next thing falling due (the page shows a Pay button when this is set)
+  const { rows: openItems } = await q(
+    `select i.label, i.due_date as "dueDate",
+            (i.amount - coalesce((select sum(a.amount) from payment_allocations a where a.fee_item_id = i.id), 0))::float8 as balance
+     from student_fee_items i where i.student_id = $1 and i.status in ('unpaid', 'partial')
+     order by i.due_date nulls last, i.created_at`,
+    [req.user.studentId],
+  );
+  const outstanding = Math.round(openItems.reduce((a, i) => a + i.balance, 0) * 100) / 100;
+  const next = openItems[0] || null;
+
+  // Most recent published exam, for the "latest result" card
+  const results = await studentResults(req.user.studentId);
+  const latest = results.exams[0] || null;
+
   res.json({
+    fees: { outstanding, next: next && { label: next.label, dueDate: next.dueDate, balance: next.balance } },
+    latestResult: latest && { id: latest.id, name: latest.name, semester: latest.semester, gpa: latest.gpa, pct: latest.pct, result: latest.result, cgpa: results.cgpa },
     student: {
       name: student.name, rollNo: student.rollNo, course: student.course, semester: student.semester, section: student.section,
     },

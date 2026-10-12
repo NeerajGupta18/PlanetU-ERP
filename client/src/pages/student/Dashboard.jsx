@@ -1,5 +1,7 @@
-import { BookOpen, CalendarDays, Clock, LayoutDashboard, MapPin, Megaphone, Percent, Video } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { AlertTriangle, Award, BookOpen, CalendarDays, Clock, LayoutDashboard, MapPin, Megaphone, Percent, Video, Wallet } from 'lucide-react';
 import { useFetch } from '../../hooks/useFetch.js';
+import { useTenantConfig } from '../../hooks/useTenantConfig.js';
 import { Badge, Card, PageBanner, StatCard } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import { EVENT_TYPES } from '../../utils/eventTypes.js';
@@ -22,9 +24,15 @@ export default function Dashboard() {
   );
 }
 
+const inr = (n) => `₹${Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
 function DashboardView({ d }) {
+  const { hasModule } = useTenantConfig();
   const now = nowHHMM();
   const first = d.student.name.split(' ')[0];
+  const low = d.attendance.filter((a) => a.pct < d.attendanceThreshold);
+  const showFees = hasModule('fees') && d.fees;
+  const showResult = hasModule('exams') && d.latestResult;
 
   return (
     <>
@@ -40,6 +48,39 @@ function DashboardView({ d }) {
         <StatCard value={d.stats.upcomingEvents} label="Events in the next 7 days" icon={CalendarDays} tone="amber" />
         <StatCard value={d.stats.notices} label="Notices" icon={Megaphone} tone="rose" />
       </div>
+
+      {low.length > 0 && (
+        <div className="alert alert--warn" role="alert">
+          <AlertTriangle size={18} />
+          <span>
+            <strong>Low attendance:</strong> {low.map((a) => `${a.subject} (${a.pct}%)`).join(', ')} {low.length === 1 ? 'is' : 'are'} below the {d.attendanceThreshold}% minimum.{' '}
+            {hasModule('attendance') && <Link to="/student/attendance">See details</Link>}
+          </span>
+        </div>
+      )}
+
+      {(showFees || showResult) && (
+        <div className="grid-2">
+          {showFees && (
+            <Card title="Fees" icon={Wallet} action={d.fees.outstanding > 0 && <Link to="/student/fees" className="btn btn--primary btn--sm">Pay now</Link>}>
+              {d.fees.outstanding > 0 ? (
+                <>
+                  <div className="bigfigure bigfigure--bad">{inr(d.fees.outstanding)}</div>
+                  <p className="muted">outstanding{d.fees.next?.dueDate ? ` - next due ${fmtDate(d.fees.next.dueDate)} (${d.fees.next.label})` : ''}</p>
+                </>
+              ) : (
+                <EmptyState title="No fees due" hint="You are all paid up." />
+              )}
+            </Card>
+          )}
+          {showResult && (
+            <Card title="Latest result" icon={Award} action={<Link to="/student/results" className="btn btn--outline btn--sm">All results</Link>}>
+              <div className="bigfigure">{d.latestResult.gpa === null ? '-' : `GPA ${d.latestResult.gpa.toFixed(2)}`}</div>
+              <p className="muted">{d.latestResult.name}, semester {d.latestResult.semester}{d.latestResult.cgpa !== null ? ` - CGPA ${d.latestResult.cgpa.toFixed(2)}` : ''}</p>
+            </Card>
+          )}
+        </div>
+      )}
 
       <div className="grid-2">
         <Card title="Today's schedule" icon={Clock}>

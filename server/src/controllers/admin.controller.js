@@ -40,10 +40,43 @@ export async function dashboard(req, res) {
 
   const upcomingEvents = (await loadEvents({ from: today, to: toISO(addDays(new Date(), 30)) })).slice(0, 5);
   const weekAhead = await buildAdminTimetable({ start: today, end: toISO(addDays(new Date(), 6)) });
+  const todayAhead = await buildAdminTimetable({ start: today, end: today });
+
+  // "Today's work" figures for the dashboard cards. Each is a cheap aggregate, and the page
+  // only shows the ones whose module the institute has switched on.
+  const monthStart = `${today.slice(0, 8)}01`;
+  const { rows: [w] } = await q(`
+    select (select count(*) from applications where status = 'submitted')::int as "toReview",
+           (select count(*) from applications where status = 'accepted')::int as "toEnrol",
+           coalesce((select sum(amount) from payments where paid_at >= $1::date), 0)::float8 as "feesThisMonth",
+           coalesce((select sum(i.amount - coalesce((select sum(a.amount) from payment_allocations a where a.fee_item_id = i.id), 0))
+                     from student_fee_items i where i.status in ('unpaid', 'partial')), 0)::float8 as "feesOutstanding",
+           (select count(*) from attendance_sessions where on_date = $2::date and status = 'submitted')::int as "sessionsMarked",
+           (select count(*) from attendance_records r join attendance_sessions s on s.id = r.session_id
+              where s.on_date = $2::date and s.status = 'submitted')::int as "recordsToday",
+           (select count(*) from attendance_records r join attendance_sessions s on s.id = r.session_id
+              where s.on_date = $2::date and s.status = 'submitted' and r.status in ('present', 'late'))::int as "presentToday"`,
+  [monthStart, today]);
+  const { rows: recentApplications } = await q(`
+    select a.id, a.application_no as "applicationNo", a.name, a.status, co.name as course
+    from applications a left join courses co on co.id = a.course_id
+    where a.status <> 'draft' order by a.submitted_at desc nulls last, a.created_at desc limit 5`);
+  const lecturesToday = todayAhead.summary.lectures;
 
   res.json({
     institute: await getInstitute(),
     stats: { ...c, lecturesNext7Days: weekAhead.summary.lectures },
+    today: {
+      applicationsToReview: w.toReview,
+      applicationsToEnrol: w.toEnrol,
+      feesThisMonth: w.feesThisMonth,
+      feesOutstanding: w.feesOutstanding,
+      lecturesToday,
+      lecturesMarked: w.sessionsMarked,
+      lecturesNotMarked: Math.max(0, lecturesToday - w.sessionsMarked),
+      attendancePercent: w.recordsToday ? Math.round((w.presentToday / w.recordsToday) * 1000) / 10 : null,
+    },
+    recentApplications,
     upcomingEvents,
   });
 }

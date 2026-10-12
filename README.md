@@ -52,6 +52,7 @@ subscription billing, and the learning platform with quizzes. See *What's built*
 | 5 | 🛠️ Admin · 👔 Employee / Faculty · 🎓 Student | **Attendance** *(faculty mark per lecture; admin corrections; student percentages)* · **Exams & Results** *(papers, marks entry, grading scale, GPA, report-card PDFs)* · **Reports & Exports** *(Excel / PDF / CSV)* |
 | 6 | 👑 Super Admin · 🛠️ Admin | **Vendor billing** — plans and trials, recurring GST tax invoices, Razorpay payment, reminders, access pause for non-payment, revenue and receivables |
 | 7 | 🎓 Student · 👔 Faculty · 🛠️ Admin | **Learning platform** *(NPTEL / SWAYAM / in-house courses assigned for compulsory credits)* · **Quizzes** *(timed, auto-graded, scaled into internal marks)* · on-screen document viewer for admission review |
+| 8 | 🎨 Everyone | **Easier to use** — grouped, searchable sidebar · Ctrl + K quick search · breadcrumbs · in-app confirm / reason dialogs and toasts (no more browser popups) · tab kept in the URL · new admin, student and faculty dashboards |
 | — | 🚀 Deployment | Render *(Blueprint)* and Oracle Cloud guides · backups and restore · feature-by-feature Git history |
 
 **Student vs. Admin data boundary:** a student only ever sees the institute's public profile
