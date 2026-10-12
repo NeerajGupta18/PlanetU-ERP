@@ -301,7 +301,63 @@ async function seedTenant(spec, hashes) {
 
   await seedExams(spec, course.id, emp);
   await seedLearningAndQuizzes(spec, course.id, emp);
+  await seedAssignments(spec, course.id, emp);
+  if (['college', 'university'].includes(spec.type)) await seedPlacement(course.id);
   await refreshRollingData();
+}
+
+/** Two assignments for the first subject: one with a graded answer, one still open. */
+async function seedAssignments(spec, courseId, emp) {
+  const subject = spec.subjects[0];
+  const { rows: studs } = await q('select id from students where tenant_id = app_tenant() order by student_code limit 3');
+  const now = new Date();
+  const { rows: [a1] } = await q(
+    `insert into assignments (course_id, subject, title, description, due_at, max_marks, status, created_by_employee, published_at)
+     values ($1, $2, 'Unit 1 problem set', 'Solve all the problems at the end of Unit 1 and write your working clearly.', $3, 20, 'published', $4, $5) returning id`,
+    [courseId, subject, addDays(now, -3).toISOString(), emp[0] || null, addDays(now, -10).toISOString()],
+  );
+  await q(
+    `insert into assignments (course_id, subject, title, description, due_at, max_marks, status, created_by_employee, published_at)
+     values ($1, $2, 'Short note on the case study', 'Write a one-page note on the case study discussed in class.', $3, 10, 'published', $4, now())`,
+    [courseId, subject, addDays(now, 6).toISOString(), emp[0] || null],
+  );
+  for (const [i, st] of studs.slice(0, 2).entries()) {
+    await q(
+      `insert into assignment_submissions (assignment_id, student_id, answer, status, marks, feedback, submitted_at, graded_at)
+       values ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [a1.id, st.id, 'Worked solutions are attached in my notebook; question 5 uses the second method.', i === 0 ? 'graded' : 'submitted',
+        i === 0 ? 17 : null, i === 0 ? 'Good working. Check the units in question 4.' : '', addDays(now, -4).toISOString(), i === 0 ? addDays(now, -2).toISOString() : null],
+    );
+  }
+}
+
+/** Companies, drives and a few applications so the Placement screens have something to show. */
+async function seedPlacement(courseId) {
+  const mk = async (name, industry, website) => (await q(
+    'insert into placement_companies (name, industry, website, contact_name, contact_email) values ($1, $2, $3, $4, $5) returning id',
+    [name, industry, website, 'Talent Acquisition', `careers@${website.replace(/^https?:\/\//, '')}`],
+  )).rows[0].id;
+  const c1 = await mk('Northwind Software', 'Information Technology', 'https://northwind.example');
+  const c2 = await mk('Bluepeak Analytics', 'Data and Analytics', 'https://bluepeak.example');
+  const c3 = await mk('Harbor Finance', 'Banking and Finance', 'https://harborfinance.example');
+  const now = new Date();
+  const drive = async (company, title, ctc, loc, driveIn, applyIn, status, extra = {}) => (await q(
+    `insert into placement_drives (company_id, title, description, ctc_lpa, location, drive_date, apply_by, status, course_ids, min_semester, min_attendance)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) returning id`,
+    [company, title, 'Campus drive. Bring a printed resume and your college ID. Details of the rounds will be shared with shortlisted students.', ctc, loc,
+      toISO(addDays(now, driveIn)), toISO(addDays(now, applyIn)), status, extra.courses || [], extra.sem || null, extra.att ?? null],
+  )).rows[0].id;
+  const d1 = await drive(c1, 'Graduate Engineer Trainee', 6.5, 'Pune', 12, 8, 'open', { courses: [courseId], att: 60 });
+  await drive(c2, 'Data Analyst', 8, 'Bengaluru', 20, 15, 'open', { courses: [courseId], sem: 6 });
+  const d3 = await drive(c3, 'Associate Analyst', 5.2, 'Mumbai', -20, -25, 'closed');
+  await drive(c1, 'Software Developer (Next Batch)', 9, 'Pune', 40, 34, 'draft');
+  const { rows: studs } = await q('select id from students where tenant_id = app_tenant() order by student_code limit 3');
+  const apps = [[d1, 0, 'shortlisted', null], [d1, 1, 'applied', null], [d3, 0, 'selected', 5.2], [d3, 2, 'rejected', null]];
+  for (const [d, k, status, offer] of apps) {
+    if (!studs[k]) continue;
+    await q('insert into placement_applications (drive_id, student_id, status, offer_lpa, decided_at) values ($1, $2, $3, $4, $5)',
+      [d, studs[k].id, status, offer, status === 'applied' ? null : new Date().toISOString()]);
+  }
 }
 
 /**

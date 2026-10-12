@@ -127,6 +127,30 @@ export const templates = {
     },
   ),
 
+  assignmentGraded: ({ institute, name, title, returned, marks, maxMarks, feedback, url }) => mail(
+    returned ? `"${title}" was sent back` : `"${title}" was graded`,
+    {
+      institute, title: returned ? 'Your work was sent back' : 'Your work was graded',
+      lines: [`Hello ${name},`,
+        returned ? `Your teacher asked you to change your work for "${title}" and send it again.` : `Your work for "${title}" was graded: ${marks} out of ${maxMarks}.`,
+        ...(feedback ? [`Feedback: ${feedback}`] : [])],
+      cta: { label: 'Open Assignments', url },
+    },
+  ),
+
+  placementUpdate: ({ institute, name, company, title, status, offer, note, url }) => mail(
+    `Update on your application to ${company}`,
+    {
+      institute, title: status === 'selected' ? `You were selected by ${company}` : 'There is an update on your application',
+      lines: [`Hello ${name},`,
+        status === 'selected' ? `Congratulations! You were selected for "${title}" at ${company}${offer ? ` (offer: ${offer} LPA)` : ''}.`
+          : status === 'shortlisted' ? `You have been shortlisted for "${title}" at ${company}. The placement office will share the next steps.`
+            : `Your application for "${title}" at ${company} was not taken forward this time.`,
+        ...(note ? [`Note from the placement office: ${note}`] : [])],
+      cta: { label: 'Open Placement', url },
+    },
+  ),
+
   grievanceUpdate: ({ institute, name, ticketNo, subject, status, message, url }) => mail(
     `Update on your ticket ${ticketNo}`,
     {

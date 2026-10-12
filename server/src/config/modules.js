@@ -35,6 +35,8 @@ export const MODULES = [
   { key: 'notices', label: 'Notice Board', core: false, implemented: true },
   { key: 'certificates', label: 'Certificates', core: false, implemented: true },
   { key: 'grievance', label: 'Grievance & Feedback', core: false, implemented: true },
+  { key: 'assignments', label: 'Assignments', core: false, implemented: true },
+  { key: 'placement', label: 'Placement', core: false, implemented: true },
   { key: 'parent_portal', label: 'Parent portal', core: false, implemented: true },
   { key: 'visitors', label: 'Visitor Management', core: false, implemented: false },
 ];
@@ -43,7 +45,7 @@ export const MODULE_KEYS = MODULES.map((m) => m.key);
 export const CORE_MODULES = MODULES.filter((m) => m.core).map((m) => m.key);
 
 const base = ['calendar', 'timetable', 'admissions', 'students', 'id_cards', 'fees', 'attendance', 'exams', 'learning', 'quizzes',
-  'library', 'assets', 'leave', 'payroll', 'notices', 'certificates', 'grievance', 'visitors'];
+  'library', 'assets', 'leave', 'payroll', 'notices', 'certificates', 'grievance', 'visitors', 'assignments'];
 
 export const PRESETS = {
   school: {
@@ -57,7 +59,7 @@ export const PRESETS = {
   },
   college: {
     label: 'College',
-    modules: [...CORE_MODULES, ...base, 'hostel', 'transport', 'parent_portal'],
+    modules: [...CORE_MODULES, ...base, 'hostel', 'transport', 'placement', 'parent_portal'],
     terminology: {
       institute: 'College', student: 'Student', students: 'Students', course: 'Course', courses: 'Courses',
       semester: 'Semester', department: 'Department', departments: 'Departments', employee: 'Faculty', employees: 'Faculty',
@@ -66,7 +68,7 @@ export const PRESETS = {
   },
   university: {
     label: 'University',
-    modules: [...CORE_MODULES, ...base, 'hostel', 'transport', 'parent_portal'],
+    modules: [...CORE_MODULES, ...base, 'hostel', 'transport', 'placement', 'parent_portal'],
     terminology: {
       institute: 'University', student: 'Student', students: 'Students', course: 'Programme', courses: 'Programmes',
       semester: 'Semester', department: 'School / Department', departments: 'Schools / Departments',
