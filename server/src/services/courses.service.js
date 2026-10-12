@@ -25,6 +25,7 @@ export const COURSE_DEPENDANTS = [
   ['quizzes', 'course_id', 'quiz', 'quizzes'],
   ['learning_assignments', 'target_course_id', 'learning assignment', 'learning assignments'],
   ['notices', 'course_id', 'notice', 'notices'],
+  ['feedback_forms', 'course_id', 'feedback form', 'feedback forms'],
 ];
 
 const SELECT = `

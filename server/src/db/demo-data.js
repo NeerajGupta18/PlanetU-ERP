@@ -170,4 +170,4 @@ const university = {
 
 export const DEMO_TENANTS = [college, school, university];
 
-export const DEMO_PASSWORDS = { admin: 'Admin@123', student: 'Student@123', employee: 'Employee@123', super_admin: 'SuperAdmin@123' };
+export const DEMO_PASSWORDS = { admin: 'Admin@123', student: 'Student@123', parent: 'Parent@123', employee: 'Employee@123', super_admin: 'SuperAdmin@123' };

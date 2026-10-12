@@ -107,6 +107,28 @@ export const templates = {
     cta: { label: 'Open the notice board', url },
   }),
 
+  leaveUpdate: ({ institute, name, typeName, fromDate, toDate, days, decision, remark, url }) => mail(
+    `Your leave request was ${decision}`,
+    {
+      institute, title: decision === 'approved' ? 'Your leave is approved' : 'Your leave was not approved',
+      lines: [`Hello ${name},`,
+        `Your ${typeName} request for ${fromDate === toDate ? fromDate : `${fromDate} to ${toDate}`} (${days} day${days === 1 ? '' : 's'}) was ${decision}.`,
+        ...(remark ? [`Message from the office: ${remark}`] : [])],
+      cta: { label: 'Open Leave', url },
+    },
+  ),
+
+  grievanceUpdate: ({ institute, name, ticketNo, subject, status, message, url }) => mail(
+    `Update on your ticket ${ticketNo}`,
+    {
+      institute, title: 'There is an update on your ticket',
+      lines: [`Hello ${name},`,
+        `Your ticket ${ticketNo} ("${subject}") is now: ${String(status).replace('_', ' ')}.`,
+        ...(message ? [`Message from the office: ${message}`] : [])],
+      cta: { label: 'Open the ticket', url },
+    },
+  ),
+
   certificateUpdate: ({ institute, name, certLabel, decision, certificateNo, remark, url }) => mail(
     decision === 'issued' ? `Your ${certLabel} is ready` : `Update on your ${certLabel} request`,
     {

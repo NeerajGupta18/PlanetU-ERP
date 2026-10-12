@@ -9,6 +9,7 @@
 import { gradeAttempt } from '../services/quizGrading.js';
 import bcrypt from 'bcryptjs';
 import { q, switchTenant, withTx } from './pool.js';
+import { nextNumber } from './series.js';
 import { provisionTenant } from '../services/tenant.service.js';
 import { DEMO_PASSWORDS, DEMO_TENANTS } from './demo-data.js';
 import { addDays, parseISO, toISO } from '../utils/dates.js';
@@ -172,6 +173,33 @@ async function seedTenant(spec, hashes) {
   }
   await q("insert into number_series (key, prefix, padding, next_value) values ('employee', 'EMP', 3, $1)", [spec.employees.length + 1]);
 
+  // Leave: the standard types, one request waiting and one already approved, so the screens are not empty
+  for (const [name, days] of [['Casual leave', 12], ['Sick leave', 10], ['Earned leave', 15], ['Leave without pay', null]]) {
+    await q('insert into leave_types (name, days_per_year) values ($1, $2)', [name, days]);
+  }
+  if (emp.length >= 3) {
+    const { rows: [casual] } = await q("select id from leave_types where name = 'Casual leave'");
+    const { rows: [sick] } = await q("select id from leave_types where name = 'Sick leave'");
+    const day = (n) => toISO(addDays(new Date(), n));
+    await q(
+      `insert into leave_requests (employee_id, leave_type_id, from_date, to_date, days, reason, status)
+       values ($1, $2, $3, $4, 2, 'Family function out of town', 'pending')`, [emp[1], casual.id, day(3), day(4)],
+    );
+    await q(
+      `insert into leave_requests (employee_id, leave_type_id, from_date, to_date, days, reason, status, decided_at)
+       values ($1, $2, $3, $4, 1, 'Medical check-up', 'approved', now())`, [emp[2], sick.id, day(7), day(7)],
+    );
+  }
+
+  // Feedback: one open form for students, so the screens are not empty
+  const { rows: [form] } = await q(
+    `insert into feedback_forms (title, description, audience, status) values ('Teaching and campus feedback', 'Tell us how this term is going. Your answers are anonymous.', 'students', 'open') returning id`,
+  );
+  for (const [i, [text, kind]] of [['The classes are well organised and easy to follow', 'rating'], ['Teachers explain clearly and answer questions', 'rating'],
+    ['The library, labs and classrooms meet my needs', 'rating'], ['What one thing should we improve?', 'text']].entries()) {
+    await q('insert into feedback_questions (form_id, position, text, kind, required) values ($1, $2, $3, $4, $5)', [form.id, i + 1, text, kind, kind === 'rating']);
+  }
+
   const c = spec.course;
   const { rows: [course] } = await q(
     'insert into courses (code, name, full_name, department_id, years) values ($1, $2, $3, $4, $5) returning id',
@@ -192,6 +220,26 @@ async function seedTenant(spec, hashes) {
       [s.code, s.email, s.name, hashes.student, st.id],
     );
   }
+
+  // One parent account linked to the first two students, so the parent portal shows a switch between children
+  const { rows: kids } = await q('select id, name, guardian from students where tenant_id = app_tenant() order by student_code limit 2');
+  if (kids.length) {
+    const { rows: [pu] } = await q(
+      `insert into users (role, login_id, email, name, password_hash) values ('parent', 'PAR001', $1, $2, $3) returning id`,
+      [`parent@${spec.code.replace('demo-', '')}.example`, kids[0].guardian?.name || 'Parent', hashes.parent],
+    );
+    for (const k of kids) await q("insert into parent_links (user_id, student_id, relation) values ($1, $2, 'Parent')", [pu.id, k.id]);
+  }
+
+  // One open grievance with an answer from the office
+  const { rows: [firstStudent] } = await q("select id, student_id from users where role = 'student' and tenant_id = app_tenant() order by login_id limit 1");
+  const ticket = await nextNumber('grievance', { prefix: `GRV${new Date().getFullYear()}-`, padding: 5 });
+  const { rows: [grv] } = await q(
+    `insert into grievances (ticket_no, raised_by, raiser_role, student_id, category, subject, details, status)
+     values ($1, $2, 'student', $3, 'Facilities', 'Projector in Room 204 is not working', 'The projector has been showing a blue screen for a week, so lectures there are hard to follow.', 'in_progress') returning id`,
+    [ticket, firstStudent.id, firstStudent.student_id],
+  );
+  await q("insert into grievance_messages (grievance_id, from_office, body) values ($1, true, 'Thank you for reporting this. The maintenance team has been asked to repair it this week.')", [grv.id]);
 
   // Weekly repeating timetable. weekday: 1 = Mon ... 5 = Fri. Subject k is taught by employee k.
   const periods = [['09:00', '10:00'], ['10:00', '11:00'], ['11:15', '12:15'], ['12:15', '13:15']];
@@ -364,6 +412,7 @@ export async function seedDemoTenants({ log = console.log } = {}) {
   const hashes = {
     employee: bcrypt.hashSync(DEMO_PASSWORDS.employee, 10),
     student: bcrypt.hashSync(DEMO_PASSWORDS.student, 10),
+    parent: bcrypt.hashSync(DEMO_PASSWORDS.parent, 10),
     super_admin: bcrypt.hashSync(DEMO_PASSWORDS.super_admin, 10),
   };
   await withTx({ platform: true }, async () => {
@@ -388,7 +437,7 @@ export async function seedDemoTenants({ log = console.log } = {}) {
  *  - a real institute that happens to use a sample code is left completely alone
  */
 export async function ensureDemoInstitutes({ log = console.log, reset = false, specs = DEMO_TENANTS } = {}) {
-  const hashes = { employee: bcrypt.hashSync(DEMO_PASSWORDS.employee, 10), student: bcrypt.hashSync(DEMO_PASSWORDS.student, 10) };
+  const hashes = { employee: bcrypt.hashSync(DEMO_PASSWORDS.employee, 10), student: bcrypt.hashSync(DEMO_PASSWORDS.student, 10), parent: bcrypt.hashSync(DEMO_PASSWORDS.parent, 10) };
   let created = 0;
   await withTx({ platform: true }, async () => {
     const { rows } = await q("select code, coalesce(settings->>'demo', 'false') = 'true' as demo from tenants");

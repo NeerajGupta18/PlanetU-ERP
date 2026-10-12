@@ -28,12 +28,14 @@ export const MODULES = [
   { key: 'quizzes', label: 'Quizzes & Internal Marks', core: false, implemented: true },
   { key: 'library', label: 'Library', core: false, implemented: true },
   { key: 'assets', label: 'Assets', core: false, implemented: true },
-  { key: 'leave', label: 'Leave & Shifts', core: false, implemented: false },
+  { key: 'leave', label: 'Leave & Shifts', core: false, implemented: true },
   { key: 'payroll', label: 'Payroll', core: false, implemented: false },
   { key: 'hostel', label: 'Hostel', core: false, implemented: false },
   { key: 'transport', label: 'Transport', core: false, implemented: false },
   { key: 'notices', label: 'Notice Board', core: false, implemented: true },
   { key: 'certificates', label: 'Certificates', core: false, implemented: true },
+  { key: 'grievance', label: 'Grievance & Feedback', core: false, implemented: true },
+  { key: 'parent_portal', label: 'Parent portal', core: false, implemented: true },
   { key: 'visitors', label: 'Visitor Management', core: false, implemented: false },
 ];
 
@@ -41,12 +43,12 @@ export const MODULE_KEYS = MODULES.map((m) => m.key);
 export const CORE_MODULES = MODULES.filter((m) => m.core).map((m) => m.key);
 
 const base = ['calendar', 'timetable', 'admissions', 'students', 'id_cards', 'fees', 'attendance', 'exams', 'learning', 'quizzes',
-  'library', 'assets', 'leave', 'payroll', 'notices', 'certificates', 'visitors'];
+  'library', 'assets', 'leave', 'payroll', 'notices', 'certificates', 'grievance', 'visitors'];
 
 export const PRESETS = {
   school: {
     label: 'School',
-    modules: [...CORE_MODULES, ...base, 'transport'],
+    modules: [...CORE_MODULES, ...base, 'transport', 'parent_portal'],
     terminology: {
       institute: 'School', student: 'Student', students: 'Students', course: 'Class', courses: 'Classes',
       semester: 'Term', department: 'Department', departments: 'Departments', employee: 'Teacher', employees: 'Teachers',
@@ -55,7 +57,7 @@ export const PRESETS = {
   },
   college: {
     label: 'College',
-    modules: [...CORE_MODULES, ...base, 'hostel', 'transport'],
+    modules: [...CORE_MODULES, ...base, 'hostel', 'transport', 'parent_portal'],
     terminology: {
       institute: 'College', student: 'Student', students: 'Students', course: 'Course', courses: 'Courses',
       semester: 'Semester', department: 'Department', departments: 'Departments', employee: 'Faculty', employees: 'Faculty',
@@ -64,7 +66,7 @@ export const PRESETS = {
   },
   university: {
     label: 'University',
-    modules: [...CORE_MODULES, ...base, 'hostel', 'transport'],
+    modules: [...CORE_MODULES, ...base, 'hostel', 'transport', 'parent_portal'],
     terminology: {
       institute: 'University', student: 'Student', students: 'Students', course: 'Programme', courses: 'Programmes',
       semester: 'Semester', department: 'School / Department', departments: 'Schools / Departments',
@@ -74,7 +76,7 @@ export const PRESETS = {
   company: {
     label: 'Company / Organisation',
     modules: [...CORE_MODULES, 'calendar', 'timetable', 'admissions', 'students', 'id_cards', 'attendance',
-      'assets', 'leave', 'payroll', 'notices', 'visitors', 'transport'],
+      'assets', 'leave', 'payroll', 'notices', 'grievance', 'visitors', 'transport'],
     terminology: {
       institute: 'Organisation', student: 'Trainee', students: 'Trainees', course: 'Programme', courses: 'Programmes',
       semester: 'Phase', department: 'Department', departments: 'Departments', employee: 'Employee', employees: 'Employees',
