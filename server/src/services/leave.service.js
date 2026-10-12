@@ -89,8 +89,8 @@ export async function addStandardTypes(admin) {
 
 /* ---------------- counting days and balances ---------------- */
 
-/** Leave days between two dates: Sundays and calendar holidays are not counted. A half day is 0.5. */
-export async function countDays(from, to, half = false) {
+/** Days between two dates (both included) that are not Sundays or calendar holidays. May be 0. */
+export async function workingDays(from, to) {
   const { rows: holidays } = await q(
     "select start_date::text as s, end_date::text as e from events where type = 'holiday' and start_date <= $2 and end_date >= $1", [from, to],
   );
@@ -100,6 +100,12 @@ export async function countDays(from, to, half = false) {
     const iso = toISO(d);
     if (d.getDay() !== 0 && !off(iso)) n += 1;
   }
+  return n;
+}
+
+/** Leave days between two dates: Sundays and calendar holidays are not counted. A half day is 0.5. */
+export async function countDays(from, to, half = false) {
+  const n = await workingDays(from, to);
   if (n === 0) throw new HttpError(400, 'These dates are all Sundays or holidays, so no leave is needed.');
   return half ? 0.5 : n;
 }
