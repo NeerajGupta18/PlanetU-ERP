@@ -7,6 +7,7 @@ import * as rawQuizzes from '../controllers/quiz.controller.js';
 import * as rawNotices from '../controllers/notices.controller.js';
 import * as rawGrievance from '../controllers/grievance.controller.js';
 import * as rawLeave from '../controllers/leave.controller.js';
+import * as rawPayroll from '../controllers/payroll.controller.js';
 import { uuidParam, wrapAll } from './wrap.js';
 
 const attendance = wrapAll(rawAttendance);
@@ -16,6 +17,7 @@ const quizzes = wrapAll(rawQuizzes);
 const notices = wrapAll(rawNotices);
 const grievance = wrapAll(rawGrievance);
 const leave = wrapAll(rawLeave);
+const payroll = wrapAll(rawPayroll);
 const router = Router();
 router.use(requireAuth, requireRole('employee'));
 router.param('paperId', uuidParam);
@@ -36,6 +38,8 @@ router.post('/feedback/:id', requireModule('grievance'), grievance.submitForm);
 router.get('/leave', requireModule('leave'), leave.mine);
 router.post('/leave', requireModule('leave'), leave.apply);
 router.post('/leave/:id/cancel', requireModule('leave'), leave.cancel);
+router.get('/payslips', requireModule('payroll'), payroll.mine);
+router.get('/payslips/:id/pdf', requireModule('payroll'), payroll.myPdf);
 
 // Faculty marking: "today's lectures" come from the Timetable, so both modules must be on
 router.use('/attendance', requireModule('attendance'), requireModule('timetable'));

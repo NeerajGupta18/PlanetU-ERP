@@ -12,6 +12,8 @@ import * as rawLearning from '../controllers/learning.controller.js';
 import * as rawQuizzes from '../controllers/quiz.controller.js';
 import * as rawNotices from '../controllers/notices.controller.js';
 import * as rawGrievance from '../controllers/grievance.controller.js';
+import * as rawHostel from '../controllers/hostel.controller.js';
+import * as rawTransport from '../controllers/transport.controller.js';
 import * as rawCertificates from '../controllers/certificates.controller.js';
 import { uuidParam, wrapAll } from './wrap.js';
 
@@ -26,6 +28,8 @@ const quizzes = wrapAll(rawQuizzes);
 const notices = wrapAll(rawNotices);
 const grievance = wrapAll(rawGrievance);
 const certificates = wrapAll(rawCertificates);
+const hostel = wrapAll(rawHostel);
+const transport = wrapAll(rawTransport);
 const router = Router();
 // Each order is a call to Razorpay, so keep a stuck/abusive client from hammering it
 const orderLimiter = rateLimit({ windowMs: 60_000, limit: () => Number(process.env.PAYMENT_ORDERS_PER_MINUTE) || 10, standardHeaders: true, legacyHeaders: false, message: { message: 'Too many payment attempts. Please wait a minute and try again.' } });
@@ -33,6 +37,8 @@ router.use(requireAuth, requireRole('student', 'parent'), asChild);
 router.param('id', uuidParam);
 
 router.get('/dashboard', student.dashboard);
+router.get('/hostel', requireModule('hostel'), hostel.mine);
+router.get('/transport', requireModule('transport'), transport.mine);
 router.get('/profile', student.profile);
 router.get('/institute', student.institute);
 router.get('/calendar', requireModule('calendar'), student.calendar);
