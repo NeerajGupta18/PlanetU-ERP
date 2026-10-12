@@ -24,6 +24,7 @@ export const COURSE_DEPENDANTS = [
   ['exams', 'course_id', 'exam', 'exams'],
   ['quizzes', 'course_id', 'quiz', 'quizzes'],
   ['learning_assignments', 'target_course_id', 'learning assignment', 'learning assignments'],
+  ['notices', 'course_id', 'notice', 'notices'],
 ];
 
 const SELECT = `

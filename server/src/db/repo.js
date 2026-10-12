@@ -91,7 +91,10 @@ export async function loadHolidayEvents() {
 
 export async function loadNotices(limit) {
   const { rows } = await q(
-    `select id, title, body, category, notice_date as date from notices order by notice_date desc, title
+    `select id, title, body, category, notice_date as date from notices
+     where status = 'published' and notice_date <= current_date and (expires_on is null or expires_on >= current_date)
+       and audience in ('all', 'students') and course_id is null
+     order by pinned desc, notice_date desc, title
      ${limit ? `limit ${Number(limit)}` : ''}`,
   );
   return rows;

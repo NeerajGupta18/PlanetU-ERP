@@ -39,10 +39,11 @@ const ROLLING_DUTIES = [
 ];
 
 const ROLLING_NOTICES = [
-  { key: 'n1', title: 'Mid-term examination schedule released', body: 'The date sheet is available on the Calendar page.', category: 'Exam', rel: -1 },
+  { key: 'n1', title: 'Mid-term examination schedule released', body: 'The date sheet is available on the Calendar page.', category: 'Exam', rel: -1, priority: 'important', pinned: true },
   { key: 'n2', title: 'Library timings extended', body: 'The library stays open until 7:00 PM on all working days during exam preparation.', category: 'General', rel: -3 },
   { key: 'n3', title: 'Tech fest registrations open', body: 'Register your team at the department office.', category: 'Event', rel: -4 },
-  { key: 'n4', title: 'Fee reminder', body: 'Please clear pending dues before the last date shown on the Calendar.', category: 'Fees', rel: -6 },
+  { key: 'n4', title: 'Fee reminder', body: 'Please clear pending dues before the last date shown on the Calendar.', category: 'Fees', rel: -6, audience: 'students' },
+  { key: 'n5', title: 'Staff meeting on Friday', body: 'All faculty are requested to attend the monthly staff meeting in the conference room.', category: 'General', rel: -2, audience: 'employees' },
 ];
 
 /**
@@ -88,9 +89,9 @@ export async function refreshRollingData() {
   }
   for (const n of ROLLING_NOTICES) {
     await q(
-      `insert into notices (title, body, category, notice_date, seed_key) values ($1, $2, $3, $4, $5)
+      `insert into notices (title, body, category, notice_date, audience, priority, pinned, seed_key) values ($1, $2, $3, $4, $5, $6, $7, $8)
        on conflict (tenant_id, seed_key) where seed_key is not null do update set notice_date = excluded.notice_date`,
-      [n.title, n.body, n.category, at(n.rel), `roll:${n.key}`],
+      [n.title, n.body, n.category, at(n.rel), n.audience ?? 'all', n.priority ?? 'normal', n.pinned ?? false, `roll:${n.key}`],
     );
   }
 

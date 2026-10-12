@@ -32,8 +32,8 @@ export const MODULES = [
   { key: 'payroll', label: 'Payroll', core: false, implemented: false },
   { key: 'hostel', label: 'Hostel', core: false, implemented: false },
   { key: 'transport', label: 'Transport', core: false, implemented: false },
-  { key: 'notices', label: 'Notice Board', core: false, implemented: false },
-  { key: 'certificates', label: 'Certificates', core: false, implemented: false },
+  { key: 'notices', label: 'Notice Board', core: false, implemented: true },
+  { key: 'certificates', label: 'Certificates', core: false, implemented: true },
   { key: 'visitors', label: 'Visitor Management', core: false, implemented: false },
 ];
 

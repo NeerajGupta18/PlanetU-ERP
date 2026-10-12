@@ -101,6 +101,24 @@ export const templates = {
     cta: { label: 'Check your status', url: statusUrl },
   }),
 
+  noticePosted: ({ institute, title, category, excerpt, important, url }) => mail(`${important ? 'Important notice: ' : 'New notice: '}${title}`, {
+    institute, title: important ? 'Important notice' : 'New notice',
+    lines: [title, ...(category ? [`Category: ${category}`] : []), ...(excerpt ? [excerpt] : []), 'Sign in to read the full notice on the notice board.'],
+    cta: { label: 'Open the notice board', url },
+  }),
+
+  certificateUpdate: ({ institute, name, certLabel, decision, certificateNo, remark, url }) => mail(
+    decision === 'issued' ? `Your ${certLabel} is ready` : `Update on your ${certLabel} request`,
+    {
+      institute, title: decision === 'issued' ? 'Your certificate is ready' : 'Your request was not approved',
+      lines: [`Hello ${name},`,
+        decision === 'issued' ? `Your ${certLabel} (number ${certificateNo}) has been issued. You can download it from Certificates in your student portal.`
+          : `Your request for a ${certLabel} could not be approved.`,
+        ...(remark ? [`Message from the institute: ${remark}`] : [])],
+      cta: { label: 'Open Certificates', url },
+    },
+  ),
+
   accountSetup: ({ institute, name, instituteCode, loginId, link, hours }) => mail(`Your ${institute} account is ready`, {
     institute, title: 'Set up your account',
     lines: [`Hello ${name},`, `An account has been created for you at ${institute}.`, `Institute code: ${instituteCode}`, `Your login ID: ${loginId}`,
