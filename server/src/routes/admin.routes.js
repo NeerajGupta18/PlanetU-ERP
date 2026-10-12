@@ -2,6 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import { HttpError } from '../middleware/error.js';
 import { IMPORT_LIMITS } from '../services/studentImport.service.js';
+import { MAX_BYTES } from '../services/files.service.js';
 import { rebindTx, requireAuth, requireModule, requireRole } from '../middleware/auth.js';
 import * as raw from '../controllers/admin.controller.js';
 import * as rawAdmissions from '../controllers/admissions.controller.js';
@@ -17,6 +18,8 @@ import * as rawReports from '../controllers/reports.controller.js';
 import * as rawBilling from '../controllers/billing.controller.js';
 import * as rawLearning from '../controllers/learning.controller.js';
 import * as rawQuizzes from '../controllers/quiz.controller.js';
+import * as rawNotices from '../controllers/notices.controller.js';
+import * as rawCertificates from '../controllers/certificates.controller.js';
 import { uuidParam, wrapAll } from './wrap.js';
 
 const admin = wrapAll(raw);
@@ -33,6 +36,8 @@ const reports = wrapAll(rawReports);
 const billing = wrapAll(rawBilling);
 const learning = wrapAll(rawLearning);
 const quizzes = wrapAll(rawQuizzes);
+const notices = wrapAll(rawNotices);
+const certificates = wrapAll(rawCertificates);
 const router = Router();
 
 // CSV uploads for the student import: memory only, one file, hard size cap, with a message that fits
@@ -41,6 +46,13 @@ const csvUpload = (req, res, next) => csvParser(req, res, (err) => {
   if (!err) return rebindTx(req, res, next); // see rebindTx: large bodies lose the request's database context
   if (err.code === 'LIMIT_FILE_SIZE') return next(new HttpError(413, `That file is too large (${IMPORT_LIMITS.maxBytes / 1024 / 1024} MB at most).`));
   return next(new HttpError(400, 'Could not read the upload. Send one CSV file in the "file" field.'));
+});
+// Scanned documents the office uploads for a walk-in applicant: same cap and bytes check as every other upload
+const docParser = multer({ storage: multer.memoryStorage(), limits: { fileSize: MAX_BYTES, files: 1 } }).single('file');
+const docUpload = (req, res, next) => docParser(req, res, (err) => {
+  if (!err) return rebindTx(req, res, next);
+  if (err.code === 'LIMIT_FILE_SIZE') return next(new HttpError(413, 'That file is too large (5 MB at most).'));
+  return next(new HttpError(400, 'Could not read the upload. Send one file in the "file" field.'));
 });
 router.use(requireAuth, requireRole('admin'));
 router.param('id', uuidParam);
@@ -92,7 +104,15 @@ router.delete('/employees/:id', admin.removeEmployee);
 
 router.use('/admissions', requireModule('admissions'));
 router.get('/admissions', admissions.list);
+router.get('/admissions/settings', admissions.getSettings);
+router.put('/admissions/settings', admissions.updateSettings);
+router.get('/admissions/merit-list', admissions.meritList);
+router.post('/admissions/walk-in', admissions.walkIn);
+router.post('/admissions/bulk-decision', admissions.bulkDecide);
 router.get('/admissions/:id', admissions.get);
+router.post('/admissions/:id/documents', docUpload, admissions.uploadDocument);
+router.put('/admissions/:id/fee', admissions.setFee);
+router.put('/admissions/:id/merit', admissions.setMerit);
 router.put('/admissions/:id/documents/:docId', admissions.review);
 router.post('/admissions/:id/decision', admissions.decide);
 router.post('/admissions/:id/enroll', admissions.enroll);
@@ -223,6 +243,18 @@ router.get('/exams/:id/results', exams.results);
 router.get('/exams/:id/results.csv', exams.resultsCsv);
 router.get('/exams/:id/report-cards.pdf', exams.reportCards);
 router.get('/exams/:id/students/:studentId/report-card.pdf', exams.reportCard);
+
+router.use('/notices', requireModule('notices'));
+router.get('/notices', notices.list);
+router.post('/notices', notices.create);
+router.put('/notices/:id', notices.update);
+router.delete('/notices/:id', notices.remove);
+
+router.use('/certificates', requireModule('certificates'));
+router.get('/certificates', certificates.list);
+router.post('/certificates', certificates.issue);
+router.put('/certificates/:id', certificates.decide);
+router.get('/certificates/:id/pdf', certificates.pdf);
 
 router.use('/timetable', requireModule('timetable'));
 router.get('/timetable/filters', admin.timetableFilters);

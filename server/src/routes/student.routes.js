@@ -9,6 +9,8 @@ import * as rawAttendance from '../controllers/attendance.controller.js';
 import * as rawExams from '../controllers/exams.controller.js';
 import * as rawLearning from '../controllers/learning.controller.js';
 import * as rawQuizzes from '../controllers/quiz.controller.js';
+import * as rawNotices from '../controllers/notices.controller.js';
+import * as rawCertificates from '../controllers/certificates.controller.js';
 import { uuidParam, wrapAll } from './wrap.js';
 
 const student = wrapAll(raw);
@@ -19,6 +21,8 @@ const attendance = wrapAll(rawAttendance);
 const exams = wrapAll(rawExams);
 const learning = wrapAll(rawLearning);
 const quizzes = wrapAll(rawQuizzes);
+const notices = wrapAll(rawNotices);
+const certificates = wrapAll(rawCertificates);
 const router = Router();
 // Each order is a call to Razorpay, so keep a stuck/abusive client from hammering it
 const orderLimiter = rateLimit({ windowMs: 60_000, limit: () => Number(process.env.PAYMENT_ORDERS_PER_MINUTE) || 10, standardHeaders: true, legacyHeaders: false, message: { message: 'Too many payment attempts. Please wait a minute and try again.' } });
@@ -53,6 +57,12 @@ router.get('/fees/payments/:id/receipt.pdf', requireModule('fees'), fees.myRecei
 router.get('/fees/online/config', requireModule('fees'), online.config);
 router.post('/fees/online/orders', requireModule('fees'), orderLimiter, online.createOrder);
 router.post('/fees/online/verify', requireModule('fees'), online.verify);
+router.get('/notices', requireModule('notices'), notices.mine);
+router.post('/notices/read-all', requireModule('notices'), notices.readAll);
+router.post('/notices/:id/read', requireModule('notices'), notices.read);
+router.get('/certificates', requireModule('certificates'), certificates.mine);
+router.post('/certificates', requireModule('certificates'), certificates.request);
+router.get('/certificates/:id/pdf', requireModule('certificates'), certificates.myPdf);
 router.get('/library/books', requireModule('library'), library.catalogue);
 router.get('/library/my-issues', requireModule('library'), library.myIssues);
 

@@ -22,6 +22,7 @@ import { recordPayment, studentFees } from './fees.service.js';
 import * as gateway from './razorpay.service.js';
 import { asPlatform } from './billing.service.js';
 import { handleSubscriptionWebhook } from './billingPayments.service.js';
+import { handleFeeWebhook } from './admissions.service.js';
 
 const toPaise = (rupees) => Math.round(Number(rupees) * 100);
 const round2 = (n) => Math.round(Number(n) * 100) / 100;
@@ -164,6 +165,7 @@ export async function handleWebhook(rawBody, signature) {
     catch (err) { if (err.transient) throw err; return { ignored: true }; } // not an order of ours
   }
   if (notes?.kind === 'subscription') return asPlatform(() => handleSubscriptionWebhook(event, pay));
+  if (notes?.kind === 'application_fee') return handleFeeWebhook(event, pay, notes);
   const tenantId = notes?.tenant_id;
   if (!isUuid(tenantId)) return { ignored: true };
 

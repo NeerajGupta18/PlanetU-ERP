@@ -1,6 +1,7 @@
 import { q } from '../db/pool.js';
 import { HttpError } from '../middleware/error.js';
-import { getInstitute, loadEvents, loadNotices } from '../db/repo.js';
+import { getInstitute, loadEvents } from '../db/repo.js';
+import { feed as noticeFeed } from '../services/notices.service.js';
 import { issueIdCard } from './students.controller.js';
 import { buildTimetable } from '../services/timetable.service.js';
 import { studentOverview } from '../services/attendance.service.js';
@@ -40,7 +41,7 @@ export async function dashboard(req, res) {
 
   const todaySchedule = (await buildTimetable({ courseId: student.courseId, start: today, end: today })).items;
   const upcomingEvents = await loadEvents({ audiences: STUDENT_AUDIENCES, from: today, to: toISO(addDays(new Date(), 45)) });
-  const notices = await loadNotices();
+  const notices = req.tenant.modules.includes('notices') ? await noticeFeed(req.user, { limit: 4 }) : { notices: [], unread: 0 };
 
   // Money still owed, and the next thing falling due (the page shows a Pay button when this is set)
   const { rows: openItems } = await q(
@@ -67,13 +68,13 @@ export async function dashboard(req, res) {
       attendance: overview.overall,
       lecturesToday: todaySchedule.filter((i) => i.type === 'lecture').length,
       upcomingEvents: upcomingEvents.filter((e) => e.start <= toISO(addDays(new Date(), 7))).length,
-      notices: notices.length,
+      notices: notices.unread,
     },
     today: todaySchedule,
     upcomingEvents: upcomingEvents.slice(0, 5),
     attendance: overview.subjects,
     attendanceThreshold: overview.threshold,
-    notices: notices.slice(0, 4),
+    notices: notices.notices,
   });
 }
 

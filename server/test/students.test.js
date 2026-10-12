@@ -178,7 +178,7 @@ describe('Admission -> enrolment carries the photo through', () => {
     const ch = await fetch(`${base}/api/auth/change-password`, { method: 'POST', headers: { 'content-type': 'application/json', cookie: first }, body: JSON.stringify({ currentPassword: t.body.admin.temporaryPassword, newPassword: 'Changed@12345' }) });
     const localAdmin = ch.headers.getSetCookie().map((x) => x.split(';')[0]).find((x) => x.startsWith(`${env.COOKIE_NAME}=`));
 
-    const app = await json('POST', `/api/public/${CODE}/admissions/applications`, { body: { captchaToken: issueCaptchaToken(), courseId: c, name: 'Photo Kid', email: 'photokid@example.com', dob: '2006-01-01' } });
+    const app = await json('POST', `/api/public/${CODE}/admissions/applications`, { body: { captchaToken: issueCaptchaToken(), courseId: c, name: 'Photo Kid', email: 'photokid@example.com', dob: '2006-01-01', phone: '9000000004', address: 'Pune', guardian: { name: 'Parent', phone: '9000000005' } } });
     const put = (type, bytes) => { const f = new FormData(); f.set('docType', type); f.set('file', new Blob([bytes]), `${type}`); return fetch(`${base}/api/public/${CODE}/admissions/applications/${app.body.id}/documents`, { method: 'POST', headers: { 'x-access-code': app.body.accessCode }, body: f }); };
     await put('photo', PNG); await put('id_proof', PDF); await put('marksheet', PDF);
     await fetch(`${base}/api/public/${CODE}/admissions/applications/${app.body.id}/submit`, { method: 'POST', headers: { 'x-access-code': app.body.accessCode } });

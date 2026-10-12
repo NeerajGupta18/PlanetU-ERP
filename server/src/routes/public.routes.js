@@ -19,6 +19,7 @@ const limit = (name, def) => rateLimit({
 const general = limit('PUBLIC_RATE_LIMIT', 300);
 const creates = limit('PUBLIC_CREATE_LIMIT', 10);
 const lookups = limit('PUBLIC_LOOKUP_LIMIT', 30); // guards the access code against guessing
+const feeOrders = limit('PUBLIC_FEE_ORDER_LIMIT', 20); // each order is a call to Razorpay
 
 // Resolves the institute from the URL and checks it is active and offers admissions
 const resolveTenant = asyncHandler(async (req, res, next) => {
@@ -52,6 +53,9 @@ router.post('/applications/lookup', lookups, h.lookup);
 router.post('/applications/recover', lookups, h.recover);
 router.get('/applications/:id', h.status);
 router.post('/applications/:id/documents', upload.single('file'), h.upload);
+router.put('/applications/:id/steps/:step', h.saveStep);
+router.post('/applications/:id/fee/order', feeOrders, h.feeOrder);
+router.post('/applications/:id/fee/verify', h.feeVerify);
 router.post('/applications/:id/submit', h.submit);
 
 export default router;

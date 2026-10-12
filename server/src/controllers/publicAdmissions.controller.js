@@ -30,6 +30,21 @@ export async function upload(req, res) {
   res.status(201).json({ application: await svc.attachDocument(app, req.body?.docType, req.file) });
 }
 
+export async function saveStep(req, res) {
+  const app = await svc.loadForApplicant(req.params.id, code(req));
+  res.json({ application: await svc.saveStep(app, req.params.step, req.body || {}) });
+}
+
+export async function feeOrder(req, res) {
+  const app = await svc.loadForApplicant(req.params.id, code(req));
+  res.status(201).json(await svc.createFeeOrder(app));
+}
+
+export async function feeVerify(req, res) {
+  const app = await svc.loadForApplicant(req.params.id, code(req));
+  res.json(await svc.verifyFee(app, req.body));
+}
+
 export async function submit(req, res) {
   const app = await svc.loadForApplicant(req.params.id, code(req));
   res.json({ application: await svc.submitApplication(app) });

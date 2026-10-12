@@ -246,7 +246,7 @@ describe('Notifications isolation and applicant emails', () => {
     const info = (await get('/api/public/demo-college/admissions/info')).body;
     const email = `mailflow${Date.now()}@example.com`;
     const created = (await post('/api/public/demo-college/admissions/applications', {
-      captchaToken: issueCaptchaToken(), courseId: info.courses[0].id, name: '<b>Mail Flow</b>', email, dob: '2006-01-02',
+      captchaToken: issueCaptchaToken(), courseId: info.courses[0].id, name: '<b>Mail Flow</b>', email, dob: '2006-01-02', phone: '9000000002', address: 'Pune', guardian: { name: 'Parent', phone: '9000000003' },
     })).body;
     const upload = (type, cookieless = true) => {
       const f = new FormData(); f.set('docType', type); f.set('file', new Blob([PDF]), `${type}.pdf`);

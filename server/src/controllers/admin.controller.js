@@ -48,6 +48,8 @@ export async function dashboard(req, res) {
   const { rows: [w] } = await q(`
     select (select count(*) from applications where status = 'submitted')::int as "toReview",
            (select count(*) from applications where status = 'accepted')::int as "toEnrol",
+           (select count(*) from applications where fee_status = 'pending' and status <> 'draft')::int as "feesPending",
+           (select count(*) from certificate_requests where status = 'requested')::int as "certsToIssue",
            coalesce((select sum(amount) from payments where paid_at >= $1::date), 0)::float8 as "feesThisMonth",
            coalesce((select sum(i.amount - coalesce((select sum(a.amount) from payment_allocations a where a.fee_item_id = i.id), 0))
                      from student_fee_items i where i.status in ('unpaid', 'partial')), 0)::float8 as "feesOutstanding",
@@ -69,6 +71,8 @@ export async function dashboard(req, res) {
     today: {
       applicationsToReview: w.toReview,
       applicationsToEnrol: w.toEnrol,
+      applicationFeesPending: w.feesPending,
+      certificatesToIssue: w.certsToIssue,
       feesThisMonth: w.feesThisMonth,
       feesOutstanding: w.feesOutstanding,
       lecturesToday,
