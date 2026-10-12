@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/PostgreSQL-16%20%2B%20RLS-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" />
   <img src="https://img.shields.io/badge/Auth-JWT%20%2B%20bcrypt-EC1C24?style=for-the-badge&logo=jsonwebtokens&logoColor=white" />
   <img src="https://img.shields.io/badge/Multi--tenant-SaaS-7C3AED?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/Tests-540%20passing-2ea44f?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Tests-576%20passing-2ea44f?style=for-the-badge" />
   <img src="https://img.shields.io/badge/Deploy-Render%20%7C%20Oracle%20Cloud-46E3B7?style=for-the-badge" />
   <img src="https://img.shields.io/badge/STATUS-PHASE%207-2ea44f?style=for-the-badge" />
 </p>
@@ -92,7 +92,7 @@ tables, run `npm run db:migrate` instead.
 ### Tests
 
 ```bash
-npm test             # 540 tests against a real PostgreSQL (run db:setup first)
+npm test             # 576 tests against a real PostgreSQL (run db:setup first)
 ```
 
 They cover tenant isolation, uploads, admissions, accounts and email, students and ID cards, fees, online payments
@@ -701,8 +701,26 @@ password is emailed) or uses *Invite all parents* to create accounts from guardi
 attendance, timetable, results, calendar, fees and notices, can pay fees and raise tickets, and switches between children
 from the top bar. Everything else is read-only. A parent's email must differ from any student or staff email.
 
-**On the roadmap** (switchable in the vendor console, marked "coming soon" until built): Payroll ·
-Hostel · Transport · Visitor Management.
+## Hostel, transport and payroll
+
+**Hostel.** The office adds hostels (boys, girls or mixed, with an optional warden) and their rooms, entering room numbers
+as a list or range such as `101-110, 201`. Each room has a bed count and a monthly charge. Students are allotted a room
+from their record search; a full room, an inactive student or a boys/girls mismatch is refused, and a student has only
+one current room. Moving or vacating keeps the earlier stay as history. Students and their parents see the room, charge
+and warden.
+
+**Transport.** Routes have a vehicle, driver, seats, monthly charge and ordered stops with pickup times. Students are put
+on a stop of a route (one current ride each, seats are checked), can be moved to another stop or taken off, and see their
+route, stop and pickup time. A stop that students ride from cannot be removed.
+
+**Payroll.** Each employee has a monthly salary: basic, HRA, allowances, PF as a percent of basic and other fixed
+deductions. *Run payroll* for a month makes a payslip for everyone with a salary who had joined by then. Approved leave
+of an unlimited type (such as leave without pay) is deducted at gross divided by the days in the month, counting only
+the days inside that month and skipping Sundays and holidays. A draft can be made again; *Finalise* locks the month,
+emails the staff and lets them open and download their payslip as a PDF. Payslips keep the amounts as they were at run
+time. Amounts are in rupees and the module records pay only; it does not pay anyone.
+
+**On the roadmap** (switchable in the vendor console, marked "coming soon" until built): Visitor Management.
 
 
 ---

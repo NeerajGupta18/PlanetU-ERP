@@ -1,5 +1,5 @@
 import {
-  BookOpen, BookOpenCheck, Boxes, Building2, CalendarCheck, CalendarOff, CalendarDays, CircleDollarSign, ClipboardCheck, CreditCard, FileBarChart2, FileText, LifeBuoy, Star, GraduationCap, LayoutDashboard, ListChecks, Megaphone, School, Network, Server, Settings2, Table2, UserRound, Users, Users2, Wallet,
+  BedDouble, Banknote, BookOpen, BookOpenCheck, Boxes, Bus, Building2, CalendarCheck, CalendarOff, CalendarDays, CircleDollarSign, ClipboardCheck, CreditCard, FileBarChart2, FileText, LifeBuoy, Star, GraduationCap, LayoutDashboard, ListChecks, Megaphone, School, Network, Server, Settings2, Table2, UserRound, Users, Users2, Wallet,
 } from 'lucide-react';
 
 /**
@@ -26,6 +26,8 @@ export const MENU_TREE = {
       { label: 'Results', to: '/student/results', icon: GraduationCap, module: 'exams' },
       { label: 'Calendar', to: '/student/calendar', icon: CalendarDays, module: 'calendar' },
       { label: 'Fees', to: '/student/fees', icon: Wallet, module: 'fees' },
+      { label: 'Hostel', to: '/student/hostel', icon: BedDouble, module: 'hostel' },
+      { label: 'Transport', to: '/student/transport', icon: Bus, module: 'transport' },
       { label: 'Profile', to: '/student/profile', icon: UserRound },
     ] },
     { label: 'Help and feedback', to: '/parent/support', icon: LifeBuoy, module: 'grievance' },
@@ -44,9 +46,11 @@ export const MENU_TREE = {
       ],
     },
     {
-      group: 'Fees & Library', icon: Wallet, items: [
+      group: 'Fees & Campus', icon: Wallet, items: [
         { label: 'Fees', to: '/student/fees', icon: Wallet, module: 'fees' },
         { label: 'Library', to: '/student/library', icon: BookOpen, module: 'library' },
+        { label: 'Hostel', to: '/student/hostel', icon: BedDouble, module: 'hostel' },
+        { label: 'Transport', to: '/student/transport', icon: Bus, module: 'transport' },
       ],
     },
     {
@@ -82,6 +86,8 @@ export const MENU_TREE = {
       group: 'Campus', icon: Boxes, items: [
         { label: 'Library', to: '/admin/library', icon: BookOpen, module: 'library' },
         { label: 'Assets', to: '/admin/assets', icon: Boxes, module: 'assets' },
+        { label: 'Hostel', to: '/admin/hostel', icon: BedDouble, module: 'hostel' },
+        { label: 'Transport', to: '/admin/transport', icon: Bus, module: 'transport' },
       ],
     },
     {
@@ -94,6 +100,7 @@ export const MENU_TREE = {
     {
       group: 'Finance', icon: Wallet, items: [
         { label: 'Fees & Payments', to: '/admin/fees', icon: Wallet, module: 'fees' },
+        { label: 'Payroll', to: '/admin/payroll', icon: Banknote, module: 'payroll' },
         { label: 'Billing', to: '/admin/billing', icon: CreditCard },
       ],
     },
@@ -120,6 +127,7 @@ export const MENU_TREE = {
     { label: 'Dashboard', to: '/employee/dashboard', icon: LayoutDashboard },
     { label: 'Notice board', to: '/employee/notices', icon: Megaphone, module: 'notices' },
     { label: 'My leave', to: '/employee/leave', icon: CalendarOff, module: 'leave' },
+    { label: 'My payslips', to: '/employee/payslips', icon: Banknote, module: 'payroll' },
     { label: 'Help and feedback', to: '/employee/support', icon: LifeBuoy, module: 'grievance' },
     {
       group: 'Teaching', icon: ClipboardCheck, items: [

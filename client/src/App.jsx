@@ -49,6 +49,12 @@ import StudentCertificates from './pages/student/Certificates.jsx';
 import EmployeeNotices from './pages/employee/Notices.jsx';
 import EmployeeLeave from './pages/employee/Leave.jsx';
 import AdminLeave from './pages/admin/Leave.jsx';
+import AdminHostel from './pages/admin/Hostel.jsx';
+import AdminTransport from './pages/admin/Transport.jsx';
+import AdminPayroll from './pages/admin/Payroll.jsx';
+import StudentHostel from './pages/student/Hostel.jsx';
+import StudentTransport from './pages/student/Transport.jsx';
+import EmployeePayslips from './pages/employee/Payslips.jsx';
 import AdminGrievances from './pages/admin/Grievances.jsx';
 import AdminFeedback from './pages/admin/Feedback.jsx';
 import StudentSupport from './pages/student/Support.jsx';
@@ -112,6 +118,8 @@ export default function App() {
           <Route element={<ModuleGate module="certificates" />}><Route path="certificates" element={<StudentCertificates />} /></Route>
           <Route element={<ModuleGate module="grievance" />}><Route path="support" element={<StudentSupport />} /></Route>
           <Route element={<ModuleGate module="library" />}><Route path="library" element={<StudentLibrary />} /></Route>
+          <Route element={<ModuleGate module="hostel" />}><Route path="hostel" element={<StudentHostel />} /></Route>
+          <Route element={<ModuleGate module="transport" />}><Route path="transport" element={<StudentTransport />} /></Route>
           <Route element={<ModuleGate module="timetable" />}><Route path="timetable" element={<StudentTimetable />} /></Route>
           <Route element={<ModuleGate module="attendance" />}><Route path="attendance" element={<StudentAttendance />} /></Route>
           <Route element={<ModuleGate module="exams" />}><Route path="results" element={<StudentResults />} /></Route>
@@ -145,6 +153,9 @@ export default function App() {
           <Route element={<ModuleGate module="notices" />}><Route path="notices" element={<AdminNotices />} /></Route>
           <Route element={<ModuleGate module="certificates" />}><Route path="certificates" element={<AdminCertificates />} /></Route>
           <Route element={<ModuleGate module="leave" />}><Route path="leave" element={<AdminLeave />} /></Route>
+          <Route element={<ModuleGate module="hostel" />}><Route path="hostel" element={<AdminHostel />} /></Route>
+          <Route element={<ModuleGate module="transport" />}><Route path="transport" element={<AdminTransport />} /></Route>
+          <Route element={<ModuleGate module="payroll" />}><Route path="payroll" element={<AdminPayroll />} /></Route>
           <Route element={<ModuleGate module="grievance" />}>
             <Route path="grievances" element={<AdminGrievances />} />
             <Route path="feedback" element={<AdminFeedback />} />
@@ -192,6 +203,7 @@ export default function App() {
         <Route path="/employee" element={<AppShell />}>
           <Route element={<ModuleGate module="notices" />}><Route path="notices" element={<EmployeeNotices />} /></Route>
           <Route element={<ModuleGate module="leave" />}><Route path="leave" element={<EmployeeLeave />} /></Route>
+          <Route element={<ModuleGate module="payroll" />}><Route path="payslips" element={<EmployeePayslips />} /></Route>
           <Route element={<ModuleGate module="grievance" />}><Route path="support" element={<EmployeeSupport />} /></Route>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<EmployeeDashboard />} />
