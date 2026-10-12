@@ -49,6 +49,11 @@ import StudentCertificates from './pages/student/Certificates.jsx';
 import EmployeeNotices from './pages/employee/Notices.jsx';
 import EmployeeLeave from './pages/employee/Leave.jsx';
 import AdminLeave from './pages/admin/Leave.jsx';
+import AdminPlacement, { DriveDetail as AdminDriveDetail } from './pages/admin/Placement.jsx';
+import Assignments, { AssignmentDetail } from './pages/shared/Assignments.jsx';
+import StudentAssignments, { AssignmentView as StudentAssignmentView } from './pages/student/Assignments.jsx';
+import StudentCheckin from './pages/student/Checkin.jsx';
+import StudentPlacement from './pages/student/Placement.jsx';
 import AdminHostel from './pages/admin/Hostel.jsx';
 import AdminTransport from './pages/admin/Transport.jsx';
 import AdminPayroll from './pages/admin/Payroll.jsx';
@@ -119,6 +124,12 @@ export default function App() {
           <Route element={<ModuleGate module="grievance" />}><Route path="support" element={<StudentSupport />} /></Route>
           <Route element={<ModuleGate module="library" />}><Route path="library" element={<StudentLibrary />} /></Route>
           <Route element={<ModuleGate module="hostel" />}><Route path="hostel" element={<StudentHostel />} /></Route>
+          <Route element={<ModuleGate module="assignments" />}>
+            <Route path="assignments" element={<StudentAssignments />} />
+            <Route path="assignments/:id" element={<StudentAssignmentView />} />
+          </Route>
+          <Route element={<ModuleGate module="attendance" />}><Route path="checkin" element={<StudentCheckin />} /></Route>
+          <Route element={<ModuleGate module="placement" />}><Route path="placement" element={<StudentPlacement />} /></Route>
           <Route element={<ModuleGate module="transport" />}><Route path="transport" element={<StudentTransport />} /></Route>
           <Route element={<ModuleGate module="timetable" />}><Route path="timetable" element={<StudentTimetable />} /></Route>
           <Route element={<ModuleGate module="attendance" />}><Route path="attendance" element={<StudentAttendance />} /></Route>
@@ -154,6 +165,14 @@ export default function App() {
           <Route element={<ModuleGate module="certificates" />}><Route path="certificates" element={<AdminCertificates />} /></Route>
           <Route element={<ModuleGate module="leave" />}><Route path="leave" element={<AdminLeave />} /></Route>
           <Route element={<ModuleGate module="hostel" />}><Route path="hostel" element={<AdminHostel />} /></Route>
+          <Route element={<ModuleGate module="assignments" />}>
+            <Route path="assignments" element={<Assignments role="admin" />} />
+            <Route path="assignments/:id" element={<AssignmentDetail role="admin" />} />
+          </Route>
+          <Route element={<ModuleGate module="placement" />}>
+            <Route path="placement" element={<AdminPlacement />} />
+            <Route path="placement/drives/:id" element={<AdminDriveDetail />} />
+          </Route>
           <Route element={<ModuleGate module="transport" />}><Route path="transport" element={<AdminTransport />} /></Route>
           <Route element={<ModuleGate module="payroll" />}><Route path="payroll" element={<AdminPayroll />} /></Route>
           <Route element={<ModuleGate module="grievance" />}>
@@ -216,6 +235,10 @@ export default function App() {
             <Route path="quizzes/new" element={<QuizEditor role="employee" />} />
             <Route path="quizzes/:id" element={<QuizEditor role="employee" />} />
             <Route path="quizzes/:id/results" element={<QuizResults role="employee" />} />
+          </Route>
+          <Route element={<ModuleGate module="assignments" />}>
+            <Route path="assignments" element={<Assignments role="employee" />} />
+            <Route path="assignments/:id" element={<AssignmentDetail role="employee" />} />
           </Route>
           <Route element={<ModuleGate module="exams" />}>
             <Route path="exams" element={<EmployeeExams />} />

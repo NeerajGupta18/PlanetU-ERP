@@ -1,0 +1,20 @@
+{
+  "name": "PlanetU Campus ERP",
+  "short_name": "Campus ERP",
+  "description": "Attendance, assignments, fees, results and notices for your institute.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#3f2bc9",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Check in to class", "url": "/student/checkin", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Assignments", "url": "/student/assignments", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

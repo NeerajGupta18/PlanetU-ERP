@@ -1,5 +1,5 @@
 import {
-  BedDouble, Banknote, BookOpen, BookOpenCheck, Boxes, Bus, Building2, CalendarCheck, CalendarOff, CalendarDays, CircleDollarSign, ClipboardCheck, CreditCard, FileBarChart2, FileText, LifeBuoy, Star, GraduationCap, LayoutDashboard, ListChecks, Megaphone, School, Network, Server, Settings2, Table2, UserRound, Users, Users2, Wallet,
+  BedDouble, Banknote, Briefcase, NotebookPen, QrCode, BookOpen, BookOpenCheck, Boxes, Bus, Building2, CalendarCheck, CalendarOff, CalendarDays, CircleDollarSign, ClipboardCheck, CreditCard, FileBarChart2, FileText, LifeBuoy, Star, GraduationCap, LayoutDashboard, ListChecks, Megaphone, School, Network, Server, Settings2, Table2, UserRound, Users, Users2, Wallet,
 } from 'lucide-react';
 
 /**
@@ -42,6 +42,8 @@ export const MENU_TREE = {
         { label: 'Results', to: '/student/results', icon: GraduationCap, module: 'exams' },
         { label: 'Learning', to: '/student/learning', icon: BookOpenCheck, module: 'learning' },
         { label: 'Quizzes', to: '/student/quizzes', icon: ListChecks, module: 'quizzes' },
+        { label: 'Assignments', to: '/student/assignments', icon: NotebookPen, module: 'assignments' },
+        { label: 'Check in', to: '/student/checkin', icon: QrCode, module: 'attendance' },
         { label: 'Calendar', to: '/student/calendar', icon: CalendarDays, module: 'calendar' },
       ],
     },
@@ -51,6 +53,7 @@ export const MENU_TREE = {
         { label: 'Library', to: '/student/library', icon: BookOpen, module: 'library' },
         { label: 'Hostel', to: '/student/hostel', icon: BedDouble, module: 'hostel' },
         { label: 'Transport', to: '/student/transport', icon: Bus, module: 'transport' },
+        { label: 'Placement', to: '/student/placement', icon: Briefcase, module: 'placement' },
       ],
     },
     {
@@ -79,6 +82,7 @@ export const MENU_TREE = {
         { label: 'Exams & Results', to: '/admin/exams', icon: GraduationCap, module: 'exams' },
         { label: 'Learning', to: '/admin/learning', icon: BookOpenCheck, module: 'learning' },
         { label: 'Quizzes', to: '/admin/quizzes', icon: ListChecks, module: 'quizzes' },
+        { label: 'Assignments', to: '/admin/assignments', icon: NotebookPen, module: 'assignments' },
         { label: 'Calendar', to: '/admin/calendar', icon: CalendarDays, module: 'calendar' },
       ],
     },
@@ -88,6 +92,7 @@ export const MENU_TREE = {
         { label: 'Assets', to: '/admin/assets', icon: Boxes, module: 'assets' },
         { label: 'Hostel', to: '/admin/hostel', icon: BedDouble, module: 'hostel' },
         { label: 'Transport', to: '/admin/transport', icon: Bus, module: 'transport' },
+        { label: 'Placement', to: '/admin/placement', icon: Briefcase, module: 'placement' },
       ],
     },
     {
@@ -135,6 +140,7 @@ export const MENU_TREE = {
         { label: 'Exam marks', to: '/employee/exams', icon: GraduationCap, module: 'exams' },
         { label: 'Learning', to: '/employee/learning', icon: BookOpenCheck, module: 'learning' },
         { label: 'Quizzes', to: '/employee/quizzes', icon: ListChecks, module: 'quizzes' },
+        { label: 'Assignments', to: '/employee/assignments', icon: NotebookPen, module: 'assignments' },
       ],
     },
   ],

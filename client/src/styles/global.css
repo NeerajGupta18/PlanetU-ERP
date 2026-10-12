@@ -736,3 +736,11 @@ kbd { font: inherit; font-size: 11px; padding: 1px 6px; border: 1px solid var(--
 .stop-row { display: grid; grid-template-columns: 1fr 110px auto; gap: 6px; align-items: center; margin-bottom: 6px; }
 .payslip-sum { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 14px; }
 @media (max-width: 600px) { .stop-row { grid-template-columns: 1fr 90px auto; } }
+
+/* ---- QR check-in (Phase 5) ---- */
+.qr-panel { display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start; }
+.qr-panel__code { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.qr-panel__code img { border: 1px solid var(--border, #e3e3ef); border-radius: 12px; background: #fff; max-width: 100%; height: auto; }
+.qr-panel__digits { font-size: 34px; font-weight: 700; letter-spacing: 6px; font-variant-numeric: tabular-nums; }
+.qr-panel__side { flex: 1 1 260px; min-width: 0; }
+.plain-list { list-style: none; margin: 8px 0; padding: 0; display: grid; gap: 4px; font-size: 14px; }

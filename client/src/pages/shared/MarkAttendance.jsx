@@ -5,6 +5,7 @@ import { api } from '../../api/http.js';
 import { useFetch } from '../../hooks/useFetch.js';
 import { Badge, Card, PageBanner } from '../../components/ui/Ui.jsx';
 import { DataBoundary } from '../../components/ui/Feedback.jsx';
+import QrCheckinPanel from '../../components/campus/QrCheckinPanel.jsx';
 import { fmtLong, fmtRange, todayISO } from '../../utils/dates.js';
 
 const OPTIONS = [
@@ -60,6 +61,19 @@ function Sheet({ role, data, backTo }) {
   const set = (id, status) => { setNotice(''); setMarks((m) => ({ ...m, [id]: status })); };
   const setAll = (status) => { setNotice(''); setMarks(Object.fromEntries(students.map((s) => [s.id, status]))); };
 
+  // Students who checked in with the QR code: bring their marks into the sheet without touching what the teacher changed
+  async function loadCheckins() {
+    try {
+      const next = await api.get(`/${role}/attendance/lecture?slotId=${lecture.slotId}&date=${lecture.date}`);
+      setMarks((cur) => Object.fromEntries(next.students.map((s) => {
+        const before = saved.students.find((x) => x.id === s.id);
+        const edited = (cur[s.id] || null) !== (before?.status || null);
+        return [s.id, edited ? cur[s.id] : s.status];
+      })));
+      setSaved((p) => ({ ...p, students: next.students }));
+    } catch (err) { setError(err.message); }
+  }
+
   async function save(submit) {
     setBusy(true); setError(''); setNotice('');
     try {
@@ -85,6 +99,8 @@ function Sheet({ role, data, backTo }) {
         subtitle={`${lecture.course} · ${fmtLong(lecture.date)} · ${fmtRange(lecture.start, lecture.end)}`}
         actions={<Link to={backTo} className="btn btn--outline btn--sm"><ArrowLeft size={14} /> Back</Link>}
       />
+
+      {role === 'employee' && editable && !submitted && lecture.date === todayISO() && <QrCheckinPanel slotId={lecture.slotId} onCheckedIn={loadCheckins} />}
 
       <Card
         title={`${students.length} students`}

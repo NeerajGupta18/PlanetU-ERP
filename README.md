@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/PostgreSQL-16%20%2B%20RLS-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" />
   <img src="https://img.shields.io/badge/Auth-JWT%20%2B%20bcrypt-EC1C24?style=for-the-badge&logo=jsonwebtokens&logoColor=white" />
   <img src="https://img.shields.io/badge/Multi--tenant-SaaS-7C3AED?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/Tests-576%20passing-2ea44f?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Tests-617%20passing-2ea44f?style=for-the-badge" />
   <img src="https://img.shields.io/badge/Deploy-Render%20%7C%20Oracle%20Cloud-46E3B7?style=for-the-badge" />
   <img src="https://img.shields.io/badge/STATUS-PHASE%207-2ea44f?style=for-the-badge" />
 </p>
@@ -92,7 +92,7 @@ tables, run `npm run db:migrate` instead.
 ### Tests
 
 ```bash
-npm test             # 576 tests against a real PostgreSQL (run db:setup first)
+npm test             # 617 tests against a real PostgreSQL (run db:setup first)
 ```
 
 They cover tenant isolation, uploads, admissions, accounts and email, students and ID cards, fees, online payments
@@ -621,6 +621,12 @@ planetu-erp/
 | GET/POST | `/api/{admin,employee}/quizzes/:id/results`, `.../extra-attempts`, `/quizzes/internal-marks` | admin, faculty |
 | GET    | `/api/student/quizzes`, `/api/student/internal-marks`, `/api/student/quizzes/:id/result` | student *(own results; the answer key is withheld until it is safe to show)* |
 | POST/PUT | `/api/student/quizzes/:id/start`, `.../answers`, `.../submit` | student *(the server owns the clock and grades the answers)* |
+| GET/POST/PUT/DELETE | `/api/admin|employee/assignments`, `.../:id`, `.../:id/publish|close|reopen`, `.../:id/submissions/:studentId` | admin, faculty *(faculty only for subjects they teach)* |
+| GET/POST | `/api/student/assignments`, `/api/student/assignments/:id`, `.../submit` | student *(own class only)* |
+| GET/POST | `/api/employee/attendance/checkin`, `.../checkin/close` | faculty *(the lecture's own teacher)* |
+| GET/POST | `/api/student/checkin/today`, `/api/student/checkin` | student *(rate limited; wrong codes are counted)* |
+| GET/POST/PUT/DELETE | `/api/admin/placement/companies`, `/drives`, `/drives/:id/open|close`, `/applications/:id`, `/stats` | admin *(placement module)* |
+| GET/POST | `/api/student/placement`, `/:id/apply`, `/:id/withdraw` | student *(placement module)* |
 | GET    | `/api/super-admin/diagnostics/network` | super admin *(shows the IP the app sees; use it to check `TRUST_PROXY_HOPS`)* |
 
 Calendar and Timetable routes (admin and student) answer `403 MODULE_DISABLED` when the institute's plan doesn't include them.
@@ -719,6 +725,31 @@ of an unlimited type (such as leave without pay) is deducted at gross divided by
 the days inside that month and skipping Sundays and holidays. A draft can be made again; *Finalise* locks the month,
 emails the staff and lets them open and download their payslip as a PDF. Payslips keep the amounts as they were at run
 time. Amounts are in rupees and the module records pay only; it does not pay anyone.
+
+## Assignments, QR check-in, placement and the installable app
+
+**Assignments.** A teacher (or the office) sets work for a class and subject, with instructions, a due date, maximum marks,
+an optional section and an optional PDF or image attachment. It stays a draft until published. Students hand in a written
+answer, a file (PDF, PNG or JPEG up to 5 MB) or both, and can replace their work until it is graded; work after the due
+date is marked late, or refused if the teacher turned late work off. The teacher sees who has handed in, opens each
+answer, gives marks and feedback, or sends it back to redo. Faculty can only manage assignments for the subjects they
+teach. Students are emailed when work is graded.
+
+**QR check-in.** On the attendance sheet for today's lecture, faculty press *Start check-in*. The screen shows a QR code and
+a 6-digit code that change every 30 seconds. Students open *Check in* on their phone and scan it (or type the code) and
+are marked present, or late after the number of minutes the teacher set. Five wrong codes lock a student out of that
+lecture, and the faculty can still change anyone on the sheet before submitting. The code proves the student has it in
+front of them; it does not prove where they are.
+
+**Placement** *(colleges and universities)*. The placement cell keeps companies and drives: role, package, dates and who may
+apply (courses, minimum semester, minimum attendance). A drive is a draft until opened. Students see the drives, why they
+are or are not eligible, apply with an optional PDF resume and can withdraw. The office moves each application to
+shortlisted, selected (with the offer) or rejected, and the student is emailed. The Results tab shows students placed,
+average and highest package and the placement rate by course.
+
+**Installable app.** The web app can be installed from the browser's *Install app* or *Add to Home Screen* option and then
+opens like a phone app. Only the app shell is kept for offline use; records are always loaded live, so nothing from the
+past is shown. It is a web app, not a Play Store or App Store listing.
 
 **On the roadmap** (switchable in the vendor console, marked "coming soon" until built): Visitor Management.
 
