@@ -227,7 +227,7 @@ describe('Student and employee lists', () => {
   });
   it('lists employees, optionally for one department', async () => {
     const all = await rep('employees');
-    assert.equal(all.body.total, 6);
+    assert.equal(all.body.total, 11); // 6 teachers and 5 office staff in the demo college
     const dept = all.body.rows[0].department;
     const some = await rep('employees', `department=${encodeURIComponent(dept.toUpperCase())}`);
     assert.ok(some.body.total >= 1 && some.body.rows.every((r) => r.department === dept));

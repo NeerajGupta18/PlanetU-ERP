@@ -16,6 +16,9 @@ import { createApp } from '../src/app.js';
 import { closePool, q, withTx } from '../src/db/pool.js';
 import { issueCaptchaToken } from '../src/services/captcha.service.js';
 
+// Each demo institute: 6 teachers plus 5 office staff with staff roles (principal, accountant, librarian, gate security, head of department)
+const DEMO_EMPLOYEES = 11;
+
 let server;
 let base;
 const tenants = {}; // code -> id
@@ -92,7 +95,7 @@ describe('Row Level Security (database)', () => {
       await inTenant(code, async () => {
         const { rows } = await q('select distinct tenant_id from employees');
         assert.deepEqual(rows.map((r) => r.tenant_id), [tenants[code]]);
-        assert.equal(await count('employees'), 6);
+        assert.equal(await count('employees'), DEMO_EMPLOYEES);
       });
     }
   });
@@ -118,7 +121,7 @@ describe('Row Level Security (database)', () => {
       assert.equal((await q('delete from employees where tenant_id = $1', [tenants['demo-school']])).rowCount, 0);
     });
     await inTenant('demo-school', async () => {
-      assert.equal(await count('employees'), 6);
+      assert.equal(await count('employees'), DEMO_EMPLOYEES);
       assert.equal((await q("select count(*)::int as n from employees where name = 'HACKED'")).rows[0].n, 0);
     });
   });
@@ -208,8 +211,8 @@ describe('API data isolation between institutes', () => {
   });
 
   it('each admin sees only their own employees', () => {
-    assert.equal(college.length, 6);
-    assert.equal(school.length, 6);
+    assert.equal(college.length, DEMO_EMPLOYEES);
+    assert.equal(school.length, DEMO_EMPLOYEES);
     const ids = new Set(college.map((e) => e.id));
     assert.ok(school.every((e) => !ids.has(e.id)));
     assert.ok(college.some((e) => e.name === 'Amandeep Kaur'));
@@ -351,7 +354,7 @@ describe('Vendor console: provisioning and configuration', () => {
     assert.deepEqual(codes, ['EMP001', 'EMP002', 'EMP003', 'EMP004', 'EMP005']);
     // and the demo college's series is untouched
     const c = (await call(sessions['demo-college'], 'GET', '/api/admin/employees')).body.employees;
-    assert.equal(c.length, 6);
+    assert.equal(c.length, DEMO_EMPLOYEES);
   });
 
   it('module switches are enforced on the server for admin AND student routes', async () => {
@@ -402,7 +405,7 @@ describe('Vendor console: provisioning and configuration', () => {
   it('the vendor console lists institutes with counts but is the only route to them', async () => {
     const list = (await call(sessions.superAdmin, 'GET', '/api/super-admin/tenants')).body.tenants;
     const college = list.find((t) => t.code === 'demo-college');
-    assert.equal(college.employees, 6);
+    assert.equal(college.employees, DEMO_EMPLOYEES);
     assert.equal(college.students, 3);
   });
 });

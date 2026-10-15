@@ -172,7 +172,35 @@ async function seedTenant(spec, hashes) {
       [code, email, name, hashes.employee, e.id],
     );
   }
-  await q("insert into number_series (key, prefix, padding, next_value) values ('employee', 'EMP', 3, $1)", [spec.employees.length + 1]);
+  // Office staff who are not teachers, with their staff roles: they sign in as employees and see only their part of the office
+  const office = [
+    ['Principal', spec.institute.stamp?.signatory || 'Principal', ['principal']],
+    ['Accountant', 'Prakash Kulkarni', ['accountant']],
+    ['Librarian', 'Sunita Joshi', ['librarian']],
+    ['Security Officer', 'Vikram Pawar', ['gate_security']],
+    ['Head of Department', 'Dr. Rajiv Menon', ['hod']],
+  ];
+  const staffIds = [];
+  // The head of department heads the department that teaches the demo course (EMP001's department)
+  const { rows: [teaching] } = await q('select department_id from employees where id = $1', [emp[0]]);
+  for (const [i, [title, name, roles]] of office.entries()) {
+    const code = `EMP${String(spec.employees.length + 1 + i).padStart(3, '0')}`;
+    const email = `${title.toLowerCase().replace(/[^a-z]+/g, '.')}@${spec.code.replace('demo-', '')}.example`;
+    const deptId = roles.includes('hod') ? teaching.department_id : dept.Administration;
+    const { rows: [dg] } = await q(
+      `insert into designations (department_id, name) values ($1, $2)
+       on conflict do nothing returning id`, [deptId, title],
+    );
+    const desigId = dg?.id || (await q('select id from designations where department_id = $1 and name = $2', [deptId, title])).rows[0].id;
+    const { rows: [e] } = await q(
+      "insert into employees (emp_code, name, email, department_id, designation_id, shift) values ($1, $2, $3, $4, $5, 'General shift') returning id",
+      [code, name, email, deptId, desigId],
+    );
+    await q("insert into users (role, login_id, email, name, password_hash, employee_id) values ('employee', $1, $2, $3, $4, $5)", [code, email, name, hashes.employee, e.id]);
+    for (const role of roles) await q('insert into staff_roles (employee_id, role, department_id) values ($1, $2, $3)', [e.id, role, role === 'hod' ? deptId : null]);
+    staffIds.push(e.id);
+  }
+  await q("insert into number_series (key, prefix, padding, next_value) values ('employee', 'EMP', 3, $1)", [spec.employees.length + office.length + 1]);
 
   // Leave: the standard types, one request waiting and one already approved, so the screens are not empty
   for (const [name, days] of [['Casual leave', 12], ['Sick leave', 10], ['Earned leave', 15], ['Leave without pay', null]]) {
