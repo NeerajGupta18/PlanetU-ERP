@@ -1,24 +1,27 @@
 import { useTabParam } from '../../hooks/useTabParam.js';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Banknote, FileBarChart2, FileText, Plus, Receipt, Search, Trash2, Wallet } from 'lucide-react';
+import { AlertTriangle, Banknote, CalendarClock, FileBarChart2, FileText, Plus, Receipt, Search, Trash2, Wallet } from 'lucide-react';
 import { useFetch } from '../../hooks/useFetch.js';
 import { useTenantConfig } from '../../hooks/useTenantConfig.js';
 import { api } from '../../api/http.js';
-import { Badge, Card, PageBanner, Tabs } from '../../components/ui/Ui.jsx';
+import { Badge, Card, PageBanner, StatCard, Tabs, pending } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import Modal from '../../components/ui/Modal.jsx';
 import { useDialogs } from '../../components/ui/Dialogs.jsx';
+import { feeItemBadge } from '../../utils/fees.js';
 import { fmtDate } from '../../utils/dates.js';
 
+const inr0 = (n) => `₹${Math.round(Number(n)).toLocaleString('en-IN')}`;
 const inr = (n) => `₹${Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-const STATUS_TONE = { unpaid: 'red', partial: 'amber', paid: 'green', waived: 'gray' };
 const METHODS = [['cash', 'Cash'], ['cheque', 'Cheque'], ['bank_transfer', 'Bank transfer'], ['upi', 'UPI'], ['card', 'Card'], ['online', 'Online']];
 
 export default function Fees() {
   const { t } = useTenantConfig();
-  const [tab, setTab] = useTabParam('students');
+  const [tab, setTab] = useTabParam('overview');
   const [newStructure, setNewStructure] = useState(false);
+  const [ledgerStudent, setLedgerStudent] = useState(null);
+  const openLedger = (st) => { setLedgerStudent(st); setTab('students'); };
   const structures = useFetch('/admin/fees/structures');
 
   return (
@@ -27,19 +30,20 @@ export default function Fees() {
         icon={Wallet} title="Fees & Payments" subtitle={`Fee plans, charges and payments for ${t('students', 'students').toLowerCase()}`}
         actions={(
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <Link to="/admin/reports?report=fee-collection" className="btn btn--outline btn--sm" style={{ background: '#fff' }}><FileBarChart2 size={14} /> Collection report</Link>
-            <Link to="/admin/reports?report=fee-dues" className="btn btn--outline btn--sm" style={{ background: '#fff' }}><FileBarChart2 size={14} /> Outstanding fees</Link>
+            <Link to="/admin/reports?report=fee-collection" className="btn btn--outline btn--sm"><FileBarChart2 size={14} /> Collection report</Link>
+            <Link to="/admin/reports?report=fee-dues" className="btn btn--outline btn--sm"><FileBarChart2 size={14} /> Outstanding fees</Link>
           </div>
         )}
       />
       <Card>
-        <Tabs tabs={[{ id: 'students', label: 'Student ledger' }, { id: 'structures', label: 'Fee structures' }, { id: 'payments', label: 'All payments' }, { id: 'online', label: 'Online payments' }]} active={tab} onChange={setTab} />
-        {tab === 'students' && <StudentLedger />}
+        <Tabs tabs={[{ id: 'overview', label: 'Overview' }, { id: 'students', label: 'Student ledger' }, { id: 'structures', label: 'Fee structures' }, { id: 'payments', label: 'All payments' }, { id: 'online', label: 'Online payments' }]} active={tab} onChange={setTab} />
+        {tab === 'overview' && <Overview onOpen={openLedger} onSetup={() => { setTab('structures'); setNewStructure(true); }} />}
+        {tab === 'students' && <StudentLedger selected={ledgerStudent} setSelected={setLedgerStudent} />}
         {tab === 'structures' && (
           <>
             <div className="toolbar"><span /><button type="button" className="btn btn--primary btn--sm" onClick={() => setNewStructure(true)}><Plus size={13} /> New structure</button></div>
             <DataBoundary loading={structures.loading} error={structures.error} data={structures.data} reload={structures.reload}>
-              {structures.data && (structures.data.structures.length === 0 ? <EmptyState title="No fee structures yet" /> : (
+              {structures.data && (structures.data.structures.length === 0 ? <EmptyState title="No fee structures yet" hint="A fee structure lists the charges for a course, such as tuition and exam fee, with due dates." action={{ label: 'Create a fee structure', onClick: () => setNewStructure(true) }} /> : (
                 <div className="table-wrap">
                   <table className="table">
                     <thead><tr><th>Name</th><th>{t('course', 'Course')}</th><th>Year</th><th>Total</th><th>Assigned</th><th /></tr></thead>
@@ -168,9 +172,50 @@ function NewStructureModal({ onClose, onCreated }) {
   );
 }
 
-function StudentLedger() {
+/** What the office needs first: what came in, what is still to collect, what is overdue and who owes it. */
+function Overview({ onOpen, onSetup }) {
+  const { data, loading, error, reload } = useFetch('/admin/fees/summary');
+  return (
+    <DataBoundary loading={loading} error={error} data={data} reload={reload}>
+      {data && (data.itemsTotal === 0 ? (
+        <EmptyState
+          title="No fees charged yet"
+          hint={data.structures ? 'Assign a fee structure to a course from the Fee structures tab.' : 'Start by creating a fee structure for a course. Then assign it to the students.'}
+          action={{ label: data.structures ? 'Go to fee structures' : 'Create a fee structure', onClick: onSetup }}
+        />
+      ) : (
+        <div style={{ display: 'grid', gap: 16, marginTop: 14 }}>
+          <div className="stats">
+            <StatCard value={inr0(data.collectedThisMonth)} label="Collected this month" icon={Banknote} hint={`${inr0(data.collectedToday)} today, ${inr0(data.collectedLastMonth)} last month`} />
+            <StatCard value={inr0(data.outstanding)} label={`Still to collect (${data.studentsWithDues} student${data.studentsWithDues === 1 ? '' : 's'})`} icon={Wallet} {...pending(data.outstanding, { act: 'To collect', clear: 'All paid' })} />
+            <StatCard value={inr0(data.overdue)} label={`Overdue (${data.studentsOverdue} student${data.studentsOverdue === 1 ? '' : 's'})`} icon={AlertTriangle} {...pending(data.overdue, { level: 'bad', act: 'Past the due date', clear: 'Nothing overdue' })} />
+            <StatCard value={inr0(data.dueThisWeek)} label="Falls due in the next 7 days" icon={CalendarClock} {...(data.dueThisWeek > 0 ? { status: 'info', hint: 'Coming up' } : { status: 'clear', hint: 'Nothing this week' })} />
+          </div>
+          <div>
+            <h3 className="section-title"><AlertTriangle size={16} /> Students with overdue fees</h3>
+            {data.overdueStudents.length === 0 ? <EmptyState title="Nobody is overdue" hint="Every charge that is past its due date has been paid." /> : (
+              <div className="table-wrap"><table className="table">
+                <thead><tr><th>Student</th><th>Course</th><th>Overdue since</th><th className="num">Overdue amount</th><th /></tr></thead>
+                <tbody>{data.overdueStudents.map((o) => (
+                  <tr key={o.studentId}>
+                    <td><strong>{o.name}</strong> <span className="muted">({o.studentCode})</span></td>
+                    <td>{o.course || '-'}</td>
+                    <td><Badge tone="red">{fmtDate(String(o.oldestDue).slice(0, 10))}</Badge></td>
+                    <td className="num"><strong>{inr0(o.overdue)}</strong></td>
+                    <td><button type="button" className="btn btn--outline btn--sm" onClick={() => onOpen({ id: o.studentId, name: o.name, studentCode: o.studentCode })}><Receipt size={13} /> Open ledger</button></td>
+                  </tr>
+                ))}</tbody>
+              </table></div>
+            )}
+          </div>
+        </div>
+      ))}
+    </DataBoundary>
+  );
+}
+
+function StudentLedger({ selected, setSelected }) {
   const [search, setSearch] = useState('');
-  const [selected, setSelected] = useState(null);
   const list = useFetch(search.length > 1 ? `/admin/students?search=${encodeURIComponent(search)}` : null);
   return (
     <div>
@@ -209,10 +254,10 @@ function StudentLedgerDetail({ student, onBack }) {
             <strong>{student.name} <span className="muted">({student.studentCode})</span></strong>
             <button type="button" className="btn btn--outline btn--sm" onClick={onBack}>Change student</button>
           </div>
-          <div className="stats" style={{ margin: '12px 0' }}>
-            <div className="stat"><span className="stat__value">{inr(fees.data.summary.total)}</span><span className="stat__label">Total charged</span></div>
-            <div className="stat"><span className="stat__value">{inr(fees.data.summary.paid)}</span><span className="stat__label">Paid</span></div>
-            <div className="stat"><span className="stat__value">{inr(fees.data.summary.outstanding)}</span><span className="stat__label">Outstanding</span></div>
+          <div className="stats stats--3" style={{ margin: '12px 0' }}>
+            <StatCard value={inr(fees.data.summary.total)} label="Total charged" icon={Receipt} />
+            <StatCard value={inr(fees.data.summary.paid)} label="Paid" icon={Banknote} />
+            <StatCard value={inr(fees.data.summary.outstanding)} label="Outstanding" icon={Wallet} {...(fees.data.summary.outstanding > 0 ? { status: 'warn', hint: 'To collect' } : { status: 'good', hint: 'Fully paid' })} />
           </div>
           <div className="table-wrap">
             <table className="table">
@@ -223,7 +268,7 @@ function StudentLedgerDetail({ student, onBack }) {
                     <td>{i.label} {i.source === 'manual' && <span className="muted">(manual)</span>}</td>
                     <td className="muted">{i.dueDate ? fmtDate(i.dueDate) : '-'}</td>
                     <td>{inr(i.amount)}</td><td>{inr(i.paid)}</td>
-                    <td><Badge tone={STATUS_TONE[i.status]}>{i.status}</Badge></td>
+                    <td><Badge tone={feeItemBadge(i).tone}>{feeItemBadge(i).label}</Badge></td>
                     <td>{['unpaid', 'partial'].includes(i.status) && <button type="button" className="btn btn--outline btn--sm" onClick={() => waive(i)}>Waive</button>}</td>
                   </tr>
                 ))}

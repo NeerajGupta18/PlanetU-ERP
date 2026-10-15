@@ -1,13 +1,21 @@
 import { useState } from 'react';
-import { CreditCard, FileText, Wallet } from 'lucide-react';
+import { Banknote, CreditCard, FileText, Receipt, Wallet } from 'lucide-react';
 import { useFetch } from '../../hooks/useFetch.js';
-import { Badge, Card, PageBanner } from '../../components/ui/Ui.jsx';
+import { Badge, Card, PageBanner, StatCard } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import PayOnlineModal from '../../components/fees/PayOnlineModal.jsx';
-import { fmtDate } from '../../utils/dates.js';
+import { feeItemBadge } from '../../utils/fees.js';
+import { fmtDate, todayISO } from '../../utils/dates.js';
 
 const inr = (n) => `₹${Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-const STATUS_TONE = { unpaid: 'red', partial: 'amber', paid: 'green', waived: 'gray' };
+
+/** The outstanding card says when the next payment is due, and turns red once something is overdue. */
+function dueStatus(items, outstanding) {
+  if (!(outstanding > 0)) return { status: 'good', hint: 'Fully paid' };
+  const open = items.filter((i) => ['unpaid', 'partial'].includes(i.status) && i.dueDate).map((i) => String(i.dueDate).slice(0, 10)).sort();
+  if (!open.length) return { status: 'warn', hint: 'To pay' };
+  return open[0] < todayISO() ? { status: 'bad', hint: `Overdue since ${fmtDate(open[0])}` } : { status: 'warn', hint: `Next due ${fmtDate(open[0])}` };
+}
 
 export default function Fees() {
   const { data, loading, error, reload } = useFetch('/student/fees');
@@ -24,10 +32,10 @@ export default function Fees() {
       <DataBoundary loading={loading} error={error} data={data} reload={reload}>
         {data && (
           <>
-            <div className="stats">
-              <div className="stat"><span className="stat__value">{inr(data.summary.total)}</span><span className="stat__label">Total charged</span></div>
-              <div className="stat"><span className="stat__value">{inr(data.summary.paid)}</span><span className="stat__label">Paid</span></div>
-              <div className="stat"><span className="stat__value">{inr(data.summary.outstanding)}</span><span className="stat__label">Outstanding</span></div>
+            <div className="stats stats--3">
+              <StatCard value={inr(data.summary.total)} label="Total charged" icon={Receipt} />
+              <StatCard value={inr(data.summary.paid)} label="Paid" icon={Banknote} />
+              <StatCard value={inr(data.summary.outstanding)} label="Outstanding" icon={Wallet} {...dueStatus(data.items, data.summary.outstanding)} />
             </div>
             <Card
               title="Charges"
@@ -49,7 +57,7 @@ export default function Fees() {
                           <tr key={i.id}>
                             <td>{i.label}</td><td className="muted">{i.dueDate ? fmtDate(i.dueDate) : '-'}</td>
                             <td>{inr(i.amount)}</td><td>{inr(i.paid)}</td>
-                            <td><Badge tone={STATUS_TONE[i.status]}>{i.status}</Badge></td>
+                            <td><Badge tone={feeItemBadge(i).tone}>{feeItemBadge(i).label}</Badge></td>
                             {canPayOnline && (
                               <td>{open && <button type="button" className="btn btn--outline btn--sm" onClick={() => setPaying({ feeItemId: i.id, label: i.label, due: balance })}>Pay</button>}</td>
                             )}

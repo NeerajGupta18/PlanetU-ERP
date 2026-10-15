@@ -42,6 +42,8 @@ before(async () => {
   const ids = (await withTx({ tenantId }, () => q("select id, student_code from students where student_code in ('STU2026001', 'STU2026002')"))).rows;
   studentId = ids.find((r) => r.student_code === 'STU2026001').id;
   student2Id = ids.find((r) => r.student_code === 'STU2026002').id;
+  // The demo data charges fees to the first students; this suite needs them with nothing charged yet
+  await withTx({ tenantId }, async () => { await q('delete from payments where student_id = any ($1)', [[studentId, student2Id]]); await q('delete from student_fee_items where student_id = any ($1)', [[studentId, student2Id]]); });
   await cleanup();
 });
 after(async () => {

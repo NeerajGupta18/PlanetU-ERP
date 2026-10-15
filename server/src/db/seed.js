@@ -7,6 +7,7 @@
  * Level Security applies to seeding too (nothing here bypasses tenant isolation).
  */
 import { gradeAttempt } from '../services/quizGrading.js';
+import * as feesSvc from '../services/fees.service.js';
 import bcrypt from 'bcryptjs';
 import { q, switchTenant, withTx } from './pool.js';
 import { nextNumber } from './series.js';
@@ -303,6 +304,7 @@ async function seedTenant(spec, hashes) {
   await seedLearningAndQuizzes(spec, course.id, emp);
   await seedAssignments(spec, course.id, emp);
   await seedVisitors(emp);
+  await seedFees(spec, course.id);
   if (['college', 'university'].includes(spec.type)) await seedPlacement(course.id);
   await refreshRollingData();
 }
@@ -329,6 +331,31 @@ async function seedAssignments(spec, courseId, emp) {
       [a1.id, st.id, 'Worked solutions are attached in my notebook; question 5 uses the second method.', i === 0 ? 'graded' : 'submitted',
         i === 0 ? 17 : null, i === 0 ? 'Good working. Check the units in question 4.' : '', addDays(now, -4).toISOString(), i === 0 ? addDays(now, -2).toISOString() : null],
     );
+  }
+}
+
+/** A fee plan for the class with one student fully paid for the first term, one part paid and one overdue. */
+async function seedFees(spec, courseId) {
+  const school = spec.type === 'school';
+  const now = new Date();
+  const year = `${now.getFullYear()}-${String((now.getFullYear() + 1) % 100).padStart(2, '0')}`;
+  const term = school ? 18000 : 45000;
+  const s = await feesSvc.createStructure({
+    name: school ? 'Annual school fee' : 'Programme fee', courseId, academicYear: year,
+    items: [
+      { label: 'Term 1 tuition', amount: term, dueDate: toISO(addDays(now, -35)) },
+      { label: 'Examination fee', amount: school ? 1500 : 2500, dueDate: toISO(addDays(now, 4)) },
+      { label: 'Term 2 tuition', amount: term, dueDate: toISO(addDays(now, 40)) },
+    ],
+  });
+  const system = { id: null, role: 'admin' };
+  await feesSvc.bulkAssign(s.id, system);
+  const { rows: studs } = await q("select id from students where tenant_id = app_tenant() and course_id = $1 and status = 'Active' order by student_code limit 3", [courseId]);
+  const pays = [[studs[0], term, 'upi', 3], [studs[1], term / 2, 'cash', 9]];
+  for (const [st, amount, method, daysAgo] of pays) {
+    if (!st) continue;
+    const p = await feesSvc.recordPayment({ studentId: st.id, amount, method, note: 'Demo payment' }, system);
+    await q("update payments set paid_at = now() - ($2 || ' days')::interval where id = $1", [p.id, String(daysAgo)]);
   }
 }
 

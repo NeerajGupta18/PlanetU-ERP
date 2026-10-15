@@ -28,6 +28,8 @@ before(async () => {
   tenantId = (await withTx({ platform: true }, () => q("select id from tenants where code = 'demo-college'"))).rows[0].id;
   ({ rows: [{ id: courseId }] } = await withTx({ tenantId }, () => q('select id from courses limit 1')));
   ({ rows: [{ id: studentId }] } = await withTx({ tenantId }, () => q("select id from students order by student_code limit 1")));
+  // The demo data charges fees to the institute's students; this suite needs them with nothing charged yet
+  await withTx({ tenantId }, async () => { await q('delete from payments'); await q('delete from student_fee_items'); });
 });
 after(async () => {
   await withTx({ tenantId }, async () => {

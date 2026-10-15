@@ -1,3 +1,4 @@
+import { toISO } from '../utils/dates.js';
 import { q } from '../db/pool.js';
 import { HttpError } from '../middleware/error.js';
 import { audit } from '../db/audit.js';
@@ -207,4 +208,39 @@ export async function recordPayment(body, admin) {
   }
   await audit(admin, 'fees.payment', 'student', studentId, { receiptNo, amount: total, method });
   return getPayment(p.id);
+}
+
+/* ---------------- overview for the Fees page ---------------- */
+
+/**
+ * The figures the office needs first: what came in, what is still to collect, what is already overdue,
+ * what falls due this week, and the students who owe the most overdue money.
+ */
+export async function summary() {
+  const now = new Date();
+  const today = toISO(now);
+  const monthStart = `${today.slice(0, 8)}01`;
+  const lastMonthStart = toISO(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+  const OPEN = `(i.amount - coalesce((select sum(a.amount) from payment_allocations a where a.fee_item_id = i.id), 0))`;
+  const { rows: [t] } = await q(
+    `select coalesce((select sum(amount) from payments where paid_at >= $1::date), 0)::float8 as "collectedToday",
+            coalesce((select sum(amount) from payments where paid_at >= $2::date), 0)::float8 as "collectedThisMonth",
+            coalesce((select sum(amount) from payments where paid_at >= $3::date and paid_at < $2::date), 0)::float8 as "collectedLastMonth",
+            coalesce(sum(${OPEN}), 0)::float8 as outstanding,
+            coalesce(sum(${OPEN}) filter (where i.due_date < $1::date), 0)::float8 as overdue,
+            coalesce(sum(${OPEN}) filter (where i.due_date between $1::date and $1::date + 7), 0)::float8 as "dueThisWeek",
+            count(distinct i.student_id)::int as "studentsWithDues",
+            count(distinct i.student_id) filter (where i.due_date < $1::date)::int as "studentsOverdue",
+            (select count(*) from student_fee_items)::int as "itemsTotal"
+     from student_fee_items i where i.status in ('unpaid', 'partial')`, [today, monthStart, lastMonthStart],
+  );
+  const { rows: overdueStudents } = await q(
+    `select s.id as "studentId", s.name, s.student_code as "studentCode", c.name as course,
+            sum(${OPEN})::float8 as overdue, min(i.due_date) as "oldestDue"
+     from student_fee_items i join students s on s.id = i.student_id left join courses c on c.id = s.course_id
+     where i.status in ('unpaid', 'partial') and i.due_date < $1::date
+     group by s.id, c.name order by min(i.due_date), sum(${OPEN}) desc limit 8`, [today],
+  );
+  const { rows: [{ n: structures }] } = await q('select count(*)::int as n from fee_structures');
+  return { ...t, structures, overdueStudents };
 }
