@@ -127,7 +127,7 @@ a { color: var(--brand-600); }
 /* =========================================================
    Login
    ========================================================= */
-.login { min-height: 100%; display: grid; grid-template-columns: minmax(340px, 5fr) 6fr; }
+.login { min-height: 100%; display: grid; grid-template-columns: minmax(340px, 5fr) 6fr; grid-template-rows: auto 1fr; }
 .login__aside { position: relative; overflow: hidden; background: linear-gradient(155deg, #4c4fe0 0%, #3b22b8 55%, #2a0a86 100%); color: #fff; display: flex; align-items: center; padding: 56px; }
 .login__aside::before, .login__aside::after { content: ''; position: absolute; border-radius: 50%; background: rgba(255, 255, 255, 0.07); }
 .login__aside::before { width: 420px; height: 420px; right: -160px; top: -120px; }
@@ -139,7 +139,7 @@ a { color: var(--brand-600); }
 .login__points { margin-top: 34px; display: grid; gap: 16px; }
 .login__points li { display: flex; gap: 12px; align-items: flex-start; color: rgba(255, 255, 255, 0.9); }
 .login__points svg { flex: none; margin-top: 2px; opacity: 0.85; }
-.login__panel { display: grid; place-items: center; padding: 32px 20px; }
+.login__panel { display: grid; align-content: center; justify-items: center; gap: 16px; padding: 32px 20px; }
 .login__card { width: 100%; max-width: 440px; background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 32px; box-shadow: var(--shadow); }
 .login__card h2 { font-size: 24px; letter-spacing: -0.01em; }
 .login__hint { color: var(--muted); margin: 4px 0 20px; }
@@ -936,3 +936,16 @@ kbd { font: inherit; font-size: 11px; padding: 1px 6px; border: 1px solid var(--
 .guide__item ol { margin: 10px 0 12px; padding: 0 16px 0 36px; display: grid; gap: 6px; font-size: 13.5px; line-height: 1.5; }
 .guide__item .btn { margin: 0 0 12px 14px; }
 .guide__item ol { list-style: decimal; } .guide__item li::marker { color: var(--brand); font-weight: 700; }
+
+/* Get the app: a box under the sign-in form and a closable banner along the top */
+.getapp { width: 100%; max-width: 440px; display: flex; gap: 14px; align-items: flex-start; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; }
+.getapp__icon { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--brand-50); }
+.getapp__text { min-width: 0; }
+.getapp__text strong { display: block; font-size: 14.5px; }
+.getapp__text p { margin: 2px 0 10px; font-size: 13px; color: var(--muted); }
+.getapp__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.getapp__steps { margin: 0 0 16px; padding-left: 20px; display: grid; gap: 10px; font-size: 14px; line-height: 1.5; }
+.modal__actions { display: flex; justify-content: flex-end; }
+.getapp-banner { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 8px 16px; background: var(--brand-50); border-bottom: 1px solid var(--brand-100); }
+.getapp-banner__text { flex: 1 1 240px; font-size: 13.5px; font-weight: 600; color: var(--text); }
+.getapp-banner .icon-btn { margin-left: auto; }

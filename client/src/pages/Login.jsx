@@ -9,6 +9,7 @@ import { ROLE_HOME } from '../config/menu.config.js';
 import { BRAND } from '../config/brand.js';
 import BrandMark from '../components/ui/BrandMark.jsx';
 import RobotCheck from '../components/auth/RobotCheck.jsx';
+import { GetTheAppBanner, GetTheAppCard } from '../components/campus/GetTheApp.jsx';
 
 const ROLES = [
   { value: 'super_admin', label: 'Super Admin', icon: ShieldCheck, idLabel: 'Email or Super Admin ID' },
@@ -115,6 +116,7 @@ export default function Login() {
 
   return (
     <div className="login">
+      <GetTheAppBanner />
       <aside className="login__aside">
         <div className="login__aside-inner">
           <span className="login__mark"><BrandMark size={34} /></span>
@@ -212,6 +214,7 @@ export default function Login() {
             </div>
           )}
         </form>
+        <GetTheAppCard />
       </main>
     </div>
   );

@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { DialogProvider } from './components/ui/Dialogs.jsx';
+import './lib/install.js';
 import './styles/global.css';
 
 createRoot(document.getElementById('root')).render(
