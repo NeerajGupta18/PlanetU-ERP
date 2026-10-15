@@ -1,0 +1,14 @@
+import { Router } from 'express';
+import { requireAuth, requireRole } from '../middleware/auth.js';
+import * as rawInbox from '../controllers/inbox.controller.js';
+import { wrapAll } from './wrap.js';
+
+const inbox = wrapAll(rawInbox);
+const router = Router();
+// The bell in the top bar, for every role that belongs to an institute (the platform admin has none)
+router.use(requireAuth, requireRole('admin', 'employee', 'student', 'parent'));
+router.get('/notifications', inbox.bell);
+router.post('/notifications/read-all', inbox.readAll);
+router.post('/notifications/:id/read', inbox.read);
+
+export default router;

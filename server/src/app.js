@@ -7,6 +7,7 @@ import morgan from 'morgan';
 import { env } from './config/env.js';
 import { errorHandler, notFound } from './middleware/error.js';
 import authRoutes from './routes/auth.routes.js';
+import meRoutes from './routes/me.routes.js';
 import studentRoutes from './routes/student.routes.js';
 import parentRoutes from './routes/parent.routes.js';
 import adminRoutes from './routes/admin.routes.js';
@@ -48,6 +49,7 @@ export function createApp() {
 
   app.get('/api/health', (req, res) => res.json({ ok: true }));
   app.use('/api/auth', authRoutes);
+  app.use('/api/me', meRoutes);
   app.use('/api/student', studentRoutes);
   app.use('/api/parent', parentRoutes);
   app.use('/api/admin', adminRoutes);
