@@ -49,6 +49,7 @@ import StudentCertificates from './pages/student/Certificates.jsx';
 import EmployeeNotices from './pages/employee/Notices.jsx';
 import EmployeeLeave from './pages/employee/Leave.jsx';
 import AdminLeave from './pages/admin/Leave.jsx';
+import AdminStaffRoles from './pages/admin/StaffRoles.jsx';
 import AdminApprovals from './pages/admin/Approvals.jsx';
 import AdminPlacement, { DriveDetail as AdminDriveDetail } from './pages/admin/Placement.jsx';
 import Assignments, { AssignmentDetail } from './pages/shared/Assignments.jsx';
@@ -149,7 +150,7 @@ export default function App() {
       </Route>
 
       {/* Phase 2: Admin portal */}
-      <Route element={<ProtectedRoute roles={['admin']} />}>
+      <Route element={<ProtectedRoute roles={['admin']} office />}>
         <Route path="/admin" element={<AppShell />}>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<AdminDashboard />} />
@@ -172,6 +173,7 @@ export default function App() {
             <Route path="assignments/:id" element={<AssignmentDetail role="admin" />} />
           </Route>
           <Route path="approvals" element={<AdminApprovals />} />
+          <Route path="staff-roles" element={<AdminStaffRoles />} />
           <Route element={<ModuleGate module="visitors" />}><Route path="visitors" element={<Visitors role="admin" />} /></Route>
           <Route element={<ModuleGate module="placement" />}>
             <Route path="placement" element={<AdminPlacement />} />

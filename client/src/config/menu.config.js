@@ -115,6 +115,7 @@ export const MENU_TREE = {
         { label: 'Employees', icon: Users, term: ['employees', 'Employees'], sections: [
           { label: 'Employees', to: '/admin/employees', term: ['employees', 'Employees'] },
           { label: 'Departments & Designations', to: '/admin/departments' },
+          { label: 'Staff roles', to: '/admin/staff-roles' },
         ] },
         { label: 'Leave', to: '/admin/leave', icon: CalendarOff, module: 'leave' },
       ],
@@ -156,13 +157,14 @@ export const MENU_TREE = {
   ],
   employee: [
     { label: 'Dashboard', to: '/employee/dashboard', icon: LayoutDashboard },
-    { label: 'Attendance', to: '/employee/attendance', icon: ClipboardCheck, module: 'attendance' },
-    { label: 'Coursework', icon: NotebookPen, sections: [
+    { label: 'Attendance', to: '/employee/attendance', icon: ClipboardCheck, module: 'attendance', teaching: true },
+    { label: 'Coursework', icon: NotebookPen, teaching: true, sections: [
       { label: 'Assignments', to: '/employee/assignments', module: 'assignments' },
       { label: 'Quizzes', to: '/employee/quizzes', module: 'quizzes' },
       { label: 'Learning', to: '/employee/learning', module: 'learning' },
     ] },
-    { label: 'Exam marks', to: '/employee/exams', icon: GraduationCap, module: 'exams' },
+    { label: 'Exam marks', to: '/employee/exams', icon: GraduationCap, module: 'exams', teaching: true },
+    // Office pages from the employee's staff roles (principal, accountant, librarian...) go here - see useNav
     {
       group: 'Me', icon: UserRound, items: [
         { label: 'My leave', to: '/employee/leave', icon: CalendarOff, module: 'leave' },
@@ -194,8 +196,8 @@ export const BOTTOM_NAV = {
   ],
   employee: [
     { label: 'Home', to: '/employee/dashboard', icon: LayoutDashboard },
-    { label: 'Attendance', to: '/employee/attendance', icon: ClipboardCheck, module: 'attendance' },
-    { label: 'Coursework', to: '/employee/assignments', icon: NotebookPen, module: 'assignments', also: ['/employee/quizzes', '/employee/learning'] },
+    { label: 'Attendance', to: '/employee/attendance', icon: ClipboardCheck, module: 'attendance', teaching: true },
+    { label: 'Coursework', to: '/employee/assignments', icon: NotebookPen, module: 'assignments', also: ['/employee/quizzes', '/employee/learning'], teaching: true },
     { label: 'Leave', to: '/employee/leave', icon: CalendarOff, module: 'leave' },
   ],
 };

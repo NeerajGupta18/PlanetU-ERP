@@ -9,6 +9,8 @@ import Modal from '../../components/ui/Modal.jsx';
 import { useDialogs } from '../../components/ui/Dialogs.jsx';
 import { ApplyModal, LEAVE_TONE, LEAVE_WORD, range } from '../employee/Leave.jsx';
 import { useTenantConfig } from '../../hooks/useTenantConfig.js';
+import { useAuth } from '../../context/AuthContext.jsx';
+import { officeGrant } from '../../config/staffAreas.js';
 
 const TABS = [
   { id: 'pending', label: 'Waiting' }, { id: 'approved', label: 'Approved' }, { id: 'rejected', label: 'Not approved' },
@@ -173,7 +175,11 @@ function RecordModal({ onClose, onSaved }) {
 
 export default function Leave() {
   const { tenant } = useTenantConfig();
-  const [tab, setTab] = useTabParam('pending', TABS.map((t) => t.id));
+  const { user, office } = useAuth();
+  // A head of department decides their department's requests; recording leave and leave types stay with the office
+  const deptOnly = user.role === 'employee' && officeGrant(office, '/admin/leave')?.scope === 'department';
+  const tabs = deptOnly ? TABS.filter((t) => t.id !== 'types') : TABS;
+  const [tab, setTab] = useTabParam('pending', tabs.map((t) => t.id));
   const [recording, setRecording] = useState(false);
   const counts = useFetch('/admin/leave?status=pending');
   const on = useFetch('/admin/leave/on-leave');
@@ -183,15 +189,15 @@ export default function Leave() {
   return (
     <>
       <PageBanner
-        icon={CalendarOff} title="Leave" subtitle={`Requests, balances and leave types${tenant ? '' : ''}`}
-        actions={<button type="button" className="btn btn--primary" onClick={() => setRecording(true)}><Plus size={15} /> Record leave</button>}
+        icon={CalendarOff} title={deptOnly ? 'Department leave' : 'Leave'} subtitle={deptOnly ? 'Leave requests and balances for your department' : `Requests, balances and leave types${tenant ? '' : ''}`}
+        actions={!deptOnly && <button type="button" className="btn btn--primary" onClick={() => setRecording(true)}><Plus size={15} /> Record leave</button>}
       />
       {on.data?.employees.length > 0 && (
         <Card title="On leave today">
           <p style={{ margin: 0 }}>{on.data.employees.map((e) => `${e.name} (${e.typeName}, until ${e.toDate})`).join(', ')}</p>
         </Card>
       )}
-      <Tabs tabs={TABS.map((t) => ({ id: t.id, label: t.id === 'pending' && waiting ? `Waiting (${waiting})` : t.label }))} active={tab} onChange={setTab} />
+      <Tabs tabs={tabs.map((t) => ({ id: t.id, label: t.id === 'pending' && waiting ? `Waiting (${waiting})` : t.label }))} active={tab} onChange={setTab} />
       {['pending', 'approved', 'rejected'].includes(tab) && <Requests key={`${tab}${bump}`} status={tab} />}
       {tab === 'balances' && <Balances key={bump} />}
       {tab === 'types' && <Types />}

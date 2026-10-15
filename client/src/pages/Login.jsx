@@ -195,7 +195,7 @@ export default function Login() {
                   <strong>{inst.name}</strong>
                   <div className="login__demos">
                     {inst.logins.map((l) => (
-                      <button key={l.role} type="button" className="login__demo" onClick={() => pickDemo(inst, l)}>{ROLES.find((r) => r.value === l.role).label}</button>
+                      <button key={`${l.role}-${l.id}`} type="button" className="login__demo" onClick={() => pickDemo(inst, l)}>{l.label || ROLES.find((r) => r.value === l.role).label}</button>
                     ))}
                   </div>
                 </div>
