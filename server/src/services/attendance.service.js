@@ -284,11 +284,12 @@ export async function studentOverview(studentId, legacy = [], threshold = DEFAUL
 /* -------------------------------------------------------------------- admin */
 
 /** Student x subject attendance over submitted sessions, optionally limited to a course / dates. */
-export async function report({ courseId, subject, from, to, below }) {
+export async function report({ courseId, courseIds, subject, from, to, below }) {
   const params = [];
   const where = ["a.status = 'submitted'"];
   const add = (sql, v) => { params.push(v); where.push(sql.replace('?', `$${params.length}`)); };
   if (courseId) add('a.course_id = ?', courseId);
+  if (courseIds) add('a.course_id = any (?)', courseIds);
   if (subject) add('a.subject = ?', subject);
   if (from) add('a.on_date >= ?', from);
   if (to) add('a.on_date <= ?', to);

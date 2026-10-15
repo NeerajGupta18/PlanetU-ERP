@@ -1,3 +1,4 @@
+import { coursesIn } from '../services/staff.service.js';
 import { isUuid, q } from '../db/pool.js';
 import { HttpError } from '../middleware/error.js';
 import { isISO } from '../utils/dates.js';
@@ -22,7 +23,10 @@ export async function myLectures(req, res) {
 /* ---------- marking sheet: employee for their own lecture today, admin for any past/present date ---------- */
 export async function getSheet(req, res) {
   const date = dateOr(req.query.date, svc.today());
-  res.json(await svc.getSheet({ slotId: needSlot(req.query.slotId), date, actor: req.user }));
+  const sheet = await svc.getSheet({ slotId: needSlot(req.query.slotId), date, actor: req.user });
+  const mine = await deptCourses(req);
+  if (mine && !mine.has(sheet.lecture.courseId)) throw new HttpError(403, 'That lecture is not in your department.');
+  res.json(mine ? { ...sheet, editable: false, reason: 'Heads of department can view this sheet.' } : sheet);
 }
 
 export async function saveSheet(req, res) {
@@ -33,10 +37,15 @@ export async function saveSheet(req, res) {
 }
 
 /* ---------- admin ---------- */
+// A head of department (req.office.scope) only sees the courses of their own department
+const deptCourses = async (req) => (req.office?.scope ? coursesIn(req.office.scope.departmentIds) : null);
+
 export async function daySheet(req, res) {
   const courseId = str(req.query.courseId);
   if (courseId && !isUuid(courseId)) throw new HttpError(400, 'Invalid course.');
-  res.json(await svc.daySheet(dateOr(req.query.date, svc.today()), courseId));
+  const out = await svc.daySheet(dateOr(req.query.date, svc.today()), courseId);
+  const mine = await deptCourses(req);
+  res.json(mine ? { ...out, lectures: out.lectures.filter((l) => mine.has(l.courseId)) } : out);
 }
 
 function reportFilters(req) {
@@ -49,13 +58,20 @@ function reportFilters(req) {
   if (below !== undefined && !(Number(below) >= 0 && Number(below) <= 100)) throw new HttpError(400, 'Below must be a percentage from 0 to 100.');
   return { courseId, subject: str(req.query.subject), from, to, below };
 }
+async function scopedFilters(req) {
+  const f = reportFilters(req);
+  const mine = await deptCourses(req);
+  if (!mine) return f;
+  if (f.courseId && !mine.has(f.courseId)) throw new HttpError(403, 'That course is not in your department.');
+  return { ...f, courseIds: [...mine] };
+}
 
 export async function report(req, res) {
-  res.json(await svc.report(reportFilters(req)));
+  res.json(await svc.report(await scopedFilters(req)));
 }
 
 export async function reportCsv(req, res) {
-  const csv = await svc.reportCsv(reportFilters(req));
+  const csv = await svc.reportCsv(await scopedFilters(req));
   res.set({ 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="attendance-report.csv"' });
   res.send(`\uFEFF${csv}`);
 }

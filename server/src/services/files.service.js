@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import { q } from '../db/pool.js';
 import { HttpError } from '../middleware/error.js';
 import * as storage from '../storage/index.js';
+import { officeOf } from './staff.service.js';
 
 export const MAX_BYTES = 5 * 1024 * 1024;
 export const PURPOSES = ['general', 'admission', 'profile', 'document'];
@@ -49,6 +50,10 @@ export async function findAccessible(id, user) {
   );
   if (!f) return null;
   if (user.role === 'admin' || f.created_by === user.id) return f;
+  if (user.role === 'employee') {
+    const office = await officeOf(user);
+    if (office && ['admissions', 'students', 'certificates', 'placement'].some((a) => office.areas[a]?.scope === 'all')) return f;
+  }
   if (user.role === 'parent') {
     const { rowCount } = await q(
       'select 1 from parent_links l join students s on s.id = l.student_id where l.user_id = $1 and s.photo_file_id = $2', [user.id, id],

@@ -257,6 +257,12 @@ export async function onLeave(date = today()) {
   return rows;
 }
 
+export async function employeeOfRequest(id) {
+  const { rows: [r] } = await q('select employee_id from leave_requests where id = $1', [id]);
+  if (!r) throw new HttpError(404, 'Leave request not found.');
+  return r.employee_id;
+}
+
 export async function pendingCount() {
   return (await q("select count(*)::int as n from leave_requests where status = 'pending'")).rows[0].n;
 }

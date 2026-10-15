@@ -6,12 +6,14 @@ import { PDF_MAX_ROWS, streamTablePdf } from '../services/tablepdf.js';
 
 const FORMATS = ['json', 'csv', 'xlsx', 'pdf'];
 
-export const catalogue = async (req, res) => res.json({ reports: svc.catalogue(req.tenant.modules) });
+const allowed = (req, def) => !req.office?.reportGroups || req.office.reportGroups.includes(def.group);
+export const catalogue = async (req, res) => res.json({ reports: svc.catalogue(req.tenant.modules).filter((r) => allowed(req, r)) });
 
 export async function run(req, res) {
   const format = String(req.query.format || 'json').toLowerCase();
   if (!FORMATS.includes(format)) throw new HttpError(400, `Format must be one of: ${FORMATS.join(', ')}.`);
   const def = svc.findReport(req.params.key, req.tenant.modules);
+  if (!allowed(req, def)) throw new HttpError(403, 'Your staff role does not include this report.');
   const params = svc.readParams(def, req.query);
   const result = await svc.runReport(def, params);
 

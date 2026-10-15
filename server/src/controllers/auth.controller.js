@@ -1,3 +1,4 @@
+import { officeOf } from '../services/staff.service.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
@@ -44,7 +45,9 @@ async function sessionExtras(user, tenant) {
     : [];
   // The admin sees a banner when a subscription invoice is due, overdue, or a trial is ending
   const billing = user.role === 'admin' ? await billingNotice().catch(() => null) : null;
-  return { institute: await instituteBrief(), notifications, billing };
+  // An employee's staff roles decide which office pages their menu shows (the server checks every call too)
+  const office = user.role === 'employee' ? await officeOf({ role: 'employee', employeeId: user.employeeId ?? user.employee_id }) : null;
+  return { institute: await instituteBrief(), notifications, billing, office };
 }
 
 /* ---------- captcha ---------- */
@@ -272,6 +275,10 @@ export async function demoLogins(req, res) {
       { role: 'employee', id: s.employees[0][0], password: DEMO_PASSWORDS.employee },
       { role: 'student', id: s.students[0].code, password: DEMO_PASSWORDS.student },
       { role: 'parent', id: 'PAR001', password: DEMO_PASSWORDS.parent },
+      // office staff with staff roles (see seed.js): they sign in as employees
+      ...['Principal', 'Accountant', 'Librarian', 'Gate security', 'Head of department'].map((label, i) => ({
+        role: 'employee', label, id: `EMP${String(s.employees.length + 1 + i).padStart(3, '0')}`, password: DEMO_PASSWORDS.employee,
+      })),
     ],
   }));
   return res.json({ enabled: institutes.length > 0, institutes });

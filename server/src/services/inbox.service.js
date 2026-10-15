@@ -127,7 +127,8 @@ export async function bell(user, modules = []) {
     const { rows: kids } = await q('select s.id, s.name from parent_links l join students s on s.id = l.student_id where l.user_id = $1 order by s.name', [user.id]);
     for (const k of kids) reminders.push(...await feeReminders(k.id, `${k.name.split(' ')[0]}: `, '/student/fees'));
   }
-  if (user.role === 'admin') {
+  const principal = user.role === 'employee' && (await q("select 1 from staff_roles where employee_id = $1 and role = 'principal'", [user.employeeId])).rowCount > 0;
+  if (user.role === 'admin' || principal) {
     Object.assign(counts, await approvalCounts(modules));
     if (counts.approvals > 0) reminders.push({ id: 'approvals', kind: 'approvals', tone: 'warn', title: `${counts.approvals} item${counts.approvals === 1 ? '' : 's'} waiting for your decision`, body: 'Leave, certificates, applications and tickets, in one list.', link: '/admin/approvals' });
   }
