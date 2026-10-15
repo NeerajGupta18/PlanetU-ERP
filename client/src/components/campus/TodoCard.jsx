@@ -19,8 +19,9 @@ const when = (iso) => {
 };
 
 /** One list of what to do next, most urgent first, each with its date and a link to do it. */
-export default function TodoCard({ path, limit = 6 }) {
-  const { data } = useFetch(path);
+export default function TodoCard({ path, data: given, limit = 6 }) {
+  const fetched = useFetch(given ? null : path);
+  const data = given || fetched.data;
   if (!data) return null;
   const items = data.items.slice(0, limit);
   return (

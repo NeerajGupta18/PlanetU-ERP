@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom';
-import { AlertTriangle, Award, BookOpen, CalendarDays, Clock, LayoutDashboard, MapPin, Megaphone, Percent, Video, Wallet } from 'lucide-react';
+import { AlertTriangle, Award, BookOpen, CalendarDays, Clock, FileText, GraduationCap, LayoutDashboard, MapPin, Megaphone, Percent, Video, Wallet } from 'lucide-react';
 import { useFetch } from '../../hooks/useFetch.js';
 import { useTenantConfig } from '../../hooks/useTenantConfig.js';
-import { Badge, Card, PageBanner, StatCard } from '../../components/ui/Ui.jsx';
+import { Badge, Card, PageBanner, StatCard, pending } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import { EVENT_TYPES } from '../../utils/eventTypes.js';
 import TodoCard from '../../components/campus/TodoCard.jsx';
-import { firstName, todayISO, fmtDate, fmtEventDates, fmtRange, fmtTime, greeting, MONTHS, parseISO } from '../../utils/dates.js';
+import { daysBetween, firstName, todayISO, fmtDate, fmtEventDates, fmtRange, fmtTime, greeting, MONTHS, parseISO } from '../../utils/dates.js';
+import { inr0, plural } from '../../utils/kpi.js';
 
 const nowHHMM = () => {
   const d = new Date();
@@ -26,7 +27,6 @@ export default function Dashboard() {
   );
 }
 
-const inr = (n) => `₹${Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 function DashboardView({ d }) {
   const { hasModule } = useTenantConfig();
@@ -35,6 +35,15 @@ function DashboardView({ d }) {
   const low = d.attendance.filter((a) => a.pct < d.attendanceThreshold);
   const showFees = hasModule('fees') && d.fees;
   const showResult = hasModule('exams') && d.latestResult;
+  const threshold = d.attendanceThreshold ?? 75;
+  const g = d.attendanceGuide || { canMiss: 0, needToReach: 0, attended: 0, total: 0 };
+  const attOk = d.stats.attendance >= threshold;
+  const feeOverdue = d.fees?.next?.dueDate && String(d.fees.next.dueDate).slice(0, 10) < todayISO();
+  const examIn = d.nextExam ? Math.max(0, daysBetween(todayISO(), String(d.nextExam.date).slice(0, 10))) : null;
+  // The lecture going on now, or the next one today
+  const lectures = d.today.filter((i) => i.type === 'lecture');
+  const liveNow = lectures.find((i) => i.start <= now && now < i.end);
+  const nextClass = liveNow ? { ...liveNow, live: true } : lectures.find((i) => i.start > now) || null;
 
   return (
     <>
@@ -44,15 +53,43 @@ function DashboardView({ d }) {
         subtitle={`${d.student.course}, Semester ${d.student.semester}, Section ${d.student.section}  |  Roll no. ${d.student.rollNo}`}
       />
 
-      <div className="stats">
+      <div className="stats stats--3">
         <StatCard
           value={`${d.stats.attendance}%`} label="Overall attendance" icon={Percent} to="/student/attendance"
-          status={d.stats.attendance >= (d.attendanceThreshold ?? 75) ? 'good' : 'bad'}
-          hint={d.stats.attendance >= (d.attendanceThreshold ?? 75) ? `Above ${d.attendanceThreshold ?? 75}%` : `Below ${d.attendanceThreshold ?? 75}%`}
+          status={attOk ? (g.canMiss <= 2 ? 'warn' : 'good') : 'bad'}
+          hint={attOk ? (g.canMiss > 0 ? `You can miss ${plural(g.canMiss, 'more class', 'more classes')}` : 'Do not miss the next class') : g.needToReach ? `Attend the next ${plural(g.needToReach, 'class', 'classes')} to reach ${threshold}%` : `Below ${threshold}%`}
+          sub={`${g.attended} of ${g.total} classes, minimum ${threshold}%`}
         />
-        <StatCard value={d.stats.lecturesToday} label="Lectures today" icon={BookOpen} to="/student/timetable" />
-        <StatCard value={d.stats.upcomingEvents} label="Events in the next 7 days" icon={CalendarDays} to="/student/calendar" />
-        <StatCard value={d.stats.notices} label="Unread notices" icon={Megaphone} to="/student/notices" {...(d.stats.notices > 0 ? { status: 'info', hint: 'New' } : { status: 'clear', hint: 'All read' })} />
+        <StatCard
+          value={nextClass ? fmtTime(nextClass.start) : d.today.length ? 'Done' : '-'} icon={Clock} to="/student/timetable"
+          label={nextClass ? `${nextClass.live ? 'Now' : 'Next class'}: ${nextClass.title}` : d.today.length ? 'No more classes today' : 'No classes today'}
+          status={nextClass?.live ? 'good' : nextClass ? 'info' : 'clear'}
+          hint={nextClass ? `${nextClass.reassignedTo || nextClass.employee?.name || ''}${nextClass.location ? `, ${nextClass.location}` : ''}` : undefined}
+        />
+        {hasModule('assignments') && d.assignmentsDue !== null && (
+          <StatCard value={d.assignmentsDue} label="Assignments due this week" icon={FileText} to="/student/assignments" {...pending(d.assignmentsDue, { act: 'Hand them in', clear: 'Nothing due' })} />
+        )}
+        {showFees && (
+          <StatCard
+            value={inr0(d.fees.outstanding)} label="Fees due" icon={Wallet} to="/student/fees"
+            {...(d.fees.outstanding <= 0 ? { status: 'clear', hint: 'All paid up' } : feeOverdue ? { status: 'bad', hint: `Overdue since ${fmtDate(d.fees.next.dueDate)} - pay now` } : { status: 'warn', hint: d.fees.next?.dueDate ? `Next due ${fmtDate(d.fees.next.dueDate)} - pay now` : 'Pay now' })}
+            sub={d.fees.next ? `${d.fees.next.label}: ${inr0(d.fees.next.balance)}` : undefined}
+          />
+        )}
+        {hasModule('exams') && (
+          <StatCard
+            value={d.nextExam ? fmtDate(d.nextExam.date) : '-'} label={d.nextExam ? `Next exam: ${d.nextExam.name}` : 'No exam scheduled'} icon={GraduationCap} to="/student/calendar"
+            {...(examIn === null ? { status: 'clear' } : examIn <= 7 ? { status: 'warn', hint: examIn === 0 ? 'Today' : `In ${plural(examIn, 'day')}` } : { status: 'info', hint: `In ${examIn} days` })}
+          />
+        )}
+        {showResult ? (
+          <StatCard
+            value={d.latestResult.gpa === null ? `${d.latestResult.pct ?? '-'}%` : `GPA ${d.latestResult.gpa.toFixed(2)}`} label={`Latest result: ${d.latestResult.name}`} icon={Award} to="/student/results"
+            status={d.latestResult.result === 'fail' ? 'bad' : 'neutral'} sub={d.latestResult.cgpa !== null && d.latestResult.cgpa !== undefined ? `CGPA ${d.latestResult.cgpa.toFixed(2)}` : undefined}
+          />
+        ) : (
+          <StatCard value={d.stats.notices} label="Unread notices" icon={Megaphone} to="/student/notices" {...(d.stats.notices > 0 ? { status: 'info', hint: 'New' } : { status: 'clear', hint: 'All read' })} />
+        )}
       </div>
 
       <TodoCard path="/student/todo" />
@@ -64,32 +101,6 @@ function DashboardView({ d }) {
             <strong>Low attendance:</strong> {low.map((a) => `${a.subject} (${a.pct}%)`).join(', ')} {low.length === 1 ? 'is' : 'are'} below the {d.attendanceThreshold}% minimum.{' '}
             {hasModule('attendance') && <Link to="/student/attendance">See details</Link>}
           </span>
-        </div>
-      )}
-
-      {(showFees || showResult) && (
-        <div className="grid-2">
-          {showFees && (
-            <Card title="Fees" icon={Wallet} action={d.fees.outstanding > 0 && <Link to="/student/fees" className="btn btn--primary btn--sm">Pay now</Link>}>
-              {d.fees.outstanding > 0 ? (
-                <>
-                  <div className={`bigfigure ${d.fees.next?.dueDate && String(d.fees.next.dueDate).slice(0, 10) < todayISO() ? 'bigfigure--bad' : 'bigfigure--warn'}`}>{inr(d.fees.outstanding)}</div>
-                  <p className="muted">
-                    {d.fees.next?.dueDate && String(d.fees.next.dueDate).slice(0, 10) < todayISO() ? <strong style={{ color: 'var(--danger)' }}>Overdue: </strong> : 'Outstanding'}
-                    {d.fees.next?.dueDate ? ` - next due ${fmtDate(d.fees.next.dueDate)} (${d.fees.next.label})` : ''}
-                  </p>
-                </>
-              ) : (
-                <EmptyState title="No fees due" hint="You are all paid up." />
-              )}
-            </Card>
-          )}
-          {showResult && (
-            <Card title="Latest result" icon={Award} action={<Link to="/student/results" className="btn btn--outline btn--sm">All results</Link>}>
-              <div className="bigfigure">{d.latestResult.gpa === null ? '-' : `GPA ${d.latestResult.gpa.toFixed(2)}`}</div>
-              <p className="muted">{d.latestResult.name}, semester {d.latestResult.semester}{d.latestResult.cgpa !== null ? ` - CGPA ${d.latestResult.cgpa.toFixed(2)}` : ''}</p>
-            </Card>
-          )}
         </div>
       )}
 

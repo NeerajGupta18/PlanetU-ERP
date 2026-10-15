@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/PostgreSQL-16%20%2B%20RLS-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" />
   <img src="https://img.shields.io/badge/Auth-JWT%20%2B%20bcrypt-EC1C24?style=for-the-badge&logo=jsonwebtokens&logoColor=white" />
   <img src="https://img.shields.io/badge/Multi--tenant-SaaS-7C3AED?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/Tests-648%20passing-2ea44f?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Tests-663%20passing-2ea44f?style=for-the-badge" />
   <img src="https://img.shields.io/badge/Deploy-Render%20%7C%20Oracle%20Cloud-46E3B7?style=for-the-badge" />
   <img src="https://img.shields.io/badge/STATUS-PHASE%207-2ea44f?style=for-the-badge" />
 </p>
@@ -92,7 +92,7 @@ tables, run `npm run db:migrate` instead.
 ### Tests
 
 ```bash
-npm test             # 648 tests against a real PostgreSQL (run db:setup first)
+npm test             # 663 tests against a real PostgreSQL (run db:setup first)
 ```
 
 They cover tenant isolation, uploads, admissions, accounts and email, students and ID cards, fees, online payments
@@ -630,6 +630,7 @@ planetu-erp/
 | GET/POST | `/api/student/placement`, `/:id/apply`, `/:id/withdraw` | student *(placement module)* |
 | GET/POST/DELETE | `/api/admin/staff-roles`, `/api/admin/staff-roles/:employeeId/:role` | admin only |
 | GET    | `/api/student/todo`, `/api/employee/todo` | student, employee *(their own list)* |
+| GET    | `/api/employee/office-summary` | employee with a staff role *(KPI cards for their office desks)* |
 | GET/POST | `/api/me/notifications`, `/api/me/notifications/:id/read`, `/api/me/notifications/read-all` | any institute user *(only their own messages)* |
 | GET    | `/api/admin/approvals`, `/api/admin/setup-status` | admin |
 | GET    | `/api/admin/fees/summary` | admin *(fees module: collected, outstanding, overdue, overdue students)* |
@@ -845,6 +846,27 @@ teaching department (`EMP007` to `EMP011` at the college, password `Employee@123
 **To do.** Students see one list of what to do next, most urgent first: work to hand in or redo, open quizzes, fees
 overdue or due in the next 14 days, and library books to return. Faculty see lectures still to mark today, answers to
 grade, exam marks to enter, and students below 75% attendance in their subjects.
+
+## Role dashboards
+
+Every role opens on a dashboard that says what needs doing. Each number has something to compare it with (the same
+weekday or week last time, the same days of last month, or the 75% minimum) and turns amber or red only when action is
+needed; clicking a card opens the list behind it.
+
+| Who | Cards | Also |
+|-----|-------|------|
+| Admin and principal (*Institute overview*) | attendance today or this week, lectures not marked, fees collected this month, fees overdue, approvals waiting, students below 75% | "Needs your attention" list, fees by month (bars), attendance by week (line with the 75% line), upcoming events |
+| Accountant | collected today and this month, overdue fees, online payments to check, this month's payroll | |
+| Head of department | department attendance, students below 75%, leave to decide, faculty on leave, pass rate in the last exam | |
+| Other office staff | their desk: books on loan and overdue, visitors inside and expected, beds free, riders, open drives, applications, certificates, papers with marks pending | |
+| Faculty | lectures to mark, answers to grade, marks to enter, own students below 75%, leave left, unread notices | to-do list, today's lectures |
+| Student | attendance with how many classes can be missed (or are needed), next class, assignments due this week, fees due, next exam, latest result | to-do list, schedule, attendance by subject |
+| Parent | for each child: present or absent today, attendance, fees due with a Pay button, latest result, next exam | |
+| Platform admin | active institutes, money received this month, overdue invoices, trials ending, institutes signed in this week and those quiet for 7 days | attention list, payments by month |
+
+The demo institutes now include about six weeks of marked attendance, five months of earlier fee payments and a few
+library loans, so the charts and cards are not empty. Past attendance is topped up on each restart for the demo
+institutes only. To load the new demo data on Render once, set `DEMO_RESET_ON_START=true`, deploy, then remove it.
 
 
 ---
