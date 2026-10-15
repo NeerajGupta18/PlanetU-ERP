@@ -9,6 +9,8 @@ import { provisionTenant } from '../services/tenant.service.js';
 import { sendSetupLink } from '../services/accounts.service.js';
 import { switchTenant } from '../db/pool.js';
 import { startSubscription, updateSubscription } from '../services/billing.service.js';
+import { overview as billingOverview } from '../services/billingConsole.service.js';
+import { quietInstitutes } from '../services/kpi.service.js';
 
 /**
  * The vendor console. These handlers run in PLATFORM context: they may read the
@@ -52,7 +54,21 @@ export async function dashboard(req, res) {
   const { rows: byType } = await q('select type, count(*)::int as n from tenants group by type order by type');
   const { rows: [u] } = await q('select count(*)::int as n from users where tenant_id is not null');
   const { rows: recent } = await q(`select ${TENANT_COLUMNS} from tenants order by created_at desc limit 5`);
-  res.json({ stats: { ...t, users: u.n }, byType, recent });
+  // Money and attention items for the platform owner: what came in this month, what is overdue, trials ending
+  const b = await billingOverview();
+  const { rows: [l] } = await q(
+    `select count(distinct tenant_id) filter (where at >= now() - interval '7 days')::int as "activeWeek"
+     from audit_log where action = 'auth.login' and tenant_id is not null`,
+  );
+  res.json({
+    stats: { ...t, users: u.n, activeWeek: l.activeWeek }, byType, recent,
+    billing: {
+      mrr: b.mrr, collectedThisMonth: b.collected.thisMonth, receivables: b.receivables, needsReview: b.needsReview,
+      series: b.series, counts: b.counts,
+      overdue: b.attention.overdue, trialsEnding: b.attention.trialsEnding, suspended: b.attention.suspended,
+    },
+    quiet: await quietInstitutes(7),
+  });
 }
 
 export async function listTenants(req, res) {

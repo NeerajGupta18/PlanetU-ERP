@@ -56,19 +56,25 @@ export async function forStudent(studentId, modules = []) {
 export async function forEmployee(actor, modules = []) {
   const has = (m) => modules.includes(m);
   const items = [];
+  // Headline counts for the faculty dashboard's KPI cards
+  const counts = { lecturesToday: 0, lecturesToMark: 0, toGrade: 0, papersPending: 0, lowAttendance: 0 };
   if (has('attendance') && has('timetable')) {
     const { lectures = [] } = await lecturesForEmployee(actor.employeeId, today()).catch(() => ({ lectures: [] }));
+    counts.lecturesToday = lectures.length;
+    counts.lecturesToMark = lectures.filter((x) => x.sessionStatus !== 'submitted').length;
     for (const l of lectures.filter((x) => x.sessionStatus !== 'submitted')) {
       items.push({ key: `att-${l.slotId}`, kind: 'attendance', tone: 'warn', title: `Mark attendance: ${l.subject}`, detail: `${l.course}, ${String(l.start).slice(0, 5)} today`, due: `${today()}T${String(l.start).slice(0, 5)}`, link: `/employee/attendance/${l.slotId}` });
     }
   }
   if (has('assignments')) {
     for (const a of (await assignmentsFor(actor, { status: 'published' })).filter((x) => x.toGrade > 0)) {
+      counts.toGrade += a.toGrade;
       items.push({ key: `g-${a.id}`, kind: 'assignment', tone: 'warn', title: `Grade ${a.toGrade} answer${a.toGrade === 1 ? '' : 's'}: "${a.title}"`, detail: `${a.className}, ${a.subject}`, due: a.dueAt, link: `/employee/assignments/${a.id}` });
     }
   }
   if (has('exams')) {
     for (const p of (await employeePapers(actor.employeeId)).filter((x) => x.examStatus !== 'published' && x.entered < x.roster)) {
+      counts.papersPending += 1;
       items.push({ key: `m-${p.id}`, kind: 'marks', tone: 'warn', title: `Enter marks: ${p.subject}`, detail: `${p.examName}, ${p.course} - ${p.entered} of ${p.roster} entered`, due: null, link: `/employee/exams/${p.id}` });
     }
   }
@@ -87,7 +93,9 @@ export async function forEmployee(actor, modules = []) {
       [actor.employeeId, DEFAULT_THRESHOLD],
     );
     lowAttendance = rows.map((r) => ({ ...r, pct: Math.round((r.attended / r.total) * 1000) / 10 }));
-    if (lowAttendance.length) items.push({ key: 'low-att', kind: 'attendance', tone: 'info', title: `${lowAttendance.length} student${lowAttendance.length === 1 ? ' is' : 's are'} below ${DEFAULT_THRESHOLD}% in your subjects`, detail: lowAttendance.slice(0, 3).map((s) => `${s.name} (${s.pct}%)`).join(', '), due: null, link: '/employee/attendance' });
+    const n = new Set(lowAttendance.map((s) => s.id)).size;
+    if (n) items.push({ key: 'low-att', kind: 'attendance', tone: 'info', title: `${n} student${n === 1 ? ' is' : 's are'} below ${DEFAULT_THRESHOLD}% in your subjects`, detail: lowAttendance.slice(0, 3).map((s) => `${s.name}, ${s.subject} (${s.pct}%)`).join('; '), due: null, link: '/employee/attendance' });
   }
-  return { items: sortItems(items), lowAttendance, threshold: DEFAULT_THRESHOLD };
+  counts.lowAttendance = new Set(lowAttendance.map((s) => s.id)).size;
+  return { items: sortItems(items), lowAttendance, counts, threshold: DEFAULT_THRESHOLD };
 }

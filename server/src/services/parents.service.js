@@ -11,6 +11,9 @@ import { HttpError } from '../middleware/error.js';
 import { sendSetupLink } from './accounts.service.js';
 import { studentOverview } from './attendance.service.js';
 import { studentFees } from './fees.service.js';
+import { studentResults } from './exams.service.js';
+import { loadEvents } from '../db/repo.js';
+import { addDays, toISO } from '../utils/dates.js';
 
 /** The cookie that remembers which child a parent is looking at. */
 export const CHILD_COOKIE = 'erp_child';
@@ -132,14 +135,40 @@ export async function childrenOf(userId) {
 export async function childSummaries(userId, modules = []) {
   const kids = await childrenOf(userId);
   const out = [];
+  const today = toISO(new Date());
+  // Exams on the institute calendar in the next 30 days (the calendar is institute-wide)
+  const exams = modules.includes('calendar') || modules.includes('exams')
+    ? (await loadEvents({ audiences: ['all', 'student'], from: today, to: toISO(addDays(new Date(), 30)) })).find((e) => e.type === 'exam') || null
+    : null;
   for (const k of kids) {
-    const item = { ...k, attendance: null, outstanding: null };
+    const item = { ...k, attendance: null, outstanding: null, today: null, nextDue: null, latestResult: null, nextExam: null };
     if (modules.includes('attendance')) {
       const { rows: [s] } = await q('select attendance from students where id = $1', [k.id]);
       const o = await studentOverview(k.id, s?.attendance || []);
       item.attendance = { overall: o.overall, threshold: o.threshold };
+      // Today: how many of the classes marked so far the child attended (null when nothing is marked yet)
+      const { rows: [t] } = await q(
+        `select count(*)::int as marked, count(*) filter (where r.status = 'absent')::int as absent, count(*) filter (where r.status = 'late')::int as late
+         from attendance_records r join attendance_sessions a on a.id = r.session_id
+         where r.student_id = $1 and a.status = 'submitted' and a.on_date = $2::date`, [k.id, today],
+      );
+      item.today = t.marked ? t : null;
     }
-    if (modules.includes('fees')) item.outstanding = (await studentFees(k.id)).summary.outstanding;
+    if (modules.includes('fees')) {
+      const f = await studentFees(k.id);
+      item.outstanding = f.summary.outstanding;
+      const open = f.items.filter((i) => ['unpaid', 'partial'].includes(i.status));
+      const first = open[0];
+      if (first) {
+        const due = first.dueDate ? String(first.dueDate).slice(0, 10) : null;
+        item.nextDue = { label: first.label, amount: Math.round((Number(first.amount) - Number(first.paid)) * 100) / 100, dueDate: due, overdue: Boolean(due && due < today) };
+      }
+    }
+    if (modules.includes('exams')) {
+      const r = (await studentResults(k.id)).exams[0];
+      if (r) item.latestResult = { name: r.name, gpa: r.gpa, pct: r.pct, result: r.result };
+    }
+    if (exams) item.nextExam = { title: exams.title, start: exams.start, end: exams.end };
     out.push(item);
   }
   return out;

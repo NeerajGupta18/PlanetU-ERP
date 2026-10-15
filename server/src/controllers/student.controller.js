@@ -4,7 +4,8 @@ import { getInstitute, loadEvents } from '../db/repo.js';
 import { feed as noticeFeed } from '../services/notices.service.js';
 import { issueIdCard } from './students.controller.js';
 import { buildTimetable } from '../services/timetable.service.js';
-import { studentOverview } from '../services/attendance.service.js';
+import { guidance, studentOverview } from '../services/attendance.service.js';
+import { listMine as myAssignments } from '../services/assignments.service.js';
 import { studentResults } from '../services/exams.service.js';
 import { addDays, daysBetween, isISO, pad, toISO } from '../utils/dates.js';
 
@@ -58,8 +59,28 @@ export async function dashboard(req, res) {
   const results = await studentResults(req.user.studentId);
   const latest = results.exams[0] || null;
 
+  // Assignments still to hand in that fall due in the next 7 days
+  const weekAhead = addDays(new Date(), 7).toISOString();
+  const assignmentsDue = req.tenant.modules.includes('assignments')
+    ? (await myAssignments(req.user.studentId)).assignments.filter((a) => ['pending', 'returned'].includes(a.state) && a.dueAt && new Date(a.dueAt).toISOString() <= weekAhead).length
+    : null;
+
+  // The next exam: a scheduled exam for this class, otherwise an exam on the calendar
+  let nextExam = null;
+  if (req.tenant.modules.includes('exams')) {
+    const { rows: [x] } = await q(
+      `select name, start_date::text as date from exams where course_id = $1 and semester = $2 and status = 'draft' and start_date >= $3::date
+       order by start_date limit 1`, [student.courseId, student.semester, today],
+    );
+    const ev = upcomingEvents.find((e) => e.type === 'exam');
+    nextExam = x ? { name: x.name, date: x.date } : ev ? { name: ev.title, date: ev.start } : null;
+  }
+
   res.json({
     fees: { outstanding, next: next && { label: next.label, dueDate: next.dueDate, balance: next.balance } },
+    attendanceGuide: { ...guidance(overview.attended, overview.total, overview.threshold), attended: overview.attended, total: overview.total },
+    assignmentsDue,
+    nextExam,
     latestResult: latest && { id: latest.id, name: latest.name, semester: latest.semester, gpa: latest.gpa, pct: latest.pct, result: latest.result, cgpa: results.cgpa },
     student: {
       name: student.name, rollNo: student.rollNo, course: student.course, semester: student.semester, section: student.section,
