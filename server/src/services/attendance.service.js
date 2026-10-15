@@ -241,7 +241,7 @@ async function tellAbsent(sessionId, alreadyAbsent, lecture, date) {
 /* ------------------------------------------------------------------ student */
 
 /** Classes needed in a row to reach `t`%, or how many can be missed while staying at/above it. */
-function guidance(att, tot, t) {
+export function guidance(att, tot, t) {
   if (!tot) return { needToReach: 0, canMiss: 0 };
   if (pct(att, tot) >= t) return { needToReach: 0, canMiss: Math.max(0, Math.floor((100 * att - t * tot) / t)) };
   return { needToReach: t >= 100 ? null : Math.max(0, Math.ceil((t * tot - 100 * att) / (100 - t))), canMiss: 0 };

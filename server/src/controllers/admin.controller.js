@@ -5,6 +5,7 @@ import { nextNumber } from '../db/series.js';
 import {
   EVENT_COLUMNS, getInstitute, loadEvents,
 } from '../db/repo.js';
+import * as kpi from '../services/kpi.service.js';
 import { buildAdminTimetable, clearReassignment, reassignLecture } from '../services/timetable.service.js';
 import { addDays, isISO, pad, toISO } from '../utils/dates.js';
 
@@ -86,6 +87,7 @@ export async function dashboard(req, res) {
       lecturesNotMarked: Math.max(0, lecturesToday - w.sessionsMarked),
       attendancePercent: w.recordsToday ? Math.round((w.presentToday / w.recordsToday) * 1000) / 10 : null,
     },
+    kpis: await kpi.institute(req.tenant.modules, { today }),
     recentApplications,
     upcomingEvents,
   });
