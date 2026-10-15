@@ -30,7 +30,7 @@ export default function Library() {
           <>
             <div className="toolbar"><span /><button type="button" className="btn btn--outline btn--sm" onClick={() => setNewBook(true)}><Plus size={13} /> Add book</button></div>
             <DataBoundary loading={books.loading} error={books.error} data={books.data} reload={books.reload}>
-              {books.data && (books.data.books.length === 0 ? <EmptyState title="No books yet" /> : (
+              {books.data && (books.data.books.length === 0 ? <EmptyState title="No books yet" hint="Add the books in your library, then issue them to students and staff." action={{ label: 'Add a book', onClick: () => setNewBook(true) }} /> : (
                 <div className="table-wrap">
                   <table className="table">
                     <thead><tr><th>Title</th><th>Author</th><th>ISBN</th><th>Copies</th><th /></tr></thead>
@@ -82,7 +82,7 @@ function BookRow({ b, onChanged }) {
     <tr>
       <td><strong>{b.title}</strong>{b.category && <div className="muted">{b.category}</div>}</td>
       <td>{b.author || '-'}</td><td className="muted">{b.isbn || '-'}</td>
-      <td><Badge tone={b.availableCopies > 0 ? 'green' : 'red'}>{b.availableCopies} / {b.totalCopies}</Badge></td>
+      <td><Badge tone={b.availableCopies > 0 ? 'green' : 'gray'}>{b.availableCopies} / {b.totalCopies}</Badge></td>
       <td><button type="button" className="btn btn--outline btn--sm" onClick={remove}><Trash2 size={13} /></button></td>
     </tr>
   );

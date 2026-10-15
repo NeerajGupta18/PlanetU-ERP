@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { AlertCircle, Inbox, RefreshCw } from 'lucide-react';
 
 export function FullPageLoader() {
@@ -30,12 +31,23 @@ export function ErrorState({ error, onRetry }) {
   );
 }
 
-export function EmptyState({ title, hint }) {
+/**
+ * "Nothing here yet" - with the next step when there is one. `action` is { label, to } (a link) or
+ * { label, onClick } (a button), or any element.
+ */
+export function EmptyState({ title, hint, action, icon: Icon = Inbox }) {
+  let act = null;
+  if (action && action.label) {
+    act = action.to
+      ? <Link className="btn btn--primary btn--sm" to={action.to}>{action.label}</Link>
+      : <button type="button" className="btn btn--primary btn--sm" onClick={action.onClick}>{action.label}</button>;
+  } else if (action) act = action;
   return (
     <div className="state">
-      <Inbox size={30} />
+      <Icon size={30} aria-hidden="true" />
       <strong>{title}</strong>
       {hint && <p>{hint}</p>}
+      {act && <div className="state__action">{act}</div>}
     </div>
   );
 }

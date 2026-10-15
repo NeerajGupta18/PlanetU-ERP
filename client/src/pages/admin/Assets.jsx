@@ -36,7 +36,7 @@ export default function Assets() {
           <div className="input-wrap" style={{ minWidth: 220 }}><Search size={14} /><input className="input input--icon" placeholder="Name or tag" value={search} onChange={(e) => setSearch(e.target.value)} /></div>
         </div>
         <DataBoundary loading={list.loading} error={list.error} data={list.data} reload={list.reload}>
-          {list.data && (list.data.assets.length === 0 ? <EmptyState title="No assets yet" /> : (
+          {list.data && (list.data.assets.length === 0 ? <EmptyState title="No assets yet" hint="Keep a list of equipment and furniture, who has it and where it is." action={{ label: 'Add an asset', onClick: () => setNewAsset(true) }} /> : (
             <div className="table-wrap">
               <table className="table">
                 <thead><tr><th>Tag</th><th>Name</th><th>Category</th><th>Department</th><th>Assigned to</th><th>Status</th><th /></tr></thead>

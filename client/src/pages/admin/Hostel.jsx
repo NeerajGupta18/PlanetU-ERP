@@ -127,7 +127,7 @@ function Hostels() {
   return (
     <Card title="Hostels" action={<button type="button" className="btn btn--primary btn--sm" onClick={() => setEditing({})}><Plus size={14} /> Add hostel</button>}>
       <DataBoundary loading={list.loading && !list.data} error={list.error} data={list.data} reload={list.reload}>
-        {list.data && (list.data.hostels.length === 0 ? <EmptyState title="No hostels yet" hint="Add a hostel, then add its rooms." /> : (
+        {list.data && (list.data.hostels.length === 0 ? <EmptyState title="No hostels yet" hint="Add a hostel, then add its rooms." action={{ label: 'Add a hostel', onClick: () => setEditing({}) }} /> : (
           <div className="table-wrap">
             <table className="table">
               <thead><tr><th>Hostel</th><th>For</th><th>Warden</th><th>Rooms</th><th>Beds filled</th><th /></tr></thead>

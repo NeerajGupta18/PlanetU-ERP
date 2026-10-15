@@ -71,7 +71,7 @@ function Routes() {
   return (
     <Card title="Routes" action={<button type="button" className="btn btn--primary btn--sm" onClick={() => setEditing({})}><Plus size={14} /> Add route</button>}>
       <DataBoundary loading={list.loading && !list.data} error={list.error} data={list.data} reload={list.reload}>
-        {list.data && (list.data.routes.length === 0 ? <EmptyState title="No routes yet" hint="Add a route with its stops, then put students on it." /> : (
+        {list.data && (list.data.routes.length === 0 ? <EmptyState title="No routes yet" hint="Add a route with its stops, then put students on it." action={{ label: 'Add a route', onClick: () => setEditing({}) }} /> : (
           <div className="table-wrap">
             <table className="table">
               <thead><tr><th>Route</th><th>Vehicle and driver</th><th>Stops</th><th>Seats filled</th><th>Charge / month</th><th /></tr></thead>

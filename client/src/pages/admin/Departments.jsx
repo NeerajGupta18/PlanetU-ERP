@@ -42,7 +42,7 @@ export default function Departments() {
         <Card>
           <DataBoundary loading={depts.loading} error={depts.error} data={depts.data} reload={depts.reload}>
             {depts.data && (
-              depts.data.departments.length === 0 ? <EmptyState title="No departments yet" /> : (
+              depts.data.departments.length === 0 ? <EmptyState title="No departments yet" hint="Employees and courses are grouped by department." action={{ label: 'Add a department', onClick: () => setDeptModal({ id: null }) }} /> : (
                 <div className="table-wrap">
                   <table className="table">
                     <thead><tr><th>#</th><th>Name</th><th>Description</th><th>Employees</th><th>Designations</th><th>Actions</th></tr></thead>
@@ -84,7 +84,7 @@ export default function Departments() {
         <Card>
           <DataBoundary loading={desigs.loading} error={desigs.error} data={desigs.data} reload={desigs.reload}>
             {desigs.data && (
-              desigs.data.designations.length === 0 ? <EmptyState title="No designations yet" /> : (
+              desigs.data.designations.length === 0 ? <EmptyState title="No designations yet" hint="For example Professor, Lab Assistant or Accountant." action={{ label: 'Add a designation', onClick: () => setDesigModal({ id: null }) }} /> : (
                 <div className="table-wrap">
                   <table className="table">
                     <thead><tr><th>#</th><th>Designation</th><th>Department</th><th>Actions</th></tr></thead>

@@ -45,7 +45,7 @@ function ExamList() {
       </div>
       <DataBoundary loading={loading} error={error} data={data} reload={reload}>
         {data && (data.exams.length === 0 ? (
-          <EmptyState title="No exams yet" hint="Create one with New exam. You can start it from the course timetable so each subject becomes a paper." />
+          <EmptyState title="No exams yet" hint="You can start an exam from the course timetable so each subject becomes a paper." action={{ label: 'Create an exam', onClick: () => setCreating(true) }} />
         ) : (
           <div className="table-wrap">
             <table className="table">

@@ -32,7 +32,7 @@ export default function Courses() {
       <Card>
         <DataBoundary loading={list.loading} error={list.error} data={list.data} reload={list.reload}>
           {list.data && (list.data.courses.length === 0
-            ? <EmptyState title={`No ${many.toLowerCase()} yet`} hint={`Add your first ${one.toLowerCase()} with the button above. Applicants choose from this list when they apply.`} />
+            ? <EmptyState title={`No ${many.toLowerCase()} yet`} hint={`Applicants choose from this list when they apply, and students, fees and the timetable are set up per ${one.toLowerCase()}.`} action={{ label: `Add your first ${one.toLowerCase()}`, onClick: () => setModal({}) }} />
             : (
               <div className="table-wrap">
                 <table className="table">

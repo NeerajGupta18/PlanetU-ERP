@@ -39,8 +39,8 @@ export default function Students() {
         icon={Users2} title={t('students', 'Students')} subtitle="Records are created when an applicant is enrolled, or in bulk from a CSV file"
         actions={(
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <Link to={`/admin/reports?report=students${status ? `&status=${status}` : ''}`} className="btn btn--outline btn--sm" style={{ background: '#fff' }}><Download size={14} /> Export list</Link>
-            {hasModule('parent_portal') && <button type="button" className="btn btn--outline btn--sm" style={{ background: '#fff' }} onClick={inviteAll}><Mail size={14} /> Invite all parents</button>}
+            <Link to={`/admin/reports?report=students${status ? `&status=${status}` : ''}`} className="btn btn--outline btn--sm"><Download size={14} /> Export list</Link>
+            {hasModule('parent_portal') && <button type="button" className="btn btn--outline btn--sm" onClick={inviteAll}><Mail size={14} /> Invite all parents</button>}
             <Link to="/admin/students/import" className="btn btn--primary btn--sm" style={{ background: '#fff', color: 'var(--brand-700)', boxShadow: 'none' }}><Upload size={14} /> Import from CSV</Link>
           </div>
         )}
@@ -57,7 +57,7 @@ export default function Students() {
           </div>
         </div>
         <DataBoundary loading={list.loading} error={list.error} data={list.data} reload={list.reload}>
-          {list.data && (list.data.students.length === 0 ? <EmptyState title={`No ${t('students', 'students').toLowerCase()} yet`} hint="Enrol an accepted applicant from Admissions to create one." /> : (
+          {list.data && (list.data.students.length === 0 ? <EmptyState title={`No ${t('students', 'students').toLowerCase()} yet`} hint="Enrol accepted applicants from Admissions, or import existing students from a spreadsheet." action={<><Link className="btn btn--primary btn--sm" to="/admin/students/import">Import students</Link><Link className="btn btn--outline btn--sm" to="/admin/admissions">Go to Admissions</Link></>} /> : (
             <div className="table-wrap">
               <table className="table">
                 <thead><tr><th>ID</th><th>Name</th><th>{t('course', 'Course')}</th><th>Sem / Sec</th><th>Batch</th><th>Status</th><th /></tr></thead>

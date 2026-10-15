@@ -107,7 +107,7 @@ export default function Notices() {
           </div>
         </div>
         <DataBoundary loading={list.loading} error={list.error} data={list.data} reload={list.reload}>
-          {list.data && (list.data.notices.length === 0 ? <EmptyState title="Nothing here" hint="Create a notice with the button above." /> : (
+          {list.data && (list.data.notices.length === 0 ? <EmptyState title="Nothing here" hint="Notices reach students, parents and staff on their dashboard." action={{ label: 'Post a notice', onClick: () => setEditing({}) }} /> : (
             <div className="table-wrap">
               <table className="table">
                 <thead><tr><th>Notice</th><th>For</th><th>Shows</th><th>Read by</th><th>State</th><th /></tr></thead>

@@ -126,7 +126,7 @@ function Types() {
     <Card title="Leave types" action={<button type="button" className="btn btn--primary btn--sm" onClick={() => setEditing({})}><Plus size={14} /> Add type</button>}>
       <DataBoundary loading={t.loading} error={t.error} data={t.data} reload={t.reload}>
         {t.data && (t.data.types.length === 0 ? (
-          <EmptyState title="No leave types yet" hint="Start with the usual ones (casual, sick, earned and unpaid) and change them as you like." />
+          <EmptyState title="No leave types yet" hint="Start with the usual ones (casual, sick, earned and unpaid) and change them as you like." action={{ label: 'Add a leave type', onClick: () => setEditing({}) }} />
         ) : (
           <div className="table-wrap">
             <table className="table">

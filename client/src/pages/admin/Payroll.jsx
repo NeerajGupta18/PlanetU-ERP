@@ -55,7 +55,7 @@ function Salaries() {
     <Card title="Salaries">
       <div className="toolbar"><div className="input-wrap" style={{ minWidth: 220 }}><Search size={14} /><input className="input input--icon" placeholder="Name or ID" value={search} onChange={(e) => setSearch(e.target.value)} /></div></div>
       <DataBoundary loading={list.loading && !list.data} error={list.error} data={list.data} reload={list.reload}>
-        {list.data && (list.data.employees.length === 0 ? <EmptyState title="No employees" hint="Add employees first." /> : (
+        {list.data && (list.data.employees.length === 0 ? <EmptyState title="No employees" hint="Add employees first, then set their salaries here." action={{ label: 'Go to Employees', to: '/admin/employees' }} /> : (
           <div className="table-wrap">
             <table className="table">
               <thead><tr><th>Employee</th><th>Basic</th><th>HRA</th><th>Allowances</th><th>PF</th><th>Gross</th><th /></tr></thead>

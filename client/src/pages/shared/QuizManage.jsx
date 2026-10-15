@@ -29,7 +29,7 @@ function List({ role }) {
   const { data, loading, error, reload } = useFetch(`/${role}/quizzes`);
   return (
     <DataBoundary loading={loading} error={error} data={data} reload={reload}>
-      {data && (data.quizzes.length === 0 ? <EmptyState title="No quizzes yet" hint="Create a quiz, add questions, and publish it to a class." /> : (
+      {data && (data.quizzes.length === 0 ? <EmptyState title="No quizzes yet" hint="Create a quiz, add questions, and publish it to a class." action={{ label: 'New quiz', to: `/${role}/quizzes/new` }} /> : (
         <div className="table-wrap"><table className="table">
           <thead><tr><th>Quiz</th><th>Class</th><th className="num">Questions</th><th className="num">Worth</th><th>Window</th><th>Submitted</th><th>Status</th><th /></tr></thead>
           <tbody>{data.quizzes.map((z) => (

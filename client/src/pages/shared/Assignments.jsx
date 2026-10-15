@@ -23,7 +23,7 @@ export default function Assignments({ role }) {
         actions={<button type="button" className="btn btn--primary btn--sm" onClick={() => setEditing({})}><Plus size={14} /> New assignment</button>} />
       <Card>
         <DataBoundary loading={loading} error={error} data={data} reload={reload}>
-          {data && (data.assignments.length === 0 ? <EmptyState title="No assignments yet" hint="Create one, then publish it so the class can see it." /> : (
+          {data && (data.assignments.length === 0 ? <EmptyState title="No assignments yet" hint="Create one, then publish it so the class can see it." action={{ label: 'New assignment', onClick: () => setEditing({}) }} /> : (
             <div className="table-wrap"><table className="table">
               <thead><tr><th>Assignment</th><th>Class</th><th>Due</th><th className="num">Handed in</th><th className="num">To grade</th><th>Status</th><th /></tr></thead>
               <tbody>{data.assignments.map((a) => (
