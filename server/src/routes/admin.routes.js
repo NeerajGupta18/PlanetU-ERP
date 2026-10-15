@@ -3,7 +3,7 @@ import multer from 'multer';
 import { HttpError } from '../middleware/error.js';
 import { IMPORT_LIMITS } from '../services/studentImport.service.js';
 import { MAX_BYTES } from '../services/files.service.js';
-import { rebindTx, requireAuth, requireModule, requireRole } from '../middleware/auth.js';
+import { rebindTx, requireAuth, requireModule } from '../middleware/auth.js';
 import * as raw from '../controllers/admin.controller.js';
 import * as rawAdmissions from '../controllers/admissions.controller.js';
 import * as rawCourses from '../controllers/courses.controller.js';
@@ -22,6 +22,8 @@ import * as rawNotices from '../controllers/notices.controller.js';
 import * as rawCertificates from '../controllers/certificates.controller.js';
 import * as rawLeave from '../controllers/leave.controller.js';
 import * as rawAssignments from '../controllers/assignments.controller.js';
+import { officeAccess } from '../middleware/office.js';
+import * as rawStaff from '../controllers/staff.controller.js';
 import * as rawInbox from '../controllers/inbox.controller.js';
 import * as rawVisitors from '../controllers/visitors.controller.js';
 import * as rawPlacement from '../controllers/placement.controller.js';
@@ -53,6 +55,7 @@ const hostel = wrapAll(rawHostel);
 const placement = wrapAll(rawPlacement);
 const visitors = wrapAll(rawVisitors);
 const inbox = wrapAll(rawInbox);
+const staff = wrapAll(rawStaff);
 const assignments = wrapAll(rawAssignments);
 const transport = wrapAll(rawTransport);
 const payroll = wrapAll(rawPayroll);
@@ -74,7 +77,8 @@ const docUpload = (req, res, next) => docParser(req, res, (err) => {
   if (err.code === 'LIMIT_FILE_SIZE') return next(new HttpError(413, 'That file is too large (5 MB at most).'));
   return next(new HttpError(400, 'Could not read the upload. Send one file in the "file" field.'));
 });
-router.use(requireAuth, requireRole('admin'));
+// The institute admin uses all of this; employees with staff roles use the parts their roles grant (middleware/office.js)
+router.use(requireAuth, officeAccess);
 router.param('id', uuidParam);
 router.param('docId', uuidParam);
 router.param('itemId', uuidParam);
@@ -305,6 +309,10 @@ router.post('/assignments/:id/publish', assignments.publish);
 router.post('/assignments/:id/close', assignments.close);
 router.post('/assignments/:id/reopen', assignments.reopen);
 router.put('/assignments/:id/submissions/:studentId', assignments.grade);
+
+router.get('/staff-roles', staff.list);
+router.post('/staff-roles', staff.grant);
+router.delete('/staff-roles/:employeeId/:role', staff.revoke);
 
 router.get('/approvals', inbox.approvalsList);
 router.get('/setup-status', inbox.setup);
