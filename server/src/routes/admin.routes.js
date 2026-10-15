@@ -22,6 +22,7 @@ import * as rawNotices from '../controllers/notices.controller.js';
 import * as rawCertificates from '../controllers/certificates.controller.js';
 import * as rawLeave from '../controllers/leave.controller.js';
 import * as rawAssignments from '../controllers/assignments.controller.js';
+import * as rawInbox from '../controllers/inbox.controller.js';
 import * as rawVisitors from '../controllers/visitors.controller.js';
 import * as rawPlacement from '../controllers/placement.controller.js';
 import * as rawHostel from '../controllers/hostel.controller.js';
@@ -51,6 +52,7 @@ const leave = wrapAll(rawLeave);
 const hostel = wrapAll(rawHostel);
 const placement = wrapAll(rawPlacement);
 const visitors = wrapAll(rawVisitors);
+const inbox = wrapAll(rawInbox);
 const assignments = wrapAll(rawAssignments);
 const transport = wrapAll(rawTransport);
 const payroll = wrapAll(rawPayroll);
@@ -303,6 +305,9 @@ router.post('/assignments/:id/publish', assignments.publish);
 router.post('/assignments/:id/close', assignments.close);
 router.post('/assignments/:id/reopen', assignments.reopen);
 router.put('/assignments/:id/submissions/:studentId', assignments.grade);
+
+router.get('/approvals', inbox.approvalsList);
+router.get('/setup-status', inbox.setup);
 
 router.use('/visitors', requireModule('visitors'));
 router.get('/visitors/meta', visitors.meta);
