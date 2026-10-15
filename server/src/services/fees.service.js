@@ -3,6 +3,7 @@ import { q } from '../db/pool.js';
 import { HttpError } from '../middleware/error.js';
 import { audit } from '../db/audit.js';
 import { nextNumber } from '../db/series.js';
+import { notifyStudent } from './inbox.service.js';
 
 const METHODS = ['cash', 'cheque', 'bank_transfer', 'upi', 'card', 'online'];
 const money = (n, label) => {
@@ -207,6 +208,7 @@ export async function recordPayment(body, admin) {
     await q("update student_fee_items set status = $1 where id = $2", [bal <= 0.01 ? 'paid' : 'partial', a.feeItemId]);
   }
   await audit(admin, 'fees.payment', 'student', studentId, { receiptNo, amount: total, method });
+  await notifyStudent(studentId, { kind: 'fees', title: `Payment of ₹${total.toLocaleString('en-IN')} received`, body: `Receipt ${receiptNo}. Thank you.`, link: '/student/fees' }, { parents: true });
   return getPayment(p.id);
 }
 

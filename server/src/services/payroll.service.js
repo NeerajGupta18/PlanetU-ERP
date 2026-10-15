@@ -11,6 +11,7 @@ import { HttpError } from '../middleware/error.js';
 import { toISO } from '../utils/dates.js';
 import { queueEmail, tenantInfo } from './notifications.service.js';
 import { workingDays } from './leave.service.js';
+import { notifyUsers } from './inbox.service.js';
 
 const MONTH_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
 const r2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
@@ -148,7 +149,7 @@ export async function finalise(id, admin) {
   if (!run) throw new HttpError(404, 'Payroll run not found.');
   if (run.status === 'finalised') throw new HttpError(409, 'This month is already finalised.');
   const { rows: slips } = await q(
-    'select e.name, e.email from payslips s join employees e on e.id = s.employee_id where s.run_id = $1', [id],
+    'select e.id, e.name, e.email from payslips s join employees e on e.id = s.employee_id where s.run_id = $1', [id],
   );
   if (!slips.length) throw new HttpError(409, 'There are no payslips to finalise.');
   await q("update payroll_runs set status = 'finalised', finalised_at = now() where id = $1", [id]);
@@ -156,6 +157,8 @@ export async function finalise(id, admin) {
   for (const e of slips) {
     if (e.email) await queueEmail(e.email, 'payslipReady', { institute: info.name, name: e.name, month: monthLabel(run.month), url: `${env.APP_URL}/login` });
   }
+  const { rows: staff } = await q("select id from users where employee_id = any ($1) and status = 'active'", [slips.map((e) => e.id)]);
+  await notifyUsers(staff.map((u) => u.id), { kind: 'payslip', title: `Your payslip for ${monthLabel(run.month)} is ready`, body: 'Open it to view or download the PDF.', link: '/employee/payslips' });
   await audit(admin, 'payroll.finalise', 'payroll_run', id, { month: run.month });
   return getRun(id);
 }

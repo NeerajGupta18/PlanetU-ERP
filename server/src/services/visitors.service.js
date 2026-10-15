@@ -10,6 +10,7 @@ import { nextNumber } from '../db/series.js';
 import { HttpError } from '../middleware/error.js';
 import { isISO, toISO } from '../utils/dates.js';
 import { queueEmail, tenantInfo } from './notifications.service.js';
+import { notifyEmployee } from './inbox.service.js';
 
 export const PURPOSES = ['Meeting', 'Admission enquiry', 'Parent visit', 'Interview', 'Delivery', 'Maintenance or vendor', 'Event', 'Other'];
 export const ID_TYPES = ['Aadhaar', 'Driving licence', 'Voter ID', 'Passport', 'Company ID', 'Other'];
@@ -55,6 +56,7 @@ async function hostOrThrow(hostId) {
 
 async function notifyHost(visit) {
   if (!visit.hostId) return;
+  await notifyEmployee(visit.hostId, { kind: 'visitor', title: `${visit.visitorName} has arrived to meet you`, body: `${visit.purpose}${visit.organisation ? `, ${visit.organisation}` : ''}. Pass ${visit.passNo}.`, link: '/employee/visitors' });
   const { rows: [h] } = await q('select name, email from employees where id = $1', [visit.hostId]);
   if (!h?.email) return;
   const info = await tenantInfo();

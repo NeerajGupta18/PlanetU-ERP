@@ -9,6 +9,7 @@ import { audit } from '../db/audit.js';
 import { HttpError } from '../middleware/error.js';
 import { addDays, isISO, parseISO, toISO } from '../utils/dates.js';
 import { queueEmail, tenantInfo } from './notifications.service.js';
+import { notifyAdmins, notifyEmployee } from './inbox.service.js';
 
 const STANDARD_TYPES = [['Casual leave', 12], ['Sick leave', 10], ['Earned leave', 15], ['Leave without pay', null]];
 const MAX_BACKDATE_DAYS = 60;
@@ -173,6 +174,7 @@ export async function apply(employeeId, body = {}, actor, { byOffice = false } =
     [employeeId, type.id, fromDate, toDate, half, days, reason, byOffice ? 'approved' : 'pending', actor.id, byOffice ? actor.id : null, byOffice ? new Date() : null],
   );
   await audit(actor, byOffice ? 'leave.record' : 'leave.apply', 'leave', r.id, { type: type.name, fromDate, toDate, days });
+  if (!byOffice) await notifyAdmins({ kind: 'approval', title: `Leave request from ${actor.name}`, body: `${type.name}, ${fromDate === toDate ? fromDate : `${fromDate} to ${toDate}`} (${days} day${days === 1 ? '' : 's'})`, link: '/admin/approvals' });
   return (await q(`${REQUEST_SELECT} where r.id = $1`, [r.id])).rows[0];
 }
 
@@ -206,9 +208,16 @@ export async function listForAdmin({ status, search } = {}) {
 
 async function tell(id, decision) {
   const { rows: [r] } = await q(
-    `select r.from_date::text as "fromDate", r.to_date::text as "toDate", r.days::float8 as days, r.remark, t.name as "typeName", e.name, e.email
+    `select r.from_date::text as "fromDate", r.to_date::text as "toDate", r.days::float8 as days, r.remark, r.employee_id as "employeeId", t.name as "typeName", e.name, e.email
      from leave_requests r join leave_types t on t.id = r.leave_type_id join employees e on e.id = r.employee_id where r.id = $1`, [id],
   );
+  if (r) {
+    await notifyEmployee(r.employeeId, {
+      kind: 'leave', link: '/employee/leave',
+      title: `Your ${r.typeName} leave was ${decision === 'approved' ? 'approved' : 'not approved'}`,
+      body: `${r.fromDate === r.toDate ? r.fromDate : `${r.fromDate} to ${r.toDate}`}${r.remark ? `. ${r.remark}` : ''}`,
+    });
+  }
   if (!r?.email) return;
   const info = await tenantInfo();
   await queueEmail(r.email, 'leaveUpdate', { institute: info.name, name: r.name, typeName: r.typeName, fromDate: r.fromDate, toDate: r.toDate, days: r.days, decision, remark: r.remark, url: `${env.APP_URL}/login` });

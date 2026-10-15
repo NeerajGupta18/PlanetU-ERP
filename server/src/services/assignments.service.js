@@ -9,6 +9,7 @@ import { audit } from '../db/audit.js';
 import { HttpError } from '../middleware/error.js';
 import { assertCanTeach, formScope, teaches } from './teaching.service.js';
 import { queueEmail, tenantInfo } from './notifications.service.js';
+import { notifyStudent } from './inbox.service.js';
 
 const str = (v, max, label, required = false) => {
   const s = typeof v === 'string' ? v.trim() : '';
@@ -169,6 +170,11 @@ export async function grade(actor, id, studentId, body = {}) {
       institute: info.name, name: sub.name, title: a.title, returned: action === 'return', marks, maxMarks: a.maxMarks, feedback, url: `${env.APP_URL}/login`,
     });
   }
+  await notifyStudent(studentId, {
+    kind: 'assignment', link: `/student/assignments/${id}`,
+    title: action === 'return' ? `"${a.title}" was sent back to redo` : `"${a.title}" was graded: ${marks} / ${a.maxMarks}`,
+    body: feedback,
+  });
   await audit(actor, `assignment.${action}`, 'assignment', id, { student: studentId });
   return (await detail(actor, id)).students.find((s) => s.studentId === studentId);
 }

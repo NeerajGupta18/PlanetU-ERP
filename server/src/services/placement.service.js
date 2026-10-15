@@ -10,6 +10,7 @@ import { HttpError } from '../middleware/error.js';
 import { isISO, toISO } from '../utils/dates.js';
 import { queueEmail, tenantInfo } from './notifications.service.js';
 import { studentOverview } from './attendance.service.js';
+import { notifyStudent } from './inbox.service.js';
 
 const DECISIONS = ['applied', 'shortlisted', 'selected', 'rejected'];
 const str = (v, max, label, required = false) => {
@@ -167,7 +168,7 @@ export async function driveDetail(id) {
 export async function decide(applicationId, body = {}, admin) {
   if (!DECISIONS.includes(body.status)) throw new HttpError(400, `Choose one of: ${DECISIONS.join(', ')}.`);
   const { rows: [a] } = await q(
-    `select a.id, a.status, a.drive_id, s.name, s.email, d.title, c.name as company
+    `select a.id, a.status, a.drive_id, a.student_id, s.name, s.email, d.title, c.name as company
      from placement_applications a join students s on s.id = a.student_id join placement_drives d on d.id = a.drive_id join placement_companies c on c.id = d.company_id
      where a.id = $1 for update of a`, [applicationId],
   );
@@ -180,6 +181,10 @@ export async function decide(applicationId, body = {}, admin) {
   if (a.email && body.status !== a.status && body.status !== 'applied') {
     const info = await tenantInfo();
     await queueEmail(a.email, 'placementUpdate', { institute: info.name, name: a.name, company: a.company, title: a.title, status: body.status, offer, note, url: `${env.APP_URL}/login` });
+  }
+  if (body.status !== a.status && body.status !== 'applied') {
+    const words = { shortlisted: 'You were shortlisted', selected: 'You were selected', rejected: 'Not selected this time' };
+    await notifyStudent(a.student_id, { kind: 'placement', title: `${a.company}: ${words[body.status]}`, body: `${a.title}${offer ? `, offer ${offer} LPA` : ''}${note ? `. ${note}` : ''}`, link: '/student/placement' });
   }
   await audit(admin, 'placement.decide', 'placement_application', applicationId, { status: body.status });
   return (await driveDetail(a.drive_id)).applications.find((x) => x.id === applicationId);

@@ -14,6 +14,7 @@ import { HttpError } from '../middleware/error.js';
 import { audit } from '../db/audit.js';
 import { isISO, parseISO, toISO } from '../utils/dates.js';
 import { csvCell } from '../utils/csv.js';
+import { notifyStudent, notifyUsers } from './inbox.service.js';
 
 export const STATUSES = ['present', 'absent', 'late'];
 export const DEFAULT_THRESHOLD = 75;
@@ -191,6 +192,10 @@ export async function saveSheet({ slotId, date, marks, submit, actor }) {
 
   const wasSubmitted = existingSession[0]?.status === 'submitted';
   const status = submit || wasSubmitted ? 'submitted' : 'draft';
+  // Who was already reported absent, so an edit to a submitted register only tells the newly absent
+  const alreadyAbsent = wasSubmitted
+    ? new Set((await q("select student_id from attendance_records where session_id = $1 and status = 'absent'", [existingSession[0].id])).rows.map((r) => r.student_id))
+    : new Set();
   const { rows: [s] } = await q(
     `insert into attendance_sessions
        (slot_id, on_date, course_id, subject, start_time, end_time, taken_by, status, submitted_at, created_by, updated_by)
@@ -212,11 +217,25 @@ export async function saveSheet({ slotId, date, marks, submit, actor }) {
     );
   }
 
+  if (status === 'submitted') await tellAbsent(s.id, alreadyAbsent, lecture, date);
   const action = !existingSession[0] || (!wasSubmitted && submit) ? (submit ? 'attendance.submit' : 'attendance.draft') : 'attendance.edit';
   await audit(actor, action, 'attendance_session', s.id, {
     slotId, date, marks: marks.length, by: actor.role,
   });
   return loadSheet(lecture, date, actor);
+}
+
+/** Tells each newly absent student, and their parents, as soon as the register is submitted. */
+async function tellAbsent(sessionId, alreadyAbsent, lecture, date) {
+  const { rows } = await q(
+    `select s.id, s.name from attendance_records r join students s on s.id = r.student_id where r.session_id = $1 and r.status = 'absent'`, [sessionId],
+  );
+  const when = `${date}, ${String(lecture.start).slice(0, 5)}`;
+  for (const st of rows.filter((x) => !alreadyAbsent.has(x.id))) {
+    await notifyStudent(st.id, { kind: 'attendance', title: `You were marked absent in ${lecture.subject}`, body: when, link: '/student/attendance' });
+    const { rows: parents } = await q("select l.user_id from parent_links l join users u on u.id = l.user_id and u.status = 'active' where l.student_id = $1", [st.id]);
+    await notifyUsers(parents.map((p) => p.user_id), { kind: 'attendance', title: `${st.name.split(' ')[0]} was marked absent in ${lecture.subject}`, body: when, link: '/student/attendance' });
+  }
 }
 
 /* ------------------------------------------------------------------ student */

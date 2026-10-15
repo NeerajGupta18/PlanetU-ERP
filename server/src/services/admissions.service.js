@@ -10,6 +10,7 @@ import { sendSetupLink } from './accounts.service.js';
 import { queueEmail, tenantInfo } from './notifications.service.js';
 import { isISO, toISO } from '../utils/dates.js';
 import * as gateway from './razorpay.service.js';
+import { notifyAdmins } from './inbox.service.js';
 
 export const DOC_TYPES = ['photo', 'signature', 'id_proof', 'marksheet', 'other'];
 export const REQUIRED_DOCS = ['photo', 'id_proof', 'marksheet'];
@@ -264,7 +265,10 @@ export async function submitApplication(app) {
     if (err.code === '23505') throw new HttpError(409, 'An application with this email already exists for this course.');
     throw err;
   }
-  if (app.status === 'draft') await notifyApplicant(app, 'applicationReceived');
+  if (app.status === 'draft') {
+    await notifyApplicant(app, 'applicationReceived');
+    await notifyAdmins({ kind: 'approval', title: `New application from ${app.name}`, body: app.application_no ? `Application ${app.application_no}` : '', link: `/admin/admissions?open=${app.id}` });
+  }
   return applicantView({ ...app, status: 'submitted', step: 6 });
 }
 

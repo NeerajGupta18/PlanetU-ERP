@@ -11,6 +11,7 @@ import { HttpError } from '../middleware/error.js';
 import { isISO, toISO } from '../utils/dates.js';
 import { queueEmail, tenantInfo } from './notifications.service.js';
 import { studentFees } from './fees.service.js';
+import { notifyAdmins, notifyStudent } from './inbox.service.js';
 
 export const TYPES = {
   bonafide: 'Bonafide certificate',
@@ -64,6 +65,7 @@ export async function request(user, body = {}) {
     [user.studentId, certType, purpose, user.id],
   );
   await audit(user, 'certificate.request', 'certificate', r.id, { certType });
+  await notifyAdmins({ kind: 'approval', title: `New request: ${TYPES[certType]}`, body: `From ${user.name}`, link: '/admin/approvals' });
   return (await q(`${SELECT} where r.id = $1`, [r.id])).rows.map(label)[0];
 }
 
@@ -101,8 +103,15 @@ async function issue(row, { details, remark, force }, admin, modules) {
 
 async function tell(id, decision, remark) {
   const { rows: [r] } = await q(
-    `select r.cert_type, r.certificate_no, s.name, s.email from certificate_requests r join students s on s.id = r.student_id where r.id = $1`, [id],
+    `select r.cert_type, r.certificate_no, r.student_id, s.name, s.email from certificate_requests r join students s on s.id = r.student_id where r.id = $1`, [id],
   );
+  if (r) {
+    await notifyStudent(r.student_id, {
+      kind: 'certificate', link: '/student/certificates',
+      title: decision === 'issued' ? `Your ${TYPES[r.cert_type]} is ready to download` : `Your ${TYPES[r.cert_type]} request was not approved`,
+      body: remark || '',
+    });
+  }
   if (!r?.email) return;
   const info = await tenantInfo();
   await queueEmail(r.email, 'certificateUpdate', {

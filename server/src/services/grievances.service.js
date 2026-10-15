@@ -9,6 +9,7 @@ import { audit } from '../db/audit.js';
 import { nextNumber } from '../db/series.js';
 import { HttpError } from '../middleware/error.js';
 import { queueEmail, tenantInfo } from './notifications.service.js';
+import { notifyAdmins, notifyUsers } from './inbox.service.js';
 
 export const CATEGORIES = ['Academic', 'Fees', 'Hostel', 'Transport', 'Facilities', 'Staff conduct', 'Safety', 'Other'];
 export const STATUSES = ['open', 'in_progress', 'resolved', 'closed'];
@@ -64,6 +65,7 @@ export async function create(user, body = {}, { studentId = null } = {}) {
     [ticketNo, user.id, user.role, sid, category, subject, details, body.anonymous === true],
   );
   await audit(user, 'grievance.create', 'grievance', g.id, { ticketNo, category });
+  await notifyAdmins({ kind: 'approval', title: `New ticket ${ticketNo}: ${subject}`, body: `${category}${body.anonymous === true ? '' : `, from ${user.name}`}`, link: `/admin/grievances?open=${g.id}` });
   return forRaiser((await q(`${SELECT} where g.id = $1`, [g.id])).rows[0]);
 }
 
@@ -121,8 +123,16 @@ export async function getForAdmin(id) {
 
 async function tell(id, status, message) {
   const { rows: [r] } = await q(
-    `select g.ticket_no as "ticketNo", g.subject, u.name, u.email, u.role from grievances g join users u on u.id = g.raised_by where g.id = $1`, [id],
+    `select g.ticket_no as "ticketNo", g.subject, g.raised_by as "raisedBy", u.name, u.email, u.role from grievances g join users u on u.id = g.raised_by where g.id = $1`, [id],
   );
+  if (r) {
+    const base = r.role === 'employee' ? '/employee' : r.role === 'parent' ? '/parent' : '/student';
+    await notifyUsers([r.raisedBy], {
+      kind: 'grievance', link: `${base}/support`,
+      title: `Update on your ticket ${r.ticketNo}: ${String(status).replace('_', ' ')}`,
+      body: message || r.subject,
+    });
+  }
   if (!r?.email) return;
   const info = await tenantInfo();
   const home = r.role === 'employee' ? 'employee' : 'student';
