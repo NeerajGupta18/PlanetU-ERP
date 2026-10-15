@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Bell, ChevronDown, KeyRound, LogOut, MapPin, Menu, Phone, Search } from 'lucide-react';
+import { useBell } from '../../hooks/useBell.js';
+import BellPanel from './BellPanel.jsx';
+import BottomNav from './BottomNav.jsx';
+import SectionTabs from './SectionTabs.jsx';
+import InstallPrompt from '../campus/InstallPrompt.jsx';
 import { api } from '../../api/http.js';
 import { useFetch } from '../../hooks/useFetch.js';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -67,9 +72,10 @@ function ChildSwitcher() {
 }
 
 export default function AppShell() {
-  const { user, tenant, billing, institute, notifications, logout } = useAuth();
+  const { user, tenant, billing, institute, logout } = useAuth();
   const { t } = useTenantConfig();
-  const { tree, flat } = useNav();
+  const { tree, flat, links } = useNav();
+  const bell = useBell(user.role !== 'super_admin');
   const navigate = useNavigate();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('erp.sidebar') === 'collapsed');
@@ -107,7 +113,7 @@ export default function AppShell() {
   const locked = Boolean(tenant?.billingLocked);
 
   return (
-    <div className={`shell ${collapsed ? 'is-collapsed' : ''} ${drawer ? 'is-drawer-open' : ''}`}>
+    <div className={`shell ${collapsed ? 'is-collapsed' : ''} ${drawer ? 'is-drawer-open' : ''} ${['student', 'parent', 'employee'].includes(user.role) ? 'has-bottomnav' : ''}`}>
       <aside className="sidebar" aria-label="Main navigation">
         <div className="sidebar__brand">
           <span className="sidebar__logo"><BrandMark size={26} /></span>
@@ -116,7 +122,7 @@ export default function AppShell() {
             <small>{user.role === 'student' ? `${t('student', 'Student')} Portal` : `${ROLE_LABEL[user.role]} Portal`}</small>
           </span>
         </div>
-        <SidebarNav tree={tree} flat={flat} />
+        <SidebarNav tree={tree} flat={flat} counts={bell.counts} />
       </aside>
       <div className="scrim" onClick={() => setDrawer(false)} />
 
@@ -144,22 +150,13 @@ export default function AppShell() {
             </button>
             <Dropdown
               button={({ toggle }) => (
-                <button type="button" className="icon-btn bell" onClick={toggle} aria-label={`Notifications (${notifications.length})`}>
+                <button type="button" className="icon-btn bell" onClick={toggle} aria-label={`Notifications (${bell.total})`}>
                   <Bell size={19} />
-                  {notifications.length > 0 && <span className="bell__badge">{notifications.length}</span>}
+                  {bell.total > 0 && <span className="bell__badge">{bell.total > 99 ? '99+' : bell.total}</span>}
                 </button>
               )}
             >
-              <div className="notif">
-                <div className="notif__head">Notifications</div>
-                {notifications.length === 0 && <p className="notif__empty">You're all caught up.</p>}
-                {notifications.map((n) => (
-                  <div key={n.id} className="notif__item">
-                    <strong>{n.title}</strong>
-                    <small>{n.category} - {fmtDate(n.date)}</small>
-                  </div>
-                ))}
-              </div>
+              <BellPanel bell={bell} />
             </Dropdown>
 
             <Dropdown
@@ -177,6 +174,7 @@ export default function AppShell() {
               <div className="menu">
                 <div className="menu__who"><strong>{user.name}</strong><small>{user.loginId}</small></div>
                 <button type="button" className="menu__item" onClick={() => navigate('/change-password')}><KeyRound size={15} /> Change password</button>
+                <InstallPrompt className="menu__item" />
                 <button type="button" className="menu__item" onClick={onLogout}><LogOut size={15} /> Sign out</button>
               </div>
             </Dropdown>
@@ -185,10 +183,12 @@ export default function AppShell() {
 
         <main className="content">
           <Breadcrumbs flat={flat} />
+          <SectionTabs links={links} />
           {user.role === 'admin' && billing && !locked && location.pathname !== '/admin/billing' && <BillingBanner b={billing} />}
           <Outlet />
         </main>
         <SearchPalette open={searchOpen} onClose={() => setSearchOpen(false)} flat={flat} />
+        <BottomNav role={user.role} onMenu={() => setDrawer(true)} />
 
         <footer className="footer">
           Copyright &copy; {new Date().getFullYear()} {institute?.name}. All rights reserved.
