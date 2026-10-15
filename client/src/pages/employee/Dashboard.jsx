@@ -6,15 +6,19 @@ import { useTenantConfig } from '../../hooks/useTenantConfig.js';
 import { Badge, Card, PageBanner, StatCard } from '../../components/ui/Ui.jsx';
 import { DataBoundary } from '../../components/ui/Feedback.jsx';
 import LectureList from '../../components/attendance/LectureList.jsx';
-import { fmtDate, fmtLong, greeting } from '../../utils/dates.js';
+import TodoCard from '../../components/campus/TodoCard.jsx';
+import OfficeWorkCard from '../../components/campus/OfficeWorkCard.jsx';
+import { firstName, fmtDate, fmtLong, greeting } from '../../utils/dates.js';
 import { KIND_LABEL } from '../../utils/exams.js';
 
 export default function EmployeeDashboard() {
-  const { user } = useAuth();
+  const { user, office } = useAuth();
   const { hasModule } = useTenantConfig();
-  const canMark = hasModule('attendance') && hasModule('timetable');
+  // Office staff with no lectures or exam papers (an accountant, a librarian) do not get the teaching sections
+  const teaching = office?.teaching !== false;
+  const canMark = teaching && hasModule('attendance') && hasModule('timetable');
   const { data, loading, error, reload } = useFetch(canMark ? '/employee/attendance/today' : null);
-  const showMarks = hasModule('exams');
+  const showMarks = teaching && hasModule('exams');
   const papersFetch = useFetch(showMarks ? '/employee/exams/papers' : null);
   const waiting = (papersFetch.data?.papers || []).filter((p) => p.examStatus === 'draft' && p.marksStatus !== 'submitted');
   const noticeFetch = useFetch(hasModule('notices') ? '/employee/notices' : null);
@@ -27,9 +31,11 @@ export default function EmployeeDashboard() {
   return (
     <>
       <PageBanner
-        icon={LayoutDashboard} title={`${greeting()}, ${user.name.split(' ')[0]}`}
+        icon={LayoutDashboard} title={`${greeting()}, ${firstName(user.name)}`}
         subtitle={canMark && data ? fmtLong(data.date) : 'Welcome to your workspace'}
       />
+      <OfficeWorkCard />
+      {teaching && <TodoCard path="/employee/todo" />}
       {recent.length > 0 && (
         <Card title={`Notices${noticeFetch.data.unread ? ` (${noticeFetch.data.unread} new)` : ''}`} icon={Megaphone} action={<Link to="/employee/notices" className="btn btn--outline btn--sm">All notices</Link>}>
           <ul className="notices">
@@ -59,7 +65,7 @@ export default function EmployeeDashboard() {
           </ul>
         </Card>
       )}
-      {!canMark && !(showMarks && waiting.length > 0) ? (
+      {!teaching ? null : !canMark && !(showMarks && waiting.length > 0) ? (
         <Card title="Your workspace">
           <p className="muted">Your institute has not switched on any employee modules yet.</p>
         </Card>

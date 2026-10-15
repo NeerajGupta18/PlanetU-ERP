@@ -36,3 +36,10 @@ export function greeting() {
   if (h < 17) return 'Good afternoon';
   return 'Good evening';
 }
+
+/** The name to greet someone by: their first name, skipping a title such as Dr. or Mrs. */
+export function firstName(name) {
+  const parts = String(name || '').trim().split(/\s+/);
+  const skip = /^(dr|mr|mrs|ms|miss|prof|shri|smt)\.?$/i;
+  return (parts.find((p) => !skip.test(p)) || parts[0] || '').replace(/[.,]$/, '');
+}

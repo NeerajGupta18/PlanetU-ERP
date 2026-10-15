@@ -5,7 +5,8 @@ import { useTenantConfig } from '../../hooks/useTenantConfig.js';
 import { Badge, Card, PageBanner, StatCard } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import { EVENT_TYPES } from '../../utils/eventTypes.js';
-import { todayISO, fmtDate, fmtEventDates, fmtRange, fmtTime, greeting, MONTHS, parseISO } from '../../utils/dates.js';
+import TodoCard from '../../components/campus/TodoCard.jsx';
+import { firstName, todayISO, fmtDate, fmtEventDates, fmtRange, fmtTime, greeting, MONTHS, parseISO } from '../../utils/dates.js';
 
 const nowHHMM = () => {
   const d = new Date();
@@ -30,7 +31,7 @@ const inr = (n) => `₹${Number(n).toLocaleString('en-IN', { minimumFractionDigi
 function DashboardView({ d }) {
   const { hasModule } = useTenantConfig();
   const now = nowHHMM();
-  const first = d.student.name.split(' ')[0];
+  const first = firstName(d.student.name);
   const low = d.attendance.filter((a) => a.pct < d.attendanceThreshold);
   const showFees = hasModule('fees') && d.fees;
   const showResult = hasModule('exams') && d.latestResult;
@@ -53,6 +54,8 @@ function DashboardView({ d }) {
         <StatCard value={d.stats.upcomingEvents} label="Events in the next 7 days" icon={CalendarDays} to="/student/calendar" />
         <StatCard value={d.stats.notices} label="Unread notices" icon={Megaphone} to="/student/notices" {...(d.stats.notices > 0 ? { status: 'info', hint: 'New' } : { status: 'clear', hint: 'All read' })} />
       </div>
+
+      <TodoCard path="/student/todo" />
 
       {low.length > 0 && (
         <div className="alert alert--warn" role="alert">

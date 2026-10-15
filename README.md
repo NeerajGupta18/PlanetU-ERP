@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/PostgreSQL-16%20%2B%20RLS-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" />
   <img src="https://img.shields.io/badge/Auth-JWT%20%2B%20bcrypt-EC1C24?style=for-the-badge&logo=jsonwebtokens&logoColor=white" />
   <img src="https://img.shields.io/badge/Multi--tenant-SaaS-7C3AED?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/Tests-636%20passing-2ea44f?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Tests-648%20passing-2ea44f?style=for-the-badge" />
   <img src="https://img.shields.io/badge/Deploy-Render%20%7C%20Oracle%20Cloud-46E3B7?style=for-the-badge" />
   <img src="https://img.shields.io/badge/STATUS-PHASE%207-2ea44f?style=for-the-badge" />
 </p>
@@ -92,7 +92,7 @@ tables, run `npm run db:migrate` instead.
 ### Tests
 
 ```bash
-npm test             # 636 tests against a real PostgreSQL (run db:setup first)
+npm test             # 648 tests against a real PostgreSQL (run db:setup first)
 ```
 
 They cover tenant isolation, uploads, admissions, accounts and email, students and ID cards, fees, online payments
@@ -122,6 +122,7 @@ case-sensitive. The Super Admin needs no institute code.
 | Student     | `Student@123`    |
 | Employee    | `Employee@123`   |
 | Parent (`PAR001`) | `Parent@123` |
+| Office staff: principal `EMP007`, accountant `EMP008`, librarian `EMP009`, gate security `EMP010`, head of department `EMP011` *(they sign in as Employee)* | `Employee@123` |
 
 Notice that `ADM001` exists in all three institutes but is a different person in each — the institute code
 decides whose data you get. Each institute also speaks its own language: the university calls its courses
@@ -627,6 +628,8 @@ planetu-erp/
 | GET/POST | `/api/student/checkin/today`, `/api/student/checkin` | student *(rate limited; wrong codes are counted)* |
 | GET/POST/PUT/DELETE | `/api/admin/placement/companies`, `/drives`, `/drives/:id/open|close`, `/applications/:id`, `/stats` | admin *(placement module)* |
 | GET/POST | `/api/student/placement`, `/:id/apply`, `/:id/withdraw` | student *(placement module)* |
+| GET/POST/DELETE | `/api/admin/staff-roles`, `/api/admin/staff-roles/:employeeId/:role` | admin only |
+| GET    | `/api/student/todo`, `/api/employee/todo` | student, employee *(their own list)* |
 | GET/POST | `/api/me/notifications`, `/api/me/notifications/:id/read`, `/api/me/notifications/read-all` | any institute user *(only their own messages)* |
 | GET    | `/api/admin/approvals`, `/api/admin/setup-status` | admin |
 | GET    | `/api/admin/fees/summary` | admin *(fees module: collected, outstanding, overdue, overdue students)* |
@@ -813,6 +816,35 @@ right there), certificate requests, submitted applications and new help-desk tic
 waiting. **Setup checklist:** a new institute's dashboard lists the steps before the system is useful (institute details,
 departments, courses, staff, timetable, fee structure, students, leave types), ticks each one off as it is done, and
 points to the next step. It can be hidden.
+
+## Staff roles and to-do lists
+
+**Staff roles.** Office staff sign in with their normal employee login. The admin gives them one or more roles under
+*Employees > Staff roles*, and their menu then shows the office pages of those roles and nothing else. Every call is
+checked on the server, not only hidden in the menu.
+
+| Role | Office pages |
+|------|--------------|
+| Principal | every office page except institute settings, subscription and staff roles |
+| Head of department | leave requests and attendance of their own department (decides leave, reads attendance) |
+| Accountant | fees and payments, payroll, fee reports |
+| Admission officer | admissions, students, certificates |
+| Exam cell | exams and results, exam reports |
+| Librarian | library |
+| Hostel warden | hostel |
+| Transport in-charge | transport |
+| Placement officer | placement |
+| Gate security | visitor desk |
+
+Anyone with a role may also read the course, department, employee and student lists that office pages use for
+pickers. Settings, the subscription, the audit log and the staff roles themselves stay with the institute admin. The
+audit log records what staff do as *staff*. Staff without lectures or exam papers (an accountant, a librarian) do not
+see the teaching pages. Demo institutes have a principal, an accountant, a librarian, gate security and a head of the
+teaching department (`EMP007` to `EMP011` at the college, password `Employee@123`).
+
+**To do.** Students see one list of what to do next, most urgent first: work to hand in or redo, open quizzes, fees
+overdue or due in the next 14 days, and library books to return. Faculty see lectures still to mark today, answers to
+grade, exam marks to enter, and students below 75% attendance in their subjects.
 
 
 ---

@@ -843,3 +843,18 @@ kbd { font: inherit; font-size: 11px; padding: 1px 6px; border: 1px solid var(--
 .approval__main small { color: var(--muted); }
 .approval__actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 @media (max-width: 640px) { .approval { flex-wrap: wrap; } .approval__actions { width: 100%; justify-content: flex-start; } }
+
+/* To-do list (UI Phase 3) */
+.todo-list { display: grid; gap: 6px; }
+.todo-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; color: var(--text); text-decoration: none; background: var(--surface); }
+.todo-item:hover { border-color: var(--brand-100); background: #fafbff; }
+.todo-item > svg:first-child { flex: none; }
+.todo-item--bad > svg:first-child { color: var(--danger); } .todo-item--warn > svg:first-child { color: var(--warning); } .todo-item--info > svg:first-child { color: var(--info); }
+.todo-item--bad { border-color: var(--danger-line); }
+.todo-item__text { display: grid; min-width: 0; flex: 1; }
+.todo-item__text strong { font-weight: 600; font-size: 13.5px; }
+.todo-item__text small { color: var(--muted); font-size: 12.5px; }
+.todo-item__when { flex: none; font-size: 12.5px; color: var(--muted); white-space: nowrap; }
+.todo-item--bad .todo-item__when { color: var(--danger); font-weight: 600; }
+.todo-empty { display: flex; align-items: center; gap: 8px; color: var(--success); margin: 0; font-weight: 600; }
+@media (max-width: 560px) { .todo-item { flex-wrap: wrap; } .todo-item__when { order: 3; width: 100%; padding-left: 26px; } .todo-item > svg:last-child { display: none; } }
