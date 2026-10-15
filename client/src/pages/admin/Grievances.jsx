@@ -54,7 +54,8 @@ export default function Grievances() {
   const [tab, setTab] = useTabParam('active', TABS.map((t) => t.id));
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
-  const [open, setOpen] = useState(null);
+  // ?open=<id> (from Approvals or a notification) opens that item straight away
+  const [open, setOpen] = useState(() => new URLSearchParams(window.location.search).get('open'));
   const qs = new URLSearchParams();
   if (tab !== 'all') qs.set('status', tab);
   if (category) qs.set('category', category);

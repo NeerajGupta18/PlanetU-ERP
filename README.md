@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/PostgreSQL-16%20%2B%20RLS-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" />
   <img src="https://img.shields.io/badge/Auth-JWT%20%2B%20bcrypt-EC1C24?style=for-the-badge&logo=jsonwebtokens&logoColor=white" />
   <img src="https://img.shields.io/badge/Multi--tenant-SaaS-7C3AED?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/Tests-629%20passing-2ea44f?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Tests-636%20passing-2ea44f?style=for-the-badge" />
   <img src="https://img.shields.io/badge/Deploy-Render%20%7C%20Oracle%20Cloud-46E3B7?style=for-the-badge" />
   <img src="https://img.shields.io/badge/STATUS-PHASE%207-2ea44f?style=for-the-badge" />
 </p>
@@ -92,7 +92,7 @@ tables, run `npm run db:migrate` instead.
 ### Tests
 
 ```bash
-npm test             # 629 tests against a real PostgreSQL (run db:setup first)
+npm test             # 636 tests against a real PostgreSQL (run db:setup first)
 ```
 
 They cover tenant isolation, uploads, admissions, accounts and email, students and ID cards, fees, online payments
@@ -627,6 +627,8 @@ planetu-erp/
 | GET/POST | `/api/student/checkin/today`, `/api/student/checkin` | student *(rate limited; wrong codes are counted)* |
 | GET/POST/PUT/DELETE | `/api/admin/placement/companies`, `/drives`, `/drives/:id/open|close`, `/applications/:id`, `/stats` | admin *(placement module)* |
 | GET/POST | `/api/student/placement`, `/:id/apply`, `/:id/withdraw` | student *(placement module)* |
+| GET/POST | `/api/me/notifications`, `/api/me/notifications/:id/read`, `/api/me/notifications/read-all` | any institute user *(only their own messages)* |
+| GET    | `/api/admin/approvals`, `/api/admin/setup-status` | admin |
 | GET    | `/api/admin/fees/summary` | admin *(fees module: collected, outstanding, overdue, overdue students)* |
 | GET/POST | `/api/admin/visitors`, `/meta`, `/summary`, `/:id/check-in`, `/:id/check-out`, `/:id/cancel` | admin *(visitors module)* |
 | GET/POST | `/api/employee/visitors`, `/meta`, `/:id/cancel` | staff *(only visitors they host)* |
@@ -787,6 +789,30 @@ list behind it. Empty pages say what to do next and offer the button to do it.
 The **Fees** page opens on an *Overview*: collected this month (with today and last month), still to collect, overdue,
 what falls due in the next 7 days, and the students with overdue fees, each with a link to their ledger. A charge shows as
 *Overdue* only once its due date has passed; before that it is *Not due yet*.
+
+## Navigation, notifications and approvals
+
+**Shorter menus.** Each role sees the pages it uses most at the top. Closely related pages share one menu item and
+switch with tabs at the top of the page: *Coursework* (assignments, quizzes, learning), *Attendance* (with QR check-in for
+students), *Employees* (with departments and designations), *Library & assets*, *Hostel & transport*, *Notices &
+calendar* and *Help desk* (grievances and feedback). The admin menu has six groups and 22 links instead of 29. The
+search box (Ctrl + K) and the breadcrumbs still find every page by its own name.
+
+**Phones.** Students, parents and faculty get a bar along the bottom of the screen with their four main pages and a
+*Menu* button for the rest. The app can also be installed from the user menu (*Install app*) where the browser allows it.
+
+**The bell** works for every role. It shows messages about things that happened to the user: leave approved or not,
+assignment graded or sent back, certificate ready, a reply on a ticket, a placement update, a visitor at the gate, a
+payslip ready, a fee payment received, and for a parent (and the student) an absence as soon as the register is
+submitted. It also shows reminders worked out from today's data: fees overdue or due in the next 3 days, work due in
+the next 2 days, new notices, and for the office the number of items waiting for a decision. Messages can be opened
+(which takes you to the page) and marked read, one by one or all at once.
+
+**Approvals** (admin) is one list of everything waiting for the office, oldest first: leave requests (approve or reject
+right there), certificate requests, submitted applications and new help-desk tickets. The menu item shows how many are
+waiting. **Setup checklist:** a new institute's dashboard lists the steps before the system is useful (institute details,
+departments, courses, staff, timetable, fee structure, students, leave types), ticks each one off as it is done, and
+points to the next step. It can be hidden.
 
 
 ---

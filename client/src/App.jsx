@@ -49,6 +49,7 @@ import StudentCertificates from './pages/student/Certificates.jsx';
 import EmployeeNotices from './pages/employee/Notices.jsx';
 import EmployeeLeave from './pages/employee/Leave.jsx';
 import AdminLeave from './pages/admin/Leave.jsx';
+import AdminApprovals from './pages/admin/Approvals.jsx';
 import AdminPlacement, { DriveDetail as AdminDriveDetail } from './pages/admin/Placement.jsx';
 import Assignments, { AssignmentDetail } from './pages/shared/Assignments.jsx';
 import StudentAssignments, { AssignmentView as StudentAssignmentView } from './pages/student/Assignments.jsx';
@@ -170,6 +171,7 @@ export default function App() {
             <Route path="assignments" element={<Assignments role="admin" />} />
             <Route path="assignments/:id" element={<AssignmentDetail role="admin" />} />
           </Route>
+          <Route path="approvals" element={<AdminApprovals />} />
           <Route element={<ModuleGate module="visitors" />}><Route path="visitors" element={<Visitors role="admin" />} /></Route>
           <Route element={<ModuleGate module="placement" />}>
             <Route path="placement" element={<AdminPlacement />} />

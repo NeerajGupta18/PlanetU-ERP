@@ -7,6 +7,7 @@ import { useTenantConfig } from '../../hooks/useTenantConfig.js';
 import { Badge, Card, PageBanner, StatCard, pending } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import { STATUS } from '../../components/admissions/status.js';
+import SetupChecklist from '../../components/campus/SetupChecklist.jsx';
 import { EVENT_TYPES } from '../../utils/eventTypes.js';
 import { fmtEventDates } from '../../utils/dates.js';
 
@@ -35,6 +36,8 @@ function DashboardView({ d }) {
   return (
     <>
       <PageBanner icon={LayoutDashboard} title="Admin Dashboard" subtitle={d.institute.name} />
+
+      <SetupChecklist />
 
       <Card title="Quick actions" icon={Plus}>
         <div className="quicks">

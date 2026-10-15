@@ -33,7 +33,8 @@ export default function Admissions() {
   const [tab, setTab] = useTabParam('submitted', PIPE_IDS);
   const [search, setSearch] = useState('');
   const [courseId, setCourseId] = useState('');
-  const [openId, setOpenId] = useState(null);
+  // ?open=<id> (from Approvals or a notification) opens that item straight away
+  const [openId, setOpenId] = useState(() => new URLSearchParams(window.location.search).get('open'));
   const [secret, setSecret] = useState(null);
   const [panel, setPanel] = useState(null); // 'walkin' | 'settings' | 'merit'
   const [picked, setPicked] = useState(() => new Set());
