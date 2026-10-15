@@ -19,6 +19,8 @@ export const env = {
   PORT: Number(process.env.PORT) || 5000,
   JWT_SECRET: process.env.JWT_SECRET || 'dev-only-secret-do-not-use-in-production-0123456789',
   COOKIE_NAME: 'erp_session',
+  // Where the Android app (APK) is downloaded from. Empty uses the newest GitHub release; 'off' hides the download.
+  get APK_URL() { return process.env.APK_URL || ''; },
   COOKIE_SECURE: process.env.COOKIE_SECURE === 'true',
   SESSION_HOURS: 8,
   // PostgreSQL. The app connects as a restricted role (erp_app) so Row Level
