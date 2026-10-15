@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Bell, ChevronDown, KeyRound, LogOut, MapPin, Menu, Phone, Search } from 'lucide-react';
+import ErrorBoundary from '../ui/ErrorBoundary.jsx';
+import { Loader } from '../ui/Feedback.jsx';
+import { Bell, BookOpenCheck, ChevronDown, KeyRound, LogOut, MapPin, Menu, Phone, Search } from 'lucide-react';
 import { useBell } from '../../hooks/useBell.js';
 import BellPanel from './BellPanel.jsx';
 import BottomNav from './BottomNav.jsx';
@@ -114,6 +116,7 @@ export default function AppShell() {
 
   return (
     <div className={`shell ${collapsed ? 'is-collapsed' : ''} ${drawer ? 'is-drawer-open' : ''} ${['student', 'parent', 'employee'].includes(user.role) ? 'has-bottomnav' : ''}`}>
+      <a href="#main" className="skip-link" onClick={(e) => { e.preventDefault(); document.getElementById('main')?.focus(); }}>Skip to main content</a>
       <aside className="sidebar" aria-label="Main navigation">
         <div className="sidebar__brand">
           <span className="sidebar__logo"><BrandMark size={26} /></span>
@@ -173,6 +176,7 @@ export default function AppShell() {
             >
               <div className="menu">
                 <div className="menu__who"><strong>{user.name}</strong><small>{user.loginId}</small></div>
+                <button type="button" className="menu__item" onClick={() => navigate(`/${user.role === 'super_admin' ? 'super-admin' : user.role}/help`)}><BookOpenCheck size={15} /> How to use</button>
                 <button type="button" className="menu__item" onClick={() => navigate('/change-password')}><KeyRound size={15} /> Change password</button>
                 <InstallPrompt className="menu__item" />
                 <button type="button" className="menu__item" onClick={onLogout}><LogOut size={15} /> Sign out</button>
@@ -181,11 +185,15 @@ export default function AppShell() {
           </div>
         </header>
 
-        <main className="content">
+        <main className="content" id="main" tabIndex={-1}>
           <Breadcrumbs flat={flat} />
           <SectionTabs links={links} />
           {user.role === 'admin' && billing && !locked && location.pathname !== '/admin/billing' && <BillingBanner b={billing} />}
-          <Outlet />
+          <ErrorBoundary resetKey={location.pathname}>
+            <Suspense fallback={<Loader label="Opening the page..." />}>
+              <Outlet />
+            </Suspense>
+          </ErrorBoundary>
         </main>
         <SearchPalette open={searchOpen} onClose={() => setSearchOpen(false)} flat={flat} />
         <BottomNav role={user.role} onMenu={() => setDrawer(true)} />

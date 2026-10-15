@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/PostgreSQL-16%20%2B%20RLS-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" />
   <img src="https://img.shields.io/badge/Auth-JWT%20%2B%20bcrypt-EC1C24?style=for-the-badge&logo=jsonwebtokens&logoColor=white" />
   <img src="https://img.shields.io/badge/Multi--tenant-SaaS-7C3AED?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/Tests-663%20passing-2ea44f?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Tests-667%20passing-2ea44f?style=for-the-badge" />
   <img src="https://img.shields.io/badge/Deploy-Render%20%7C%20Oracle%20Cloud-46E3B7?style=for-the-badge" />
   <img src="https://img.shields.io/badge/STATUS-PHASE%207-2ea44f?style=for-the-badge" />
 </p>
@@ -92,7 +92,7 @@ tables, run `npm run db:migrate` instead.
 ### Tests
 
 ```bash
-npm test             # 663 tests against a real PostgreSQL (run db:setup first)
+npm test             # 667 tests against a real PostgreSQL (run db:setup first)
 ```
 
 They cover tenant isolation, uploads, admissions, accounts and email, students and ID cards, fees, online payments
@@ -630,6 +630,7 @@ planetu-erp/
 | GET/POST | `/api/student/placement`, `/:id/apply`, `/:id/withdraw` | student *(placement module)* |
 | GET/POST/DELETE | `/api/admin/staff-roles`, `/api/admin/staff-roles/:employeeId/:role` | admin only |
 | GET    | `/api/student/todo`, `/api/employee/todo` | student, employee *(their own list)* |
+| GET    | `/api/admin/students/:id/overview` | admin, staff with the student office *(attendance, fees, results)* |
 | GET    | `/api/employee/office-summary` | employee with a staff role *(KPI cards for their office desks)* |
 | GET/POST | `/api/me/notifications`, `/api/me/notifications/:id/read`, `/api/me/notifications/read-all` | any institute user *(only their own messages)* |
 | GET    | `/api/admin/approvals`, `/api/admin/setup-status` | admin |
@@ -867,6 +868,21 @@ needed; clicking a card opens the list behind it.
 The demo institutes now include about six weeks of marked attendance, five months of earlier fee payments and a few
 library loans, so the charts and cards are not empty. Past attendance is topped up on each restart for the demo
 institutes only. To load the new demo data on Render once, set `DEMO_RESET_ON_START=true`, deploy, then remove it.
+
+## Testing and polish
+
+- **How to use.** Every role has a *How to use* page (in the menu and the user menu) with short steps for its everyday
+  tasks and a "Go there" button for each. The guides live in `client/src/config/helpGuide.js`; each one says which
+  login roles, office areas or modules it is for.
+- **Pages load on demand.** Each page is its own file, loaded when it is first opened, so the first download is about
+  a third of what it was. If a new version is deployed while a tab is open, the app reloads itself; if a page fails, it
+  shows a short message with a Reload button instead of a blank screen (`components/ui/ErrorBoundary.jsx`).
+- **Phones.** Action buttons at the end of a table stay in view while the table scrolls. Tables marked `table--stack`
+  (visitor desk, leave requests, student fees) become one card per row, each value labelled with its column.
+- **Keyboard and screen readers.** A skip link, dialogs that keep focus inside and close with Esc, every form field
+  connected to its label, names on icon-only buttons and darker low-contrast text.
+- **Student record at a glance.** The student record shows attendance, fees due and the latest result
+  (`GET /api/admin/students/:id/overview`, for the admin and staff whose role covers the student office).
 
 
 ---

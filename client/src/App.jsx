@@ -1,89 +1,97 @@
+import { Suspense, lazy } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './context/AuthContext.jsx';
 import { ROLE_HOME } from './config/menu.config.js';
 import AppShell from './components/layout/AppShell.jsx';
 import ProtectedRoute from './components/auth/ProtectedRoute.jsx';
 import { FullPageLoader } from './components/ui/Feedback.jsx';
+import ErrorBoundary from './components/ui/ErrorBoundary.jsx';
 import Login from './pages/Login.jsx';
 import ModuleGate from './components/auth/ModuleGate.jsx';
-import NotFound from './pages/NotFound.jsx';
-import StudentDashboard from './pages/student/Dashboard.jsx';
-import StudentProfile from './pages/student/Profile.jsx';
-import StudentInstitute from './pages/student/Institute.jsx';
-import StudentCalendar from './pages/student/Calendar.jsx';
-import StudentTimetable from './pages/student/Timetable.jsx';
-import StudentAttendance from './pages/student/Attendance.jsx';
-import EmployeeDashboard from './pages/employee/Dashboard.jsx';
-import EmployeeAttendance from './pages/employee/Attendance.jsx';
-import AdminAttendance from './pages/admin/Attendance.jsx';
-import AdminExams from './pages/admin/Exams.jsx';
-import AdminReports from './pages/admin/Reports.jsx';
-import AdminBilling from './pages/admin/Billing.jsx';
-import AdminExamDetail from './pages/admin/ExamDetail.jsx';
-import StudentResults from './pages/student/Results.jsx';
-import EmployeeExams from './pages/employee/Exams.jsx';
-import EnterMarks from './pages/shared/EnterMarks.jsx';
-import MarkAttendance from './pages/shared/MarkAttendance.jsx';
-import StudentLearning from './pages/student/Learning.jsx';
-import StudentLearningCourse from './pages/student/LearningCourse.jsx';
-import StudentQuizzes from './pages/student/Quizzes.jsx';
-import QuizTake from './pages/student/QuizTake.jsx';
-import QuizResult from './pages/student/QuizResult.jsx';
-import LearningManage from './pages/shared/LearningManage.jsx';
-import LearningAssignment from './pages/shared/LearningAssignment.jsx';
-import QuizManage from './pages/shared/QuizManage.jsx';
-import QuizEditor from './pages/shared/QuizEditor.jsx';
-import QuizResults from './pages/shared/QuizResults.jsx';
-import AdminDashboard from './pages/admin/Dashboard.jsx';
-import AdminInstitute from './pages/admin/Institute.jsx';
-import AdminDepartments from './pages/admin/Departments.jsx';
-import AdminCourses from './pages/admin/Courses.jsx';
-import AdminEmployees from './pages/admin/Employees.jsx';
-import AdminCalendar from './pages/admin/Calendar.jsx';
-import AdminTimetable from './pages/admin/Timetable.jsx';
-import AdminAdmissions from './pages/admin/Admissions.jsx';
-import AdminNotices from './pages/admin/Notices.jsx';
-import AdminCertificates from './pages/admin/Certificates.jsx';
-import StudentNotices from './pages/student/Notices.jsx';
-import StudentCertificates from './pages/student/Certificates.jsx';
-import EmployeeNotices from './pages/employee/Notices.jsx';
-import EmployeeLeave from './pages/employee/Leave.jsx';
-import AdminLeave from './pages/admin/Leave.jsx';
-import AdminStaffRoles from './pages/admin/StaffRoles.jsx';
-import AdminApprovals from './pages/admin/Approvals.jsx';
-import AdminPlacement, { DriveDetail as AdminDriveDetail } from './pages/admin/Placement.jsx';
-import Assignments, { AssignmentDetail } from './pages/shared/Assignments.jsx';
-import StudentAssignments, { AssignmentView as StudentAssignmentView } from './pages/student/Assignments.jsx';
-import StudentCheckin from './pages/student/Checkin.jsx';
-import StudentPlacement from './pages/student/Placement.jsx';
-import Visitors from './pages/shared/Visitors.jsx';
-import AdminHostel from './pages/admin/Hostel.jsx';
-import AdminTransport from './pages/admin/Transport.jsx';
-import AdminPayroll from './pages/admin/Payroll.jsx';
-import StudentHostel from './pages/student/Hostel.jsx';
-import StudentTransport from './pages/student/Transport.jsx';
-import EmployeePayslips from './pages/employee/Payslips.jsx';
-import AdminGrievances from './pages/admin/Grievances.jsx';
-import AdminFeedback from './pages/admin/Feedback.jsx';
-import StudentSupport from './pages/student/Support.jsx';
-import ParentHome from './pages/parent/Home.jsx';
-import Support from './pages/shared/Support.jsx';
-import EmployeeSupport from './pages/employee/Support.jsx';
-import AdminStudents from './pages/admin/Students.jsx';
-import AdminStudentImport from './pages/admin/StudentImport.jsx';
-import AdminFees from './pages/admin/Fees.jsx';
-import StudentFees from './pages/student/Fees.jsx';
-import AdminLibrary from './pages/admin/Library.jsx';
-import AdminAssets from './pages/admin/Assets.jsx';
-import StudentLibrary from './pages/student/Library.jsx';
-import Apply from './pages/public/Apply.jsx';
-import ForgotPassword from './pages/ForgotPassword.jsx';
-import ResetPassword from './pages/ResetPassword.jsx';
-import ChangePassword from './pages/ChangePassword.jsx';
-import ApplyStatus from './pages/public/ApplyStatus.jsx';
-import SuperAdminDashboard from './pages/superadmin/Dashboard.jsx';
-import SuperAdminBilling from './pages/superadmin/Billing.jsx';
-import SuperAdminInstitutes from './pages/superadmin/Institutes.jsx';
+
+// Pages load on demand, so the first visit downloads only what the sign-in page and the shell need
+const Help = lazy(() => import('./pages/shared/Help.jsx'));
+const StudentAssignments = lazy(() => import('./pages/student/Assignments.jsx'));
+const StudentAssignmentView = lazy(() => import('./pages/student/Assignments.jsx').then((m) => ({ default: m.AssignmentView })));
+const Assignments = lazy(() => import('./pages/shared/Assignments.jsx'));
+const AssignmentDetail = lazy(() => import('./pages/shared/Assignments.jsx').then((m) => ({ default: m.AssignmentDetail })));
+const AdminPlacement = lazy(() => import('./pages/admin/Placement.jsx'));
+const AdminDriveDetail = lazy(() => import('./pages/admin/Placement.jsx').then((m) => ({ default: m.DriveDetail })));
+const NotFound = lazy(() => import('./pages/NotFound.jsx'));
+const StudentDashboard = lazy(() => import('./pages/student/Dashboard.jsx'));
+const StudentProfile = lazy(() => import('./pages/student/Profile.jsx'));
+const StudentInstitute = lazy(() => import('./pages/student/Institute.jsx'));
+const StudentCalendar = lazy(() => import('./pages/student/Calendar.jsx'));
+const StudentTimetable = lazy(() => import('./pages/student/Timetable.jsx'));
+const StudentAttendance = lazy(() => import('./pages/student/Attendance.jsx'));
+const EmployeeDashboard = lazy(() => import('./pages/employee/Dashboard.jsx'));
+const EmployeeAttendance = lazy(() => import('./pages/employee/Attendance.jsx'));
+const AdminAttendance = lazy(() => import('./pages/admin/Attendance.jsx'));
+const AdminExams = lazy(() => import('./pages/admin/Exams.jsx'));
+const AdminReports = lazy(() => import('./pages/admin/Reports.jsx'));
+const AdminBilling = lazy(() => import('./pages/admin/Billing.jsx'));
+const AdminExamDetail = lazy(() => import('./pages/admin/ExamDetail.jsx'));
+const StudentResults = lazy(() => import('./pages/student/Results.jsx'));
+const EmployeeExams = lazy(() => import('./pages/employee/Exams.jsx'));
+const EnterMarks = lazy(() => import('./pages/shared/EnterMarks.jsx'));
+const MarkAttendance = lazy(() => import('./pages/shared/MarkAttendance.jsx'));
+const StudentLearning = lazy(() => import('./pages/student/Learning.jsx'));
+const StudentLearningCourse = lazy(() => import('./pages/student/LearningCourse.jsx'));
+const StudentQuizzes = lazy(() => import('./pages/student/Quizzes.jsx'));
+const QuizTake = lazy(() => import('./pages/student/QuizTake.jsx'));
+const QuizResult = lazy(() => import('./pages/student/QuizResult.jsx'));
+const LearningManage = lazy(() => import('./pages/shared/LearningManage.jsx'));
+const LearningAssignment = lazy(() => import('./pages/shared/LearningAssignment.jsx'));
+const QuizManage = lazy(() => import('./pages/shared/QuizManage.jsx'));
+const QuizEditor = lazy(() => import('./pages/shared/QuizEditor.jsx'));
+const QuizResults = lazy(() => import('./pages/shared/QuizResults.jsx'));
+const AdminDashboard = lazy(() => import('./pages/admin/Dashboard.jsx'));
+const AdminInstitute = lazy(() => import('./pages/admin/Institute.jsx'));
+const AdminDepartments = lazy(() => import('./pages/admin/Departments.jsx'));
+const AdminCourses = lazy(() => import('./pages/admin/Courses.jsx'));
+const AdminEmployees = lazy(() => import('./pages/admin/Employees.jsx'));
+const AdminCalendar = lazy(() => import('./pages/admin/Calendar.jsx'));
+const AdminTimetable = lazy(() => import('./pages/admin/Timetable.jsx'));
+const AdminAdmissions = lazy(() => import('./pages/admin/Admissions.jsx'));
+const AdminNotices = lazy(() => import('./pages/admin/Notices.jsx'));
+const AdminCertificates = lazy(() => import('./pages/admin/Certificates.jsx'));
+const StudentNotices = lazy(() => import('./pages/student/Notices.jsx'));
+const StudentCertificates = lazy(() => import('./pages/student/Certificates.jsx'));
+const EmployeeNotices = lazy(() => import('./pages/employee/Notices.jsx'));
+const EmployeeLeave = lazy(() => import('./pages/employee/Leave.jsx'));
+const AdminLeave = lazy(() => import('./pages/admin/Leave.jsx'));
+const AdminStaffRoles = lazy(() => import('./pages/admin/StaffRoles.jsx'));
+const AdminApprovals = lazy(() => import('./pages/admin/Approvals.jsx'));
+const StudentCheckin = lazy(() => import('./pages/student/Checkin.jsx'));
+const StudentPlacement = lazy(() => import('./pages/student/Placement.jsx'));
+const Visitors = lazy(() => import('./pages/shared/Visitors.jsx'));
+const AdminHostel = lazy(() => import('./pages/admin/Hostel.jsx'));
+const AdminTransport = lazy(() => import('./pages/admin/Transport.jsx'));
+const AdminPayroll = lazy(() => import('./pages/admin/Payroll.jsx'));
+const StudentHostel = lazy(() => import('./pages/student/Hostel.jsx'));
+const StudentTransport = lazy(() => import('./pages/student/Transport.jsx'));
+const EmployeePayslips = lazy(() => import('./pages/employee/Payslips.jsx'));
+const AdminGrievances = lazy(() => import('./pages/admin/Grievances.jsx'));
+const AdminFeedback = lazy(() => import('./pages/admin/Feedback.jsx'));
+const StudentSupport = lazy(() => import('./pages/student/Support.jsx'));
+const ParentHome = lazy(() => import('./pages/parent/Home.jsx'));
+const Support = lazy(() => import('./pages/shared/Support.jsx'));
+const EmployeeSupport = lazy(() => import('./pages/employee/Support.jsx'));
+const AdminStudents = lazy(() => import('./pages/admin/Students.jsx'));
+const AdminStudentImport = lazy(() => import('./pages/admin/StudentImport.jsx'));
+const AdminFees = lazy(() => import('./pages/admin/Fees.jsx'));
+const StudentFees = lazy(() => import('./pages/student/Fees.jsx'));
+const AdminLibrary = lazy(() => import('./pages/admin/Library.jsx'));
+const AdminAssets = lazy(() => import('./pages/admin/Assets.jsx'));
+const StudentLibrary = lazy(() => import('./pages/student/Library.jsx'));
+const Apply = lazy(() => import('./pages/public/Apply.jsx'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword.jsx'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword.jsx'));
+const ChangePassword = lazy(() => import('./pages/ChangePassword.jsx'));
+const ApplyStatus = lazy(() => import('./pages/public/ApplyStatus.jsx'));
+const SuperAdminDashboard = lazy(() => import('./pages/superadmin/Dashboard.jsx'));
+const SuperAdminBilling = lazy(() => import('./pages/superadmin/Billing.jsx'));
+const SuperAdminInstitutes = lazy(() => import('./pages/superadmin/Institutes.jsx'));
 
 function Home() {
   const { user, loading } = useAuth();
@@ -93,6 +101,8 @@ function Home() {
 
 export default function App() {
   return (
+    <ErrorBoundary>
+    <Suspense fallback={<FullPageLoader />}>
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
@@ -110,6 +120,7 @@ export default function App() {
         <Route path="/parent" element={<AppShell />}>
           <Route index element={<Navigate to="home" replace />} />
           <Route path="home" element={<ParentHome />} />
+          <Route path="help" element={<Help />} />
           <Route element={<ModuleGate module="grievance" />}><Route path="support" element={<Support base="/parent" />} /></Route>
         </Route>
       </Route>
@@ -118,6 +129,7 @@ export default function App() {
         <Route path="/student" element={<AppShell />}>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<StudentDashboard />} />
+          <Route path="help" element={<Help />} />
           <Route path="profile" element={<StudentProfile />} />
           <Route path="institute" element={<StudentInstitute />} />
           <Route element={<ModuleGate module="calendar" />}><Route path="calendar" element={<StudentCalendar />} /></Route>
@@ -154,6 +166,7 @@ export default function App() {
         <Route path="/admin" element={<AppShell />}>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="help" element={<Help />} />
           <Route path="institute" element={<AdminInstitute />} />
           <Route path="departments" element={<AdminDepartments />} />
           <Route path="courses" element={<AdminCourses />} />
@@ -218,6 +231,7 @@ export default function App() {
         <Route path="/super-admin" element={<AppShell />}>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<SuperAdminDashboard />} />
+          <Route path="help" element={<Help />} />
           <Route path="institutes" element={<SuperAdminInstitutes />} />
           <Route path="billing" element={<SuperAdminBilling />} />
         </Route>
@@ -232,6 +246,7 @@ export default function App() {
           <Route element={<ModuleGate module="grievance" />}><Route path="support" element={<EmployeeSupport />} /></Route>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<EmployeeDashboard />} />
+          <Route path="help" element={<Help />} />
           <Route element={<ModuleGate module="learning" />}>
             <Route path="learning" element={<LearningManage role="employee" />} />
             <Route path="learning/assignments/:id" element={<LearningAssignment role="employee" />} />
@@ -260,5 +275,7 @@ export default function App() {
 
       <Route path="*" element={<NotFound />} />
     </Routes>
+    </Suspense>
+    </ErrorBoundary>
   );
 }
