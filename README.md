@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/PostgreSQL-16%20%2B%20RLS-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" />
   <img src="https://img.shields.io/badge/Auth-JWT%20%2B%20bcrypt-EC1C24?style=for-the-badge&logo=jsonwebtokens&logoColor=white" />
   <img src="https://img.shields.io/badge/Multi--tenant-SaaS-7C3AED?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/Tests-625%20passing-2ea44f?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Tests-629%20passing-2ea44f?style=for-the-badge" />
   <img src="https://img.shields.io/badge/Deploy-Render%20%7C%20Oracle%20Cloud-46E3B7?style=for-the-badge" />
   <img src="https://img.shields.io/badge/STATUS-PHASE%207-2ea44f?style=for-the-badge" />
 </p>
@@ -92,7 +92,7 @@ tables, run `npm run db:migrate` instead.
 ### Tests
 
 ```bash
-npm test             # 625 tests against a real PostgreSQL (run db:setup first)
+npm test             # 629 tests against a real PostgreSQL (run db:setup first)
 ```
 
 They cover tenant isolation, uploads, admissions, accounts and email, students and ID cards, fees, online payments
@@ -627,6 +627,7 @@ planetu-erp/
 | GET/POST | `/api/student/checkin/today`, `/api/student/checkin` | student *(rate limited; wrong codes are counted)* |
 | GET/POST/PUT/DELETE | `/api/admin/placement/companies`, `/drives`, `/drives/:id/open|close`, `/applications/:id`, `/stats` | admin *(placement module)* |
 | GET/POST | `/api/student/placement`, `/:id/apply`, `/:id/withdraw` | student *(placement module)* |
+| GET    | `/api/admin/fees/summary` | admin *(fees module: collected, outstanding, overdue, overdue students)* |
 | GET/POST | `/api/admin/visitors`, `/meta`, `/summary`, `/:id/check-in`, `/:id/check-out`, `/:id/cancel` | admin *(visitors module)* |
 | GET/POST | `/api/employee/visitors`, `/meta`, `/:id/cancel` | staff *(only visitors they host)* |
 | GET    | `/api/super-admin/diagnostics/network` | super admin *(shows the IP the app sees; use it to check `TRUST_PROXY_HOPS`)* |
@@ -764,6 +765,28 @@ more than eight hours is flagged. The staff member being visited is emailed when
 a visitor themselves from *My visitors*; they see and can cancel only their own, and cannot check anyone in.
 
 All planned modules are now built.
+
+## Colors and page layout
+
+Every color has one meaning across the app, so a user can tell at a glance what needs doing:
+
+| Color | Meaning |
+|-------|---------|
+| PlanetU purple | the main button, the selected menu item, links |
+| Green | done, paid, good |
+| Amber | needs attention soon |
+| Red | overdue, failed, a problem |
+| Blue | information only |
+| Grey | nothing to do, inactive |
+
+A colored card or badge always carries a word too ("Overdue", "All clear", "Not due yet"), so color is never the only
+signal, and text colors meet the 4.5:1 contrast guideline. Every page starts with the same slim title bar (title, one line
+of help, main buttons on the right). KPI cards stay neutral unless their number needs action, and clicking one opens the
+list behind it. Empty pages say what to do next and offer the button to do it.
+
+The **Fees** page opens on an *Overview*: collected this month (with today and last month), still to collect, overdue,
+what falls due in the next 7 days, and the students with overdue fees, each with a link to their ledger. A charge shows as
+*Overdue* only once its due date has passed; before that it is *Not due yet*.
 
 
 ---
