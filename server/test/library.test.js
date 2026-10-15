@@ -26,6 +26,11 @@ before(async () => {
   schoolAdmin = await login('demo-school', 'admin', 'ADM001', 'Admin@123');
   tenantId = (await withTx({ platform: true }, () => q("select id from tenants where code = 'demo-college'"))).rows[0].id;
   ({ rows: [{ id: studentId, student_code: studentCode }] } = await withTx({ tenantId }, () => q('select id, student_code from students order by student_code limit 1')));
+  // The demo data lends this student a book; return it so the loan cap below starts from zero
+  await withTx({ tenantId }, async () => {
+    await q('update books b set available_copies = available_copies + 1 from book_issues i where i.book_id = b.id and i.student_id = $1 and i.returned_at is null', [studentId]);
+    await q('delete from book_issues where student_id = $1', [studentId]);
+  });
 });
 after(async () => {
   await withTx({ tenantId }, () => q("delete from book_issues"));

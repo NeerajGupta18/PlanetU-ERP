@@ -9,6 +9,7 @@
 import { gradeAttempt } from '../services/quizGrading.js';
 import * as feesSvc from '../services/fees.service.js';
 import bcrypt from 'bcryptjs';
+import crypto from 'node:crypto';
 import { q, switchTenant, withTx } from './pool.js';
 import { nextNumber } from './series.js';
 import { provisionTenant } from '../services/tenant.service.js';
@@ -121,6 +122,53 @@ export async function refreshRollingData() {
        on conflict (tenant_id, slot_id, on_date) do nothing`,
       [target.id, toISO(day), toCode],
     );
+  }
+  await topUpAttendanceHistory(now, holidays);
+}
+
+/** A fixed number in [0, 1) from a string, so the sample attendance is the same every time it is generated. */
+const chance = (key) => crypto.createHash('md5').update(key).digest().readUInt32BE(0) / 2 ** 32;
+
+/**
+ * Sample attendance for the past six weeks or so, so the dashboards' attendance figures and trend have something to
+ * show. Fills only lectures that have no attendance yet (a lecture someone marked by hand is left alone), never
+ * today's or later, and skips holidays. Each student keeps roughly their usual rate (from the old static figures),
+ * with the weakest student a little under the 75% minimum so the "below 75%" lists are not empty.
+ */
+async function topUpAttendanceHistory(now, holidays) {
+  const { rows: slots } = await q(
+    `select s.id, s.weekday, s.course_id, s.subject, s.start_time::text as start, s.end_time::text as "end", s.employee_id
+     from timetable_slots s join courses c on c.id = s.course_id`,
+  );
+  if (!slots.length) return;
+  const { rows: studs } = await q("select id, student_code as code, course_id, attendance from students where status = 'Active' order by student_code");
+  const rate = new Map();
+  for (const st of studs) {
+    const a = (st.attendance || []).reduce((acc, x) => ({ att: acc.att + Number(x.attended || 0), tot: acc.tot + Number(x.total || 0) }), { att: 0, tot: 0 });
+    rate.set(st.id, a.tot ? a.att / a.tot : 0.85);
+  }
+  const lowest = [...rate.entries()].sort((x, y) => x[1] - y[1])[0];
+  if (lowest && lowest[1] < 0.8) rate.set(lowest[0], 0.74);
+
+  const { rows: done } = await q("select slot_id, on_date::text as d from attendance_sessions where on_date >= $1::date and slot_id is not null", [toISO(addDays(now, -46))]);
+  const have = new Set(done.map((r) => `${r.slot_id}|${r.d}`));
+  for (let back = 45; back >= 1; back -= 1) {
+    const day = addDays(now, -back);
+    const iso = toISO(day);
+    if (holidays.has(iso) || day.getDay() === 0 || day.getDay() === 6) continue;
+    for (const sl of slots.filter((x) => x.weekday === day.getDay() && !have.has(`${x.id}|${iso}`))) {
+      const { rows: [sess] } = await q(
+        `insert into attendance_sessions (slot_id, on_date, course_id, subject, start_time, end_time, taken_by, status, submitted_at)
+         values ($1, $2, $3, $4, $5, $6, $7, 'submitted', ($2::date + $6::time)) on conflict do nothing returning id`,
+        [sl.id, iso, sl.course_id, sl.subject, sl.start, sl.end, sl.employee_id],
+      );
+      if (!sess) continue;
+      for (const st of studs.filter((x) => x.course_id === sl.course_id)) {
+        const r = chance(`${st.code}|${iso}|${sl.start}`);
+        const status = r < rate.get(st.id) ? (chance(`late|${st.code}|${iso}|${sl.start}`) < 0.06 ? 'late' : 'present') : 'absent';
+        await q('insert into attendance_records (session_id, student_id, status) values ($1, $2, $3)', [sess.id, st.id, status]);
+      }
+    }
   }
 }
 
@@ -334,6 +382,7 @@ async function seedTenant(spec, hashes) {
   await seedVisitors(emp);
   await seedFees(spec, course.id);
   if (['college', 'university'].includes(spec.type)) await seedPlacement(course.id);
+  await seedLibrary(spec, emp);
   await refreshRollingData();
 }
 
@@ -366,6 +415,7 @@ async function seedAssignments(spec, courseId, emp) {
 async function seedFees(spec, courseId) {
   const school = spec.type === 'school';
   const now = new Date();
+  await seedFeeHistory(spec, courseId, now);
   const year = `${now.getFullYear()}-${String((now.getFullYear() + 1) % 100).padStart(2, '0')}`;
   const term = school ? 18000 : 45000;
   const s = await feesSvc.createStructure({
@@ -384,6 +434,67 @@ async function seedFees(spec, courseId) {
     if (!st) continue;
     const p = await feesSvc.recordPayment({ studentId: st.id, amount, method, note: 'Demo payment' }, system);
     await q("update payments set paid_at = now() - ($2 || ' days')::interval where id = $1", [p.id, String(daysAgo)]);
+  }
+}
+
+/**
+ * Last term's monthly instalments, all paid on time over the past five months, so the fee collection chart has a
+ * history. Fully paid, so they do not change what anyone owes now.
+ */
+async function seedFeeHistory(spec, courseId, now) {
+  const school = spec.type === 'school';
+  const amount = school ? 3000 : 7500;
+  const items = [];
+  for (let m = 5; m >= 1; m -= 1) {
+    const due = new Date(now.getFullYear(), now.getMonth() - m, 10);
+    items.push({ label: `Previous term instalment ${6 - m}`, amount, dueDate: toISO(due) });
+  }
+  const prevYear = `${now.getFullYear() - 1}-${String(now.getFullYear() % 100).padStart(2, '0')}`;
+  const s = await feesSvc.createStructure({ name: 'Previous term (monthly)', courseId, academicYear: prevYear, items });
+  const system = { id: null, role: 'admin' };
+  await feesSvc.bulkAssign(s.id, system);
+  const { rows: studs } = await q("select id from students where tenant_id = app_tenant() and course_id = $1 and status = 'Active' order by student_code", [courseId]);
+  const methods = ['upi', 'cash', 'bank_transfer', 'card', 'upi'];
+  // Most pay each month; a couple of times a student pays two instalments together the month after
+  const late = { '4|2': 3, '2|1': 1 };
+  const plan = [];
+  for (let m = 5; m >= 1; m -= 1) for (const [k, st] of studs.entries()) plan.push({ k, st, m, paidIn: late[`${m}|${k}`] ?? m });
+  plan.sort((a, b) => b.paidIn - a.paidIn || b.m - a.m);
+  for (const { k, st, m, paidIn } of plan) {
+    const p = await feesSvc.recordPayment({ studentId: st.id, amount, method: methods[(m + k) % methods.length], note: 'Demo payment' }, system);
+    // Paid a few days either side of the 10th, the later students a little later
+    const paidOn = new Date(now.getFullYear(), now.getMonth() - paidIn, 6 + k * 3 + (m % 3), 11, 30);
+    await q('update payments set paid_at = $2 where id = $1', [p.id, paidOn.toISOString()]);
+  }
+}
+
+/** A small shelf and three loans (one overdue, one due back soon), so the library desk is not empty. */
+async function seedLibrary(spec, emp) {
+  const school = spec.type === 'school';
+  const books = school
+    ? [['9789352601332', 'Concise Physics for Class 9', 'S. Chand Editors', 'Science', 'S-01', 6], ['9789387153271', 'Mathematics Textbook for Class IX', 'NCERT', 'Mathematics', 'M-02', 8],
+      ['9780143333623', 'Wings of Fire', 'A. P. J. Abdul Kalam', 'Biography', 'B-04', 3], ['9780141439518', 'Pride and Prejudice', 'Jane Austen', 'Fiction', 'F-11', 2]]
+    : [['9780262046305', 'Introduction to Algorithms', 'Cormen, Leiserson, Rivest, Stein', 'Computer Science', 'CS-01', 5], ['9780132350884', 'Clean Code', 'Robert C. Martin', 'Computer Science', 'CS-04', 3],
+      ['9781491950357', 'Designing Data-Intensive Applications', 'Martin Kleppmann', 'Computer Science', 'CS-07', 2], ['9780143333623', 'Wings of Fire', 'A. P. J. Abdul Kalam', 'Biography', 'B-04', 3]];
+  const ids = [];
+  for (const [isbn, title, author, category, shelf, copies] of books) {
+    const { rows: [b] } = await q(
+      'insert into books (isbn, title, author, category, shelf_location, total_copies, available_copies) values ($1, $2, $3, $4, $5, $6, $6) returning id',
+      [isbn, title, author, category, shelf, copies],
+    );
+    ids.push(b.id);
+  }
+  const { rows: studs } = await q("select id from students where tenant_id = app_tenant() and status = 'Active' order by student_code limit 3");
+  const now = new Date();
+  const loans = [[ids[0], studs[0]?.id, null, -12, 2], [ids[1], studs[2]?.id, null, -17, -3], [ids[2], null, emp[0], -5, 9]];
+  for (const [bookId, studentId, employeeId, issuedDaysAgo, dueIn] of loans) {
+    if (!studentId && !employeeId) continue;
+    await q(
+      `insert into book_issues (book_id, borrower_type, student_id, employee_id, issued_at, due_date)
+       values ($1, $2, $3, $4, now() + ($5::int || ' days')::interval, $6)`,
+      [bookId, studentId ? 'student' : 'employee', studentId, employeeId, issuedDaysAgo, toISO(addDays(now, dueIn))],
+    );
+    await q('update books set available_copies = available_copies - 1 where id = $1', [bookId]);
   }
 }
 
