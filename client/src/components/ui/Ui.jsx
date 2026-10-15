@@ -37,13 +37,14 @@ export function Card({ title, icon: Icon, action, children, className = '' }) {
  * `hint` is the short word shown under the label, such as "Needs action" or "All clear", so meaning is never color only.
  * `to` makes the whole card a link to the filtered list behind the number. `tone` is the old decorative prop and is ignored.
  */
-export function StatCard({ value, label, icon: Icon, status = 'neutral', hint, to }) {
+export function StatCard({ value, label, icon: Icon, status = 'neutral', hint, sub, to }) {
   const empty = value === null || value === undefined || value === '' || value === '-';
   const body = (
     <>
       <div className="stat__body">
         <div className="stat__value">{empty ? <span className="muted">No data yet</span> : value}</div>
         <div className="stat__label">{label}</div>
+        {sub && <div className="stat__sub">{sub}</div>}
         {hint && <div className="stat__hint">{STATUS_ICON[status] && createElement(STATUS_ICON[status], { size: 13, 'aria-hidden': true })}{hint}</div>}
       </div>
       {Icon && <span className="stat__icon" aria-hidden="true"><Icon size={19} strokeWidth={1.8} /></span>}

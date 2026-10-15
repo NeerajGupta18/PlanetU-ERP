@@ -12,6 +12,7 @@ export const endOfMonth = (d) => new Date(d.getFullYear(), d.getMonth() + 1, 0);
 /** Monday-based week start */
 export const startOfWeek = (d) => { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; };
 export const todayISO = () => toISO(new Date());
+export const daysBetween = (a, b) => Math.round((parseISO(b) - parseISO(a)) / 86400000);
 export const isToday = (iso) => iso === todayISO();
 
 export function fmtTime(t) {
