@@ -909,3 +909,10 @@ institutes only. To load the new demo data on Render once, set `DEMO_RESET_ON_ST
 ---
 
 <p align="center">Built with ☕ and 🧠 by <a href="https://github.com/NeerajGupta18">Neeraj Sudesh Gupta</a></p>
+
+## Install as an app (phone and computer)
+
+The sign-in page offers the app in three ways: **Install** from the browser (Chrome/Edge on a computer or Android), **Add to Home Screen** steps on iPhone, and **Download Android app (APK)**.
+The APK is built by `.github/workflows/android-app.yml` (a thin Android wrapper in `android-app/` that opens the live site) and published as a GitHub release; the button appears once a release exists.
+Run it by hand from GitHub: Actions > Build Android app > Run workflow. If the site address changes, edit `android-app/capacitor.config.json`.
+Optional setting: `APK_URL` (download address; `off` hides the button).

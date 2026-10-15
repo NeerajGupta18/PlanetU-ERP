@@ -1,0 +1,55 @@
+name: Build Android app
+
+# Builds the Android app (an APK) and publishes it as a GitHub release. The sign-in page's
+# "Download Android app" button always points at the newest one.
+# Runs by itself when the files in android-app/ change, or by hand: Actions > Build Android app > Run workflow.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'android-app/**'
+      - '.github/workflows/android-app.yml'
+      - 'client/public/icon-maskable-512.png'
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Create the Android project
+        working-directory: android-app
+        run: |
+          npm install --no-audit --no-fund
+          npx cap add android
+          bash scripts/brand.sh
+
+      - name: Build the APK
+        working-directory: android-app/android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Name the file
+        run: cp android-app/android/app/build/outputs/apk/debug/app-debug.apk planetu-erp.apk
+
+      - name: Publish
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-${{ github.run_number }}
+          name: Android app ${{ github.run_number }}
+          body: Install by opening planetu-erp.apk on an Android phone. Android asks once to allow installs from your browser or files app.
+          files: planetu-erp.apk
+          make_latest: true

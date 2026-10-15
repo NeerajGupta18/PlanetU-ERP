@@ -1,0 +1,10 @@
+{
+  "name": "planetu-erp-android",
+  "private": true,
+  "description": "Android app (APK) wrapper for the PlanetU Campus ERP. Built by .github/workflows/android-app.yml",
+  "dependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/cli": "^7.0.0",
+    "@capacitor/core": "^7.0.0"
+  }
+}
