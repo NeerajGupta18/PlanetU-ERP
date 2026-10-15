@@ -18,6 +18,7 @@ export default function Breadcrumbs({ flat }) {
     <nav className="crumbs" aria-label="Breadcrumb">
       <Link to={home} aria-label="Home"><Home size={13} /></Link>
       {item.group && <><ChevronRight size={12} /><span>{item.group}</span></>}
+      {item.parent && <><ChevronRight size={12} /><Link to={item.parentTo}>{item.parent}</Link></>}
       <ChevronRight size={12} />
       {deeper ? <Link to={item.to}>{item.text}</Link> : <strong aria-current="page">{item.text}</strong>}
       {deeper && <><ChevronRight size={12} /><strong aria-current="page">Details</strong></>}

@@ -1,5 +1,5 @@
 import {
-  BedDouble, Banknote, DoorOpen, Briefcase, NotebookPen, QrCode, BookOpen, BookOpenCheck, Boxes, Bus, Building2, CalendarCheck, CalendarOff, CalendarDays, CircleDollarSign, ClipboardCheck, CreditCard, FileBarChart2, FileText, LifeBuoy, Star, GraduationCap, LayoutDashboard, ListChecks, Megaphone, School, Network, Server, Settings2, Table2, UserRound, Users, Users2, Wallet,
+  Inbox, BedDouble, Banknote, DoorOpen, Briefcase, NotebookPen, QrCode, BookOpen, BookOpenCheck, Boxes, Bus, Building2, CalendarCheck, CalendarOff, CalendarDays, CircleDollarSign, ClipboardCheck, CreditCard, FileBarChart2, FileText, LifeBuoy, Star, GraduationCap, LayoutDashboard, ListChecks, Megaphone, School, Network, Server, Settings2, Table2, UserRound, Users, Users2, Wallet,
 } from 'lucide-react';
 
 /**
@@ -9,55 +9,69 @@ import {
  * An entry is either a plain link (pinned at the top, like the Dashboard) or a group:
  *   { group: 'Academics', icon, items: [ ...links ] }
  *
+ * A link can join several closely related pages under one menu item with `sections`:
+ *   { label: 'Coursework', icon, sections: [{ label: 'Assignments', to, module }, { label: 'Quizzes', to, module }] }
+ * The sidebar shows one item; the pages show tabs to move between them (see SectionTabs.jsx).
+ * Search and breadcrumbs still know every section by name.
+ *
  * Multi-tenant behaviour (see hooks/useTenantConfig.js):
  *   module - the server-side module key. The item is hidden when the institute's
  *            plan/config has that module switched off. Omit for always-on items.
  *   term   - [key, fallback]: the label comes from the institute's terminology
  *            (a school says "Teachers", a college says "Faculty").
- * A group with no visible items is hidden automatically.
+ *   badge  - a key into the counts the notification service returns (shown as a number on the item).
+ * A group with no visible items is hidden automatically. The most used pages are pinned at the top.
  */
 export const MENU_TREE = {
   parent: [
     { label: 'Home', to: '/parent/home', icon: LayoutDashboard },
-    { label: 'Notice board', to: '/student/notices', icon: Megaphone, module: 'notices' },
-    { group: 'My child', icon: GraduationCap, items: [
-      { label: 'Attendance', to: '/student/attendance', icon: CalendarCheck, module: 'attendance' },
-      { label: 'Timetable', to: '/student/timetable', icon: Table2, module: 'timetable' },
-      { label: 'Results', to: '/student/results', icon: GraduationCap, module: 'exams' },
-      { label: 'Calendar', to: '/student/calendar', icon: CalendarDays, module: 'calendar' },
-      { label: 'Fees', to: '/student/fees', icon: Wallet, module: 'fees' },
-      { label: 'Hostel', to: '/student/hostel', icon: BedDouble, module: 'hostel' },
-      { label: 'Transport', to: '/student/transport', icon: Bus, module: 'transport' },
-      { label: 'Profile', to: '/student/profile', icon: UserRound },
+    { label: 'Attendance', to: '/student/attendance', icon: CalendarCheck, module: 'attendance' },
+    { label: 'Fees', to: '/student/fees', icon: Wallet, module: 'fees' },
+    { label: 'Results', to: '/student/results', icon: GraduationCap, module: 'exams' },
+    { label: 'Timetable', to: '/student/timetable', icon: Table2, module: 'timetable' },
+    { group: 'More', icon: Boxes, items: [
+      { label: 'Notices & calendar', icon: Megaphone, sections: [
+        { label: 'Notice board', to: '/student/notices', module: 'notices' },
+        { label: 'Calendar', to: '/student/calendar', module: 'calendar' },
+      ] },
+      { label: 'Hostel & transport', icon: Bus, sections: [
+        { label: 'Hostel', to: '/student/hostel', module: 'hostel' },
+        { label: 'Transport', to: '/student/transport', module: 'transport' },
+      ] },
+      { label: 'Child profile', to: '/student/profile', icon: UserRound },
+      { label: 'Help and feedback', to: '/parent/support', icon: LifeBuoy, module: 'grievance' },
     ] },
-    { label: 'Help and feedback', to: '/parent/support', icon: LifeBuoy, module: 'grievance' },
   ],
   student: [
     { label: 'Dashboard', to: '/student/dashboard', icon: LayoutDashboard },
-    { label: 'Notice board', to: '/student/notices', icon: Megaphone, module: 'notices' },
+    { label: 'Timetable', to: '/student/timetable', icon: Table2, module: 'timetable' },
+    { label: 'Attendance', icon: CalendarCheck, sections: [
+      { label: 'My attendance', to: '/student/attendance', module: 'attendance' },
+      { label: 'Check in', to: '/student/checkin', module: 'attendance' },
+    ] },
+    { label: 'Coursework', icon: NotebookPen, sections: [
+      { label: 'Assignments', to: '/student/assignments', module: 'assignments' },
+      { label: 'Quizzes', to: '/student/quizzes', module: 'quizzes' },
+      { label: 'Learning', to: '/student/learning', module: 'learning' },
+    ] },
+    { label: 'Results', to: '/student/results', icon: GraduationCap, module: 'exams' },
+    { label: 'Fees', to: '/student/fees', icon: Wallet, module: 'fees' },
     {
-      group: 'Academics', icon: GraduationCap, items: [
-        { label: 'Timetable', to: '/student/timetable', icon: Table2, module: 'timetable' },
-        { label: 'Attendance', to: '/student/attendance', icon: CalendarCheck, module: 'attendance' },
-        { label: 'Results', to: '/student/results', icon: GraduationCap, module: 'exams' },
-        { label: 'Learning', to: '/student/learning', icon: BookOpenCheck, module: 'learning' },
-        { label: 'Quizzes', to: '/student/quizzes', icon: ListChecks, module: 'quizzes' },
-        { label: 'Assignments', to: '/student/assignments', icon: NotebookPen, module: 'assignments' },
-        { label: 'Check in', to: '/student/checkin', icon: QrCode, module: 'attendance' },
-        { label: 'Calendar', to: '/student/calendar', icon: CalendarDays, module: 'calendar' },
-      ],
-    },
-    {
-      group: 'Fees & Campus', icon: Wallet, items: [
-        { label: 'Fees', to: '/student/fees', icon: Wallet, module: 'fees' },
+      group: 'Campus', icon: Building2, items: [
+        { label: 'Notices & calendar', icon: Megaphone, sections: [
+          { label: 'Notice board', to: '/student/notices', module: 'notices' },
+          { label: 'Calendar', to: '/student/calendar', module: 'calendar' },
+        ] },
         { label: 'Library', to: '/student/library', icon: BookOpen, module: 'library' },
-        { label: 'Hostel', to: '/student/hostel', icon: BedDouble, module: 'hostel' },
-        { label: 'Transport', to: '/student/transport', icon: Bus, module: 'transport' },
+        { label: 'Hostel & transport', icon: Bus, sections: [
+          { label: 'Hostel', to: '/student/hostel', module: 'hostel' },
+          { label: 'Transport', to: '/student/transport', module: 'transport' },
+        ] },
         { label: 'Placement', to: '/student/placement', icon: Briefcase, module: 'placement' },
       ],
     },
     {
-      group: 'My Account', icon: UserRound, items: [
+      group: 'My account', icon: UserRound, items: [
         { label: 'Profile', to: '/student/profile', icon: UserRound },
         { label: 'Certificates', to: '/student/certificates', icon: FileText, module: 'certificates' },
         { label: 'Help and feedback', to: '/student/support', icon: LifeBuoy, module: 'grievance' },
@@ -67,11 +81,14 @@ export const MENU_TREE = {
   ],
   admin: [
     { label: 'Dashboard', to: '/admin/dashboard', icon: LayoutDashboard },
+    { label: 'Approvals', to: '/admin/approvals', icon: Inbox, badge: 'approvals' },
     {
-      group: 'Admissions & Students', icon: ClipboardCheck, items: [
+      group: 'Students', icon: Users2, items: [
         { label: 'Admissions', to: '/admin/admissions', icon: ClipboardCheck, module: 'admissions', term: ['admission', 'Admissions'] },
-        { label: 'Students', to: '/admin/students', icon: Users2, module: 'students', term: ['students', 'Students'] },
-        { label: 'Certificates', to: '/admin/certificates', icon: FileText, module: 'certificates' },
+        { label: 'Students', icon: Users2, term: ['students', 'Students'], sections: [
+          { label: 'Students', to: '/admin/students', module: 'students', term: ['students', 'Students'] },
+          { label: 'Certificates', to: '/admin/certificates', module: 'certificates' },
+        ] },
       ],
     },
     {
@@ -80,47 +97,55 @@ export const MENU_TREE = {
         { label: 'Timetable', to: '/admin/timetable', icon: Table2, module: 'timetable' },
         { label: 'Attendance', to: '/admin/attendance', icon: CalendarCheck, module: 'attendance' },
         { label: 'Exams & Results', to: '/admin/exams', icon: GraduationCap, module: 'exams' },
-        { label: 'Learning', to: '/admin/learning', icon: BookOpenCheck, module: 'learning' },
-        { label: 'Quizzes', to: '/admin/quizzes', icon: ListChecks, module: 'quizzes' },
-        { label: 'Assignments', to: '/admin/assignments', icon: NotebookPen, module: 'assignments' },
-        { label: 'Calendar', to: '/admin/calendar', icon: CalendarDays, module: 'calendar' },
-      ],
-    },
-    {
-      group: 'Campus', icon: Boxes, items: [
-        { label: 'Library', to: '/admin/library', icon: BookOpen, module: 'library' },
-        { label: 'Assets', to: '/admin/assets', icon: Boxes, module: 'assets' },
-        { label: 'Hostel', to: '/admin/hostel', icon: BedDouble, module: 'hostel' },
-        { label: 'Transport', to: '/admin/transport', icon: Bus, module: 'transport' },
-        { label: 'Placement', to: '/admin/placement', icon: Briefcase, module: 'placement' },
-        { label: 'Visitors', to: '/admin/visitors', icon: DoorOpen, module: 'visitors' },
-      ],
-    },
-    {
-      group: 'People', icon: Users, items: [
-        { label: 'Employees', to: '/admin/employees', icon: Users, term: ['employees', 'Employees'] },
-        { label: 'Departments & Designations', to: '/admin/departments', icon: Network },
-        { label: 'Leave', to: '/admin/leave', icon: CalendarOff, module: 'leave' },
+        { label: 'Coursework', icon: NotebookPen, sections: [
+          { label: 'Assignments', to: '/admin/assignments', module: 'assignments' },
+          { label: 'Quizzes', to: '/admin/quizzes', module: 'quizzes' },
+          { label: 'Learning', to: '/admin/learning', module: 'learning' },
+        ] },
       ],
     },
     {
       group: 'Finance', icon: Wallet, items: [
         { label: 'Fees & Payments', to: '/admin/fees', icon: Wallet, module: 'fees' },
         { label: 'Payroll', to: '/admin/payroll', icon: Banknote, module: 'payroll' },
-        { label: 'Billing', to: '/admin/billing', icon: CreditCard },
       ],
     },
     {
-      group: 'Communication', icon: Megaphone, items: [
-        { label: 'Notice board', to: '/admin/notices', icon: Megaphone, module: 'notices' },
-        { label: 'Grievances', to: '/admin/grievances', icon: LifeBuoy, module: 'grievance' },
-        { label: 'Feedback', to: '/admin/feedback', icon: Star, module: 'grievance' },
+      group: 'Staff', icon: Users, items: [
+        { label: 'Employees', icon: Users, term: ['employees', 'Employees'], sections: [
+          { label: 'Employees', to: '/admin/employees', term: ['employees', 'Employees'] },
+          { label: 'Departments & Designations', to: '/admin/departments' },
+        ] },
+        { label: 'Leave', to: '/admin/leave', icon: CalendarOff, module: 'leave' },
       ],
     },
     {
-      group: 'Setup & Reports', icon: Settings2, items: [
-        { label: 'Institute', to: '/admin/institute', icon: Building2, term: ['institute', 'Institute'] },
+      group: 'Campus', icon: Boxes, items: [
+        { label: 'Library & assets', icon: BookOpen, sections: [
+          { label: 'Library', to: '/admin/library', module: 'library' },
+          { label: 'Assets', to: '/admin/assets', module: 'assets' },
+        ] },
+        { label: 'Hostel & transport', icon: Bus, sections: [
+          { label: 'Hostel', to: '/admin/hostel', module: 'hostel' },
+          { label: 'Transport', to: '/admin/transport', module: 'transport' },
+        ] },
+        { label: 'Visitors', to: '/admin/visitors', icon: DoorOpen, module: 'visitors' },
+        { label: 'Placement', to: '/admin/placement', icon: Briefcase, module: 'placement' },
+      ],
+    },
+    {
+      group: 'Office', icon: Settings2, items: [
+        { label: 'Notices & calendar', icon: Megaphone, sections: [
+          { label: 'Notice board', to: '/admin/notices', module: 'notices' },
+          { label: 'Calendar', to: '/admin/calendar', module: 'calendar' },
+        ] },
+        { label: 'Help desk', icon: LifeBuoy, sections: [
+          { label: 'Grievances', to: '/admin/grievances', module: 'grievance' },
+          { label: 'Feedback', to: '/admin/feedback', module: 'grievance' },
+        ] },
         { label: 'Reports & Exports', to: '/admin/reports', icon: FileBarChart2 },
+        { label: 'Institute settings', to: '/admin/institute', icon: Building2 },
+        { label: 'Subscription', to: '/admin/billing', icon: CreditCard },
       ],
     },
   ],
@@ -131,20 +156,47 @@ export const MENU_TREE = {
   ],
   employee: [
     { label: 'Dashboard', to: '/employee/dashboard', icon: LayoutDashboard },
-    { label: 'Notice board', to: '/employee/notices', icon: Megaphone, module: 'notices' },
-    { label: 'My leave', to: '/employee/leave', icon: CalendarOff, module: 'leave' },
-    { label: 'My payslips', to: '/employee/payslips', icon: Banknote, module: 'payroll' },
-    { label: 'My visitors', to: '/employee/visitors', icon: DoorOpen, module: 'visitors' },
-    { label: 'Help and feedback', to: '/employee/support', icon: LifeBuoy, module: 'grievance' },
+    { label: 'Attendance', to: '/employee/attendance', icon: ClipboardCheck, module: 'attendance' },
+    { label: 'Coursework', icon: NotebookPen, sections: [
+      { label: 'Assignments', to: '/employee/assignments', module: 'assignments' },
+      { label: 'Quizzes', to: '/employee/quizzes', module: 'quizzes' },
+      { label: 'Learning', to: '/employee/learning', module: 'learning' },
+    ] },
+    { label: 'Exam marks', to: '/employee/exams', icon: GraduationCap, module: 'exams' },
     {
-      group: 'Teaching', icon: ClipboardCheck, items: [
-        { label: 'Attendance', to: '/employee/attendance', icon: ClipboardCheck, module: 'attendance' },
-        { label: 'Exam marks', to: '/employee/exams', icon: GraduationCap, module: 'exams' },
-        { label: 'Learning', to: '/employee/learning', icon: BookOpenCheck, module: 'learning' },
-        { label: 'Quizzes', to: '/employee/quizzes', icon: ListChecks, module: 'quizzes' },
-        { label: 'Assignments', to: '/employee/assignments', icon: NotebookPen, module: 'assignments' },
+      group: 'Me', icon: UserRound, items: [
+        { label: 'My leave', to: '/employee/leave', icon: CalendarOff, module: 'leave' },
+        { label: 'My payslips', to: '/employee/payslips', icon: Banknote, module: 'payroll' },
+        { label: 'My visitors', to: '/employee/visitors', icon: DoorOpen, module: 'visitors' },
+        { label: 'Notice board', to: '/employee/notices', icon: Megaphone, module: 'notices' },
+        { label: 'Help and feedback', to: '/employee/support', icon: LifeBuoy, module: 'grievance' },
       ],
     },
+  ],
+};
+
+/**
+ * The bar along the bottom of a phone screen: the four pages a role opens most, plus "Menu" for the rest.
+ * Items whose module is switched off are left out.
+ */
+export const BOTTOM_NAV = {
+  student: [
+    { label: 'Home', to: '/student/dashboard', icon: LayoutDashboard },
+    { label: 'Timetable', to: '/student/timetable', icon: Table2, module: 'timetable' },
+    { label: 'Attendance', to: '/student/attendance', icon: CalendarCheck, module: 'attendance', also: ['/student/checkin'] },
+    { label: 'Fees', to: '/student/fees', icon: Wallet, module: 'fees' },
+  ],
+  parent: [
+    { label: 'Home', to: '/parent/home', icon: LayoutDashboard },
+    { label: 'Attendance', to: '/student/attendance', icon: CalendarCheck, module: 'attendance' },
+    { label: 'Fees', to: '/student/fees', icon: Wallet, module: 'fees' },
+    { label: 'Results', to: '/student/results', icon: GraduationCap, module: 'exams' },
+  ],
+  employee: [
+    { label: 'Home', to: '/employee/dashboard', icon: LayoutDashboard },
+    { label: 'Attendance', to: '/employee/attendance', icon: ClipboardCheck, module: 'attendance' },
+    { label: 'Coursework', to: '/employee/assignments', icon: NotebookPen, module: 'assignments', also: ['/employee/quizzes', '/employee/learning'] },
+    { label: 'Leave', to: '/employee/leave', icon: CalendarOff, module: 'leave' },
   ],
 };
 

@@ -41,9 +41,9 @@ export default function SearchPalette({ open, onClose, flat }) {
 
   const results = useMemo(() => {
     const pages = flat
-      .filter((i) => !q || `${i.text} ${i.group || ''}`.toLowerCase().includes(q))
+      .filter((i) => !q || `${i.text} ${i.parent || ''} ${i.group || ''}`.toLowerCase().includes(q))
       .slice(0, q ? 8 : 12)
-      .map((i) => ({ key: i.to, kind: 'page', text: i.text, sub: i.group || 'Main', to: i.to, icon: i.icon }));
+      .map((i) => ({ key: i.to, kind: 'page', text: i.text, sub: [i.group, i.parent].filter(Boolean).join(' > ') || 'Main', to: i.to, icon: i.icon }));
     return [...pages, ...people];
   }, [flat, q, people]);
 

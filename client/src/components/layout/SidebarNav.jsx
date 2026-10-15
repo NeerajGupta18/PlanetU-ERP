@@ -1,26 +1,31 @@
 import { useEffect, useMemo, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { ChevronDown, Search } from 'lucide-react';
+import { onPage } from '../../hooks/useNav.js';
 
 const STORE = 'erp.navgroups';
 const readClosed = () => { try { return JSON.parse(localStorage.getItem(STORE) || '[]'); } catch { return []; } };
 
-const Link = ({ item }) => {
+const Link = ({ item, counts }) => {
   const Icon = item.icon;
+  const { pathname } = useLocation();
+  const active = (item.match || [item.to]).some((to) => onPage(pathname, to));
+  const n = item.badge ? Number(counts?.[item.badge] || 0) : 0;
   return (
-    <NavLink to={item.to} className={({ isActive }) => `navlink ${isActive ? 'is-active' : ''}`} title={item.text}>
+    <NavLink to={item.to} className={() => `navlink ${active ? 'is-active' : ''}`} title={item.text} aria-current={active ? 'page' : undefined}>
       <Icon size={18} /><span>{item.text}</span>
+      {n > 0 && <b className="navlink__badge" aria-label={`${n} waiting`}>{n > 99 ? '99+' : n}</b>}
     </NavLink>
   );
 };
 
 /** Grouped, collapsible sidebar links with a filter box. The group holding the current page is always open. */
-export default function SidebarNav({ tree, flat }) {
+export default function SidebarNav({ tree, flat, counts }) {
   const { pathname } = useLocation();
   const [closed, setClosed] = useState(readClosed);
   const [query, setQuery] = useState('');
 
-  const activeGroup = useMemo(() => flat.find((i) => pathname === i.to || pathname.startsWith(`${i.to}/`))?.group || null, [flat, pathname]);
+  const activeGroup = useMemo(() => flat.find((i) => onPage(pathname, i.to))?.group || null, [flat, pathname]);
 
   // Opening a page inside a collapsed group opens that group again
   useEffect(() => {
@@ -52,11 +57,11 @@ export default function SidebarNav({ tree, flat }) {
       <nav className="sidebar__nav">
         {q ? (
           (() => {
-            const hits = flat.filter((i) => `${i.text} ${i.group || ''}`.toLowerCase().includes(q));
-            return hits.length ? hits.map((i) => <Link key={i.to} item={i} />) : <p className="sidebar__none">No menu item matches.</p>;
+            const hits = flat.filter((i) => `${i.text} ${i.parent || ''} ${i.group || ''}`.toLowerCase().includes(q));
+            return hits.length ? hits.map((i) => <Link key={i.to} item={i} counts={counts} />) : <p className="sidebar__none">No menu item matches.</p>;
           })()
         ) : tree.map((entry) => {
-          if (!entry.group) return <Link key={entry.to} item={entry} />;
+          if (!entry.group) return <Link key={entry.to} item={entry} counts={counts} />;
           const open = !closed.includes(entry.group);
           const GIcon = entry.icon;
           return (
@@ -64,7 +69,7 @@ export default function SidebarNav({ tree, flat }) {
               <button type="button" className="navgroup__head" onClick={() => toggle(entry.group)} aria-expanded={open}>
                 <GIcon size={16} /><span>{entry.group}</span><ChevronDown size={14} className="navgroup__chev" />
               </button>
-              <div className="navgroup__items">{entry.items.map((i) => <Link key={i.to} item={i} />)}</div>
+              <div className="navgroup__items">{entry.items.map((i) => <Link key={i.to} item={i} counts={counts} />)}</div>
             </div>
           );
         })}
