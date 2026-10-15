@@ -15,8 +15,16 @@ export default function BottomNav({ role, onMenu }) {
   // Office staff get their own office pages next to Home (gate security gets the visitor desk, and so on)
   if (role === 'employee' && office?.roles?.length) {
     const desk = links.filter((l) => l.to.startsWith('/admin/') && l.to !== '/admin/dashboard').slice(0, 4 - Math.min(items.length, 2))
-      .map((l) => ({ label: l.text.split(' ')[0].replace(/&$/, ''), to: l.to, icon: l.icon, also: l.match }));
-    items = [items[0], ...desk, ...items.slice(1)].slice(0, 4);
+      .map((l) => ({ words: l.text.split(' '), to: l.to, icon: l.icon, also: l.match }));
+    // One word per tab; when two desk pages share their first word ("Department attendance", "Department leave") use the last
+    const firsts = desk.map((d) => d.words[0]);
+    for (const d of desk) {
+      const w = firsts.filter((x) => x === d.words[0]).length > 1 ? d.words[d.words.length - 1] : d.words[0];
+      d.label = (w.charAt(0).toUpperCase() + w.slice(1)).replace(/&$/, '');
+    }
+    // ...and the employee's own pages say "My ..." when a desk tab has the same name
+    const rest = items.slice(1).map((i) => (desk.some((d) => d.label === i.label) ? { ...i, label: `My ${i.label.toLowerCase()}` } : i));
+    items = [items[0], ...desk, ...rest].slice(0, 4);
   }
   if (items.length < 2) return null;
   return (

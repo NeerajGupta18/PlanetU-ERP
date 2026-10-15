@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Check, ClipboardCheck, Lock, Save, Send, X } from 'lucide-react';
+import { useDialogs } from '../../components/ui/Dialogs.jsx';
 import { api } from '../../api/http.js';
 import { useFetch } from '../../hooks/useFetch.js';
 import { Badge, Card, PageBanner } from '../../components/ui/Ui.jsx';
@@ -38,6 +39,7 @@ function Sheet({ role, data, backTo }) {
   const [marks, setMarks] = useState(() => Object.fromEntries(data.students.map((s) => [s.id, s.status])));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const { toast } = useDialogs();
   const [notice, setNotice] = useState('');
 
   const students = saved.students;
@@ -84,7 +86,9 @@ function Sheet({ role, data, backTo }) {
       const next = await api.put(`/${role}/attendance/lecture`, body);
       setSaved(next);
       setMarks(Object.fromEntries(next.students.map((s) => [s.id, s.status])));
-      setNotice(submit ? 'Attendance submitted.' : 'Draft saved. Students will see it once you submit.');
+      const msg = submit ? `Attendance submitted: ${next.students.filter((x) => x.status !== 'absent').length} of ${next.students.length} attended.` : 'Draft saved. Students will see it once you submit.';
+      setNotice(msg);
+      toast.success(msg);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -132,18 +136,18 @@ function Sheet({ role, data, backTo }) {
         )}
 
         <div className="table-wrap">
-          <table className="table">
-            <thead><tr><th>Roll no.</th><th>Student</th><th style={{ width: 190 }}>Attendance</th></tr></thead>
+          <table className="table mark-table">
+            <thead><tr><th>Roll no.</th><th>Student</th><th style={{ width: 190 }}>Attendance <span className="muted mark-table__key">(P present, A absent, L late)</span></th></tr></thead>
             <tbody>
               {students.map((s) => (
                 <tr key={s.id}>
                   <td className="muted">{s.rollNo || '-'}</td>
-                  <td><strong>{s.name}</strong> <span className="muted">({s.code})</span></td>
+                  <td><strong>{s.name}</strong> <span className="muted">({s.code})</span>{s.rollNo && <div className="muted mark-table__roll">Roll no. {s.rollNo}</div>}</td>
                   <td>
                     <div className="mark-toggle" role="radiogroup" aria-label={`Attendance for ${s.name}`}>
                       {OPTIONS.map((o) => (
                         <button
-                          key={o.value} type="button" role="radio" aria-checked={marks[s.id] === o.value} title={o.title}
+                          key={o.value} type="button" role="radio" aria-checked={marks[s.id] === o.value} title={o.title} aria-label={o.title}
                           disabled={!editable} className={`mark-toggle__btn mark-toggle__btn--${o.value} ${marks[s.id] === o.value ? 'is-on' : ''}`}
                           onClick={() => set(s.id, marks[s.id] === o.value ? null : o.value)}
                         >

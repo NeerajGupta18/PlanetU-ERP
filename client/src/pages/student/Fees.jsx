@@ -7,6 +7,7 @@ import PayOnlineModal from '../../components/fees/PayOnlineModal.jsx';
 import { feeItemBadge } from '../../utils/fees.js';
 import { fmtDate, todayISO } from '../../utils/dates.js';
 
+const inr0 = (n) => `₹${Math.round(Number(n) || 0).toLocaleString('en-IN')}`;
 const inr = (n) => `₹${Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 /** The outstanding card says when the next payment is due, and turns red once something is overdue. */
@@ -33,9 +34,9 @@ export default function Fees() {
         {data && (
           <>
             <div className="stats stats--3">
-              <StatCard value={inr(data.summary.total)} label="Total charged" icon={Receipt} />
-              <StatCard value={inr(data.summary.paid)} label="Paid" icon={Banknote} />
-              <StatCard value={inr(data.summary.outstanding)} label="Outstanding" icon={Wallet} {...dueStatus(data.items, data.summary.outstanding)} />
+              <StatCard value={inr0(data.summary.total)} label="Total charged" icon={Receipt} />
+              <StatCard value={inr0(data.summary.paid)} label="Paid" icon={Banknote} />
+              <StatCard value={inr0(data.summary.outstanding)} label="Outstanding" icon={Wallet} {...dueStatus(data.items, data.summary.outstanding)} />
             </div>
             <Card
               title="Charges"
@@ -45,9 +46,12 @@ export default function Fees() {
                 </button>
               )}
             >
+              {!canPayOnline && data.summary.outstanding > 0 && (
+                <p className="note" style={{ marginTop: 0 }}>Pay at the institute's fee counter (cash, UPI, card or cheque). The receipt then appears below.</p>
+              )}
               {data.items.length === 0 ? <EmptyState title="No charges yet" /> : (
                 <div className="table-wrap">
-                  <table className="table">
+                  <table className="table table--stack">
                     <thead><tr><th>Item</th><th>Due</th><th>Amount</th><th>Paid</th><th>Status</th>{canPayOnline && <th />}</tr></thead>
                     <tbody>
                       {data.items.map((i) => {
@@ -55,8 +59,8 @@ export default function Fees() {
                         const open = (i.status === 'unpaid' || i.status === 'partial') && balance > 0;
                         return (
                           <tr key={i.id}>
-                            <td>{i.label}</td><td className="muted">{i.dueDate ? fmtDate(i.dueDate) : '-'}</td>
-                            <td>{inr(i.amount)}</td><td>{inr(i.paid)}</td>
+                            <td><strong>{i.label}</strong></td><td className="muted" data-label="Due">{i.dueDate ? fmtDate(i.dueDate) : '-'}</td>
+                            <td data-label="Amount">{inr(i.amount)}</td><td data-label="Paid">{inr(i.paid)}</td>
                             <td><Badge tone={feeItemBadge(i).tone}>{feeItemBadge(i).label}</Badge></td>
                             {canPayOnline && (
                               <td>{open && <button type="button" className="btn btn--outline btn--sm" onClick={() => setPaying({ feeItemId: i.id, label: i.label, due: balance })}>Pay</button>}</td>
@@ -74,16 +78,16 @@ export default function Fees() {
               <DataBoundary loading={history.loading} error={history.error} data={history.data} reload={history.reload}>
                 {history.data && (history.data.payments.length === 0 ? <EmptyState title="No payments yet" /> : (
                   <div className="table-wrap">
-                    <table className="table">
+                    <table className="table table--stack">
                       <thead><tr><th>Receipt</th><th>Date</th><th>Amount</th><th>Method</th><th /></tr></thead>
                       <tbody>
                         {history.data.payments.map((p) => (
                           <tr key={p.id}>
-                            <td>{p.receiptNo}</td>
-                            <td className="muted">{fmtDate(p.paidAt.slice(0, 10))}</td>
-                            <td>{inr(p.amount)}</td>
-                            <td>{p.method.replace('_', ' ')}</td>
-                            <td><a className="btn btn--outline btn--sm" href={`/api/student/fees/payments/${p.id}/receipt.pdf`} target="_blank" rel="noreferrer"><FileText size={13} /></a></td>
+                            <td><strong>{p.receiptNo}</strong></td>
+                            <td className="muted" data-label="Date">{fmtDate(p.paidAt.slice(0, 10))}</td>
+                            <td data-label="Amount">{inr(p.amount)}</td>
+                            <td data-label="Method">{p.method.replace('_', ' ')}</td>
+                            <td><a className="btn btn--outline btn--sm" href={`/api/student/fees/payments/${p.id}/receipt.pdf`} target="_blank" rel="noreferrer"><FileText size={13} /> Receipt</a></td>
                           </tr>
                         ))}
                       </tbody>

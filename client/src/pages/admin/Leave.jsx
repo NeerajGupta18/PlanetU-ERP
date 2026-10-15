@@ -37,16 +37,16 @@ function Requests({ status }) {
       <DataBoundary loading={list.loading} error={list.error} data={list.data} reload={list.reload}>
         {list.data && (list.data.requests.length === 0 ? <EmptyState title="Nothing here" hint={status === 'pending' ? 'No leave is waiting for a decision.' : 'No requests in this list.'} /> : (
           <div className="table-wrap">
-            <table className="table">
+            <table className="table table--stack">
               <thead><tr><th>Employee</th><th>Leave</th><th>Dates</th><th>Days</th><th>Reason</th><th>Status</th><th /></tr></thead>
               <tbody>
                 {list.data.requests.map((r) => (
                   <tr key={r.id}>
                     <td><strong>{r.employeeName}</strong><div className="muted">{r.employeeCode}{r.department ? ` - ${r.department}` : ''}</div></td>
-                    <td>{r.typeName}{r.halfDay && <div className="muted">Half day</div>}</td>
-                    <td>{range(r)}</td>
-                    <td>{r.days}</td>
-                    <td>{r.reason || '-'}{r.remark && <div className="muted">{r.remark}</div>}{r.byOffice && <div className="muted">Recorded by the office</div>}</td>
+                    <td data-label="Type">{r.typeName}{r.halfDay && <div className="muted">Half day</div>}</td>
+                    <td data-label="Dates">{range(r)}</td>
+                    <td data-label="Days">{r.days}</td>
+                    <td data-label="Reason">{r.reason || '-'}{r.remark && <div className="muted">{r.remark}</div>}{r.byOffice && <div className="muted">Recorded by the office</div>}</td>
                     <td><Badge tone={LEAVE_TONE[r.status]}>{LEAVE_WORD[r.status]}</Badge></td>
                     <td className="row-actions">{r.status === 'pending' && (<>
                       <button type="button" className="btn btn--primary btn--sm" onClick={() => decide(r, 'approve')}>Approve</button>
@@ -104,9 +104,9 @@ function TypeEditor({ type, onClose, onSaved }) {
       <form onSubmit={save}>
         {err && <p className="form-error">{err}</p>}
         <div className="fields">
-          <div className="form-field form-field--full"><label className="label">Name *</label><input className="input" value={f.name} maxLength={60} onChange={(e) => setF({ ...f, name: e.target.value })} required autoFocus /></div>
-          <div className="form-field form-field--full"><label className="label">Days per year</label>
-            <input className="input" type="number" min="0" max="366" step="0.5" placeholder="Empty means no limit" value={f.daysPerYear} onChange={(e) => setF({ ...f, daysPerYear: e.target.value })} /></div>
+          <label className="form-field form-field--full"><span className="label">Name *</span><input className="input" value={f.name} maxLength={60} onChange={(e) => setF({ ...f, name: e.target.value })} required autoFocus /></label>
+          <label className="form-field form-field--full"><span className="label">Days per year</span>
+            <input className="input" type="number" min="0" max="366" step="0.5" placeholder="Empty means no limit" value={f.daysPerYear} onChange={(e) => setF({ ...f, daysPerYear: e.target.value })} /></label>
           <div className="form-field form-field--full"><label><input type="checkbox" checked={f.active} onChange={(e) => setF({ ...f, active: e.target.checked })} /> In use (employees can apply for it)</label></div>
         </div>
         <div className="form-actions"><button type="button" className="btn btn--outline" onClick={onClose}>Cancel</button><button className="btn btn--primary">Save</button></div>
@@ -164,8 +164,8 @@ function RecordModal({ onClose, onSaved }) {
   if (!emp) {
     return (
       <Modal open title="Record leave for" onClose={onClose} width={420}>
-        <div className="form-field"><label className="label">Employee *</label>
-          <select className="input" value={emp} onChange={(e) => setEmp(e.target.value)}><option value="">Select...</option>{emps.data.employees.map((e) => <option key={e.id} value={e.id}>{e.name} ({e.empCode || e.code})</option>)}</select></div>
+        <label className="form-field"><span className="label">Employee *</span>
+          <select className="input" value={emp} onChange={(e) => setEmp(e.target.value)}><option value="">Select...</option>{emps.data.employees.map((e) => <option key={e.id} value={e.id}>{e.name} ({e.empCode || e.code})</option>)}</select></label>
         <p className="muted">Leave recorded here is approved straight away.</p>
       </Modal>
     );

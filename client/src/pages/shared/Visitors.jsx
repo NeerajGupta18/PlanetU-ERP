@@ -74,14 +74,14 @@ function Table({ role, scope, searchable, tick, onChanged }) {
       )}
       <DataBoundary loading={loading} error={error} data={data} reload={reload}>
         {data && (data.visits.length === 0 ? <EmptyState title={scope ? 'Nobody is inside or expected' : 'No visitors found'} /> : (
-          <div className="table-wrap"><table className="table">
+          <div className="table-wrap"><table className="table table--stack">
             <thead><tr><th>Visitor</th><th>Meeting</th><th>Purpose</th><th>Time</th><th>Status</th><th /></tr></thead>
             <tbody>{data.visits.map((v) => (
               <tr key={v.id}>
                 <td><strong>{v.visitorName}</strong> <small className="muted">{v.passNo}</small><br /><small className="muted">{[v.organisation, v.phone, v.people > 1 && `${v.people} people`, v.vehicleNo].filter(Boolean).join(' · ') || '-'}</small></td>
-                <td>{v.hostName || v.hostNote || <span className="muted">-</span>}</td>
-                <td>{v.purpose}</td>
-                <td><small>{v.checkInAt ? <>In {fmtDateTime(v.checkInAt)}{v.checkOutAt && <><br />Out {fmtDateTime(v.checkOutAt)}</>}</> : v.expectedOn ? `Expected ${fmtDate(String(v.expectedOn).slice(0, 10))}` : '-'}</small></td>
+                <td data-label="Meeting">{v.hostName || v.hostNote || <span className="muted">-</span>}</td>
+                <td data-label="Purpose">{v.purpose}</td>
+                <td data-label="Time"><small>{v.checkInAt ? <>In {fmtDateTime(v.checkInAt)}{v.checkOutAt && <><br />Out {fmtDateTime(v.checkOutAt)}</>}</> : v.expectedOn ? `Expected ${fmtDate(String(v.expectedOn).slice(0, 10))}` : '-'}</small></td>
                 <td><Badge tone={STATUS[v.status].tone}>{STATUS[v.status].label}</Badge>{v.overstay && <> <Badge tone="amber">Long stay</Badge></>}</td>
                 <td style={{ whiteSpace: 'nowrap' }}>
                   {admin && v.status === 'expected' && <button type="button" className="btn btn--primary btn--sm" onClick={() => act(v, 'check-in', {})}><LogIn size={13} /> Check in</button>}
