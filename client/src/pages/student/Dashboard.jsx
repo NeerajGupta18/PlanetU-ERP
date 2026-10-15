@@ -189,7 +189,7 @@ function DashboardView({ d }) {
           <ul className="notices">
             {d.notices.map((n) => (
               <li key={n.id}>
-                <div className="notices__head"><strong>{n.read === false && <span className="dot-new" aria-label="New" />}{n.title}</strong><Badge tone={n.priority === 'important' ? 'red' : 'blue'}>{n.priority === 'important' ? 'Important' : n.category}</Badge></div>
+                <div className="notices__head"><strong>{n.read === false && <span className="dot-new" role="img" aria-label="New" />}{n.title}</strong><Badge tone={n.priority === 'important' ? 'red' : 'blue'}>{n.priority === 'important' ? 'Important' : n.category}</Badge></div>
                 <p>{n.body}</p>
                 <small className="muted">{fmtDate(n.date)}</small>
               </li>

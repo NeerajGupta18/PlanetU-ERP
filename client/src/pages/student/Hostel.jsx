@@ -15,14 +15,14 @@ export default function Hostel() {
           <EmptyState title="No hostel room" hint="A room has not been allotted. Please ask the hostel office if you need one." />
         ) : (
           <Card title="Current room">
-            <div className="fields fields--3">
+            <dl className="fields fields--3">
               <Field label="Hostel">{data.current.hostel} <Badge tone="blue">{data.hostel.kind === 'boys' ? 'Boys' : data.hostel.kind === 'girls' ? 'Girls' : 'Mixed'}</Badge></Field>
               <Field label="Room">{data.current.roomNo} (floor {data.current.floor})</Field>
               <Field label="Staying since">{fmtDate(data.current.from)}</Field>
               <Field label="Charge">{inr0(data.current.monthlyFee)} a month</Field>
               <Field label="Warden">{data.hostel.warden || '-'}{data.hostel.wardenEmail && <div className="muted">{data.hostel.wardenEmail}</div>}</Field>
               <Field label="Hostel phone">{data.hostel.phone || '-'}</Field>
-            </div>
+            </dl>
           </Card>
         ))}
         {data?.history.length > 0 && (

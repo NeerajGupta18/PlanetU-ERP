@@ -29,7 +29,7 @@ export default function Assets() {
       />
       <Card>
         <div className="toolbar">
-          <select className="input" style={{ maxWidth: 180 }} value={status} onChange={(e) => setStatus(e.target.value)}>
+          <select aria-label="Filter by status" className="input" style={{ maxWidth: 180 }} value={status} onChange={(e) => setStatus(e.target.value)}>
             <option value="">All statuses</option>
             {Object.entries(STATUS_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>

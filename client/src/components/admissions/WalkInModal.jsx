@@ -55,24 +55,24 @@ export default function WalkInModal({ courses, fee, courseLabel = 'Course', onCl
       <form onSubmit={save}>
         {err && <p className="form-error">{err}</p>}
         <div className="fields">
-          <div className="form-field"><label className="label">{courseLabel} *</label>
-            <select className="input" value={f.courseId} onChange={set('courseId')} required><option value="">Select...</option>{courses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
-          <div className="form-field"><label className="label">Full name *</label><input className="input" value={f.name} onChange={set('name')} required /></div>
-          <div className="form-field"><label className="label">Email *</label><input className="input" type="email" value={f.email} onChange={set('email')} required /></div>
-          <div className="form-field"><label className="label">Mobile *</label><input className="input" type="tel" value={f.phone} onChange={set('phone')} required /></div>
-          <div className="form-field"><label className="label">Date of birth *</label><input className="input" type="date" max={today} value={f.dob} onChange={set('dob')} required /></div>
-          <div className="form-field"><label className="label">Gender</label>
-            <select className="input" value={f.gender} onChange={set('gender')}><option value="">-</option><option>Female</option><option>Male</option><option>Other</option></select></div>
-          <div className="form-field"><label className="label">Category</label>
-            <select className="input" value={f.personal.category} onChange={nest('personal', 'category')}><option value="">-</option>{CATEGORIES.map((c) => <option key={c}>{c}</option>)}</select></div>
-          <div className="form-field"><label className="label">Nationality</label><input className="input" value={f.personal.nationality} onChange={nest('personal', 'nationality')} /></div>
-          <div className="form-field form-field--full"><label className="label">Address *</label><input className="input" value={f.address} onChange={set('address')} required /></div>
-          <div className="form-field"><label className="label">Father's name</label><input className="input" value={f.guardian.fatherName} onChange={nest('guardian', 'fatherName')} /></div>
-          <div className="form-field"><label className="label">Mother's name</label><input className="input" value={f.guardian.motherName} onChange={nest('guardian', 'motherName')} /></div>
-          <div className="form-field"><label className="label">Guardian to contact *</label><input className="input" value={f.guardian.name} onChange={nest('guardian', 'name')} required /></div>
-          <div className="form-field"><label className="label">Guardian's phone *</label><input className="input" type="tel" value={f.guardian.phone} onChange={nest('guardian', 'phone')} required /></div>
-          <div className="form-field"><label className="label">Last qualification</label><input className="input" placeholder="12th, Diploma..." value={f.previousEducation.qualification} onChange={nest('previousEducation', 'qualification')} /></div>
-          <div className="form-field"><label className="label">School / college</label><input className="input" value={f.previousEducation.institution} onChange={nest('previousEducation', 'institution')} /></div>
+          <label className="form-field"><span className="label">{courseLabel} *</span>
+            <select className="input" value={f.courseId} onChange={set('courseId')} required><option value="">Select...</option>{courses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
+          <label className="form-field"><span className="label">Full name *</span><input className="input" value={f.name} onChange={set('name')} required /></label>
+          <label className="form-field"><span className="label">Email *</span><input className="input" type="email" value={f.email} onChange={set('email')} required /></label>
+          <label className="form-field"><span className="label">Mobile *</span><input className="input" type="tel" value={f.phone} onChange={set('phone')} required /></label>
+          <label className="form-field"><span className="label">Date of birth *</span><input className="input" type="date" max={today} value={f.dob} onChange={set('dob')} required /></label>
+          <label className="form-field"><span className="label">Gender</span>
+            <select className="input" value={f.gender} onChange={set('gender')}><option value="">-</option><option>Female</option><option>Male</option><option>Other</option></select></label>
+          <label className="form-field"><span className="label">Category</span>
+            <select className="input" value={f.personal.category} onChange={nest('personal', 'category')}><option value="">-</option>{CATEGORIES.map((c) => <option key={c}>{c}</option>)}</select></label>
+          <label className="form-field"><span className="label">Nationality</span><input className="input" value={f.personal.nationality} onChange={nest('personal', 'nationality')} /></label>
+          <label className="form-field form-field--full"><span className="label">Address *</span><input className="input" value={f.address} onChange={set('address')} required /></label>
+          <label className="form-field"><span className="label">Father's name</span><input className="input" value={f.guardian.fatherName} onChange={nest('guardian', 'fatherName')} /></label>
+          <label className="form-field"><span className="label">Mother's name</span><input className="input" value={f.guardian.motherName} onChange={nest('guardian', 'motherName')} /></label>
+          <label className="form-field"><span className="label">Guardian to contact *</span><input className="input" value={f.guardian.name} onChange={nest('guardian', 'name')} required /></label>
+          <label className="form-field"><span className="label">Guardian's phone *</span><input className="input" type="tel" value={f.guardian.phone} onChange={nest('guardian', 'phone')} required /></label>
+          <label className="form-field"><span className="label">Last qualification</span><input className="input" placeholder="12th, Diploma..." value={f.previousEducation.qualification} onChange={nest('previousEducation', 'qualification')} /></label>
+          <label className="form-field"><span className="label">School / college</span><input className="input" value={f.previousEducation.institution} onChange={nest('previousEducation', 'institution')} /></label>
           <div className="form-field"><label className="label">Year / percentage</label>
             <div style={{ display: 'flex', gap: 8 }}>
               <input className="input" placeholder="2024" maxLength={4} value={f.previousEducation.year} onChange={nest('previousEducation', 'year')} />

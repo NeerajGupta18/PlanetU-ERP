@@ -141,37 +141,37 @@ function CreateModal({ open, presets, onClose, onCreated }) {
       <form onSubmit={submit}>
         {error && <p className="form-error">{error}</p>}
         <div className="fields">
-          <div className="form-field form-field--full">
-            <label className="label">Institute name</label>
+          <label className="form-field form-field--full">
+            <span className="label">Institute name</span>
             <input className="input" value={form.name} onChange={onName} required placeholder="e.g. Horizon College of Technology" />
-          </div>
-          <div className="form-field">
-            <label className="label">Institute code (used to sign in)</label>
+          </label>
+          <label className="form-field">
+            <span className="label">Institute code (used to sign in)</span>
             <input
               className="input" value={form.code} required pattern="[a-z0-9][a-z0-9\-]{1,38}[a-z0-9]" title="3-40 characters: lowercase letters, numbers, hyphens"
               onChange={(e) => { setCodeTouched(true); setForm((f) => ({ ...f, code: e.target.value.toLowerCase() })); }}
             />
-          </div>
-          <div className="form-field">
-            <label className="label">Type</label>
+          </label>
+          <label className="form-field">
+            <span className="label">Type</span>
             <select className="input" value={form.type} onChange={onType}>
               {presets.types.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
             </select>
-          </div>
-          <div className="form-field">
-            <label className="label">First admin - name</label>
+          </label>
+          <label className="form-field">
+            <span className="label">First admin - name</span>
             <input className="input" value={form.adminName} onChange={set('adminName')} required />
-          </div>
-          <div className="form-field">
-            <label className="label">First admin - email</label>
+          </label>
+          <label className="form-field">
+            <span className="label">First admin - email</span>
             <input className="input" type="email" value={form.adminEmail} onChange={set('adminEmail')} required />
-          </div>
-          <div className="form-field">
-            <label className="label">Plan</label>
+          </label>
+          <label className="form-field">
+            <span className="label">Plan</span>
             <select className="input" value={form.plan} onChange={set('plan')}>
               {presets.plans.filter((p) => p !== 'demo').map((p) => <option key={p} value={p}>{p}</option>)}
             </select>
-          </div>
+          </label>
         </div>
 
         <p className="muted" style={{ margin: '16px 0 8px' }}>
@@ -218,16 +218,16 @@ function EditModal({ tenant, catalog, plans, onClose, onSaved, onSecret }) {
       <form onSubmit={save}>
         {error && <p className="form-error">{error}</p>}
         <div className="fields">
-          <div className="form-field">
-            <label className="label">Institute name</label>
+          <label className="form-field">
+            <span className="label">Institute name</span>
             <input className="input" value={name} onChange={(e) => setName(e.target.value)} required />
-          </div>
-          <div className="form-field">
-            <label className="label">Plan</label>
+          </label>
+          <label className="form-field">
+            <span className="label">Plan</span>
             <select className="input" value={plan} onChange={(e) => setPlan(e.target.value)}>
               {plans.map((p) => <option key={p} value={p}>{p}</option>)}
             </select>
-          </div>
+          </label>
         </div>
         <p className="muted" style={{ margin: '16px 0 8px' }}>Modules included in this institute's plan. Changes apply immediately, even to people already signed in.</p>
         <ModulePicker catalog={catalog} value={modules} onChange={setModules} />

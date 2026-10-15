@@ -56,8 +56,8 @@ export default function Departments() {
                           <td><span className="count-pill">{d.designationCount}</span></td>
                           <td>
                             <div className="row-actions">
-                              <button type="button" className="btn btn--outline btn--sm" onClick={() => setDeptModal(d)}><Pencil size={13} /></button>
-                              <button
+                              <button aria-label="Edit" title="Edit" type="button" className="btn btn--outline btn--sm" onClick={() => setDeptModal(d)}><Pencil size={13} /></button>
+                              <button aria-label="Delete" title="Delete"
                                 type="button" className="btn btn--outline btn--sm"
                                 onClick={async () => {
                                   if (!(await confirm(`Delete "${d.name}"?`, { danger: true, confirmLabel: 'Delete' } ))) return;
@@ -96,7 +96,7 @@ export default function Departments() {
                           <td>{g.department}</td>
                           <td>
                             <div className="row-actions">
-                              <button
+                              <button aria-label="Delete" title="Delete"
                                 type="button" className="btn btn--outline btn--sm"
                                 onClick={async () => {
                                   if (!(await confirm(`Delete "${g.name}"?`, { danger: true, confirmLabel: 'Delete' } ))) return;
@@ -150,14 +150,14 @@ function DepartmentModal({ state, onClose, onSaved }) {
     <Modal open={open} title={isEdit ? 'Edit department' : 'Add department'} onClose={onClose}>
       <form onSubmit={submit}>
         {error && <p className="form-error">{error}</p>}
-        <div className="form-field">
-          <label className="label">Name</label>
+        <label className="form-field">
+          <span className="label">Name</span>
           <input className="input" placeholder="e.g., Computer Science" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} required />
-        </div>
-        <div className="form-field">
-          <label className="label">Description</label>
+        </label>
+        <label className="form-field">
+          <span className="label">Description</span>
           <input className="input" placeholder="e.g., All Computer Science courses" value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
-        </div>
+        </label>
         <div className="form-actions">
           <button type="button" className="btn btn--outline" onClick={onClose}>Cancel</button>
           <button type="submit" className="btn btn--primary" disabled={busy}>{busy ? 'Saving…' : isEdit ? 'Save changes' : 'Add department'}</button>
@@ -190,16 +190,16 @@ function DesignationModal({ state, departments, onClose, onSaved }) {
     <Modal open={open} title="Add designation" onClose={onClose}>
       <form onSubmit={submit}>
         {error && <p className="form-error">{error}</p>}
-        <div className="form-field">
-          <label className="label">Designation name</label>
+        <label className="form-field">
+          <span className="label">Designation name</span>
           <input className="input" placeholder="e.g., Assistant Professor" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} required />
-        </div>
-        <div className="form-field">
-          <label className="label">Department</label>
+        </label>
+        <label className="form-field">
+          <span className="label">Department</span>
           <select className="input" value={form.department} onChange={(e) => setForm((f) => ({ ...f, department: e.target.value }))} required>
             {departments.map((d) => <option key={d.id} value={d.name}>{d.name}</option>)}
           </select>
-        </div>
+        </label>
         <div className="form-actions">
           <button type="button" className="btn btn--outline" onClick={onClose}>Cancel</button>
           <button type="submit" className="btn btn--primary" disabled={busy}>{busy ? 'Saving…' : 'Add designation'}</button>

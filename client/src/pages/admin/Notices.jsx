@@ -47,22 +47,22 @@ function Editor({ notice, categories, courses, onClose, onSaved }) {
       <form onSubmit={save}>
         {err && <p className="form-error">{err}</p>}
         <div className="fields">
-          <div className="form-field form-field--full"><label className="label">Title *</label><input className="input" value={f.title} onChange={set('title')} maxLength={150} required /></div>
-          <div className="form-field form-field--full"><label className="label">Message</label><textarea className="input" rows={5} value={f.body} onChange={set('body')} maxLength={5000} /></div>
-          <div className="form-field"><label className="label">Category</label>
-            <select className="input" value={f.category} onChange={set('category')}>{categories.map((c) => <option key={c}>{c}</option>)}</select></div>
-          <div className="form-field"><label className="label">For</label>
-            <select className="input" value={f.audience} onChange={set('audience')}>{Object.entries(AUDIENCE).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
+          <label className="form-field form-field--full"><span className="label">Title *</span><input className="input" value={f.title} onChange={set('title')} maxLength={150} required /></label>
+          <label className="form-field form-field--full"><span className="label">Message</span><textarea className="input" rows={5} value={f.body} onChange={set('body')} maxLength={5000} /></label>
+          <label className="form-field"><span className="label">Category</span>
+            <select className="input" value={f.category} onChange={set('category')}>{categories.map((c) => <option key={c}>{c}</option>)}</select></label>
+          <label className="form-field"><span className="label">For</span>
+            <select className="input" value={f.audience} onChange={set('audience')}>{Object.entries(AUDIENCE).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
           {f.audience === 'students' && (
-            <div className="form-field"><label className="label">Only one course (optional)</label>
-              <select className="input" value={f.courseId} onChange={set('courseId')}><option value="">All courses</option>{courses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
+            <label className="form-field"><span className="label">Only one course (optional)</span>
+              <select className="input" value={f.courseId} onChange={set('courseId')}><option value="">All courses</option>{courses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
           )}
-          <div className="form-field"><label className="label">Priority</label>
-            <select className="input" value={f.priority} onChange={set('priority')}><option value="normal">Normal</option><option value="important">Important</option></select></div>
-          <div className="form-field"><label className="label">Show from</label><input className="input" type="date" value={f.noticeDate} onChange={set('noticeDate')} required /></div>
-          <div className="form-field"><label className="label">Last date (optional)</label><input className="input" type="date" min={f.noticeDate} value={f.expiresOn} onChange={set('expiresOn')} /></div>
-          <div className="form-field"><label className="label">Status</label>
-            <select className="input" value={f.status} onChange={set('status')}><option value="published">Published</option><option value="draft">Draft (only the office sees it)</option></select></div>
+          <label className="form-field"><span className="label">Priority</span>
+            <select className="input" value={f.priority} onChange={set('priority')}><option value="normal">Normal</option><option value="important">Important</option></select></label>
+          <label className="form-field"><span className="label">Show from</span><input className="input" type="date" value={f.noticeDate} onChange={set('noticeDate')} required /></label>
+          <label className="form-field"><span className="label">Last date (optional)</span><input className="input" type="date" min={f.noticeDate} value={f.expiresOn} onChange={set('expiresOn')} /></label>
+          <label className="form-field"><span className="label">Status</span>
+            <select className="input" value={f.status} onChange={set('status')}><option value="published">Published</option><option value="draft">Draft (only the office sees it)</option></select></label>
           <div className="form-field form-field--full" style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
             <label><input type="checkbox" checked={f.pinned} onChange={flag('pinned')} /> Pin to the top</label>
             {f.status === 'published' && (!editing || notice.status === 'draft') && (

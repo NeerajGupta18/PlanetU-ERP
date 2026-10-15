@@ -72,24 +72,24 @@ function IssueModal({ request, types, onClose, onDone }) {
           {direct ? (
             <>
               <div className="form-field form-field--full"><label className="label">Student *</label><StudentPicker value={student} onPick={setStudent} /></div>
-              <div className="form-field"><label className="label">Certificate *</label>
-                <select className="input" value={certType} onChange={(e) => setCertType(e.target.value)}>{Object.entries(types).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
-              <div className="form-field"><label className="label">{certType === 'transfer' ? 'Reason for leaving *' : 'Purpose *'}</label><input className="input" value={purpose} onChange={(e) => { setPurpose(e.target.value); if (certType === 'transfer') setReason(e.target.value); }} required /></div>
+              <label className="form-field"><span className="label">Certificate *</span>
+                <select className="input" value={certType} onChange={(e) => setCertType(e.target.value)}>{Object.entries(types).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
+              <label className="form-field"><span className="label">{certType === 'transfer' ? 'Reason for leaving *' : 'Purpose *'}</span><input className="input" value={purpose} onChange={(e) => { setPurpose(e.target.value); if (certType === 'transfer') setReason(e.target.value); }} required /></label>
             </>
           ) : (
             <div className="form-field form-field--full"><strong>{request.studentName}</strong> <span className="muted">({request.studentCode}) - {request.purpose}</span></div>
           )}
           {certType === 'transfer' && (
             <>
-              <div className="form-field"><label className="label">Date of leaving</label><input className="input" type="date" value={leavingDate} onChange={(e) => setLeavingDate(e.target.value)} /></div>
-              <div className="form-field"><label className="label">Reason shown on the TC</label><input className="input" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={150} /></div>
+              <label className="form-field"><span className="label">Date of leaving</span><input className="input" type="date" value={leavingDate} onChange={(e) => setLeavingDate(e.target.value)} /></label>
+              <label className="form-field"><span className="label">Reason shown on the TC</span><input className="input" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={150} /></label>
             </>
           )}
           {(certType === 'transfer' || certType === 'character') && (
-            <div className="form-field"><label className="label">Conduct</label>
-              <select className="input" value={conduct} onChange={(e) => setConduct(e.target.value)}><option>Excellent</option><option>Very good</option><option>Good</option><option>Satisfactory</option></select></div>
+            <label className="form-field"><span className="label">Conduct</span>
+              <select className="input" value={conduct} onChange={(e) => setConduct(e.target.value)}><option>Excellent</option><option>Very good</option><option>Good</option><option>Satisfactory</option></select></label>
           )}
-          <div className="form-field form-field--full"><label className="label">Note to the student (optional)</label><input className="input" value={remark} onChange={(e) => setRemark(e.target.value)} maxLength={300} /></div>
+          <label className="form-field form-field--full"><span className="label">Note to the student (optional)</span><input className="input" value={remark} onChange={(e) => setRemark(e.target.value)} maxLength={300} /></label>
         </div>
         <div className="form-actions">
           <button type="button" className="btn btn--outline" onClick={onClose}>Cancel</button>

@@ -105,16 +105,16 @@ function DetailsModal({ open, institute, onClose, onSaved }) {
       <form onSubmit={submit}>
         {error && <p className="form-error">{error}</p>}
         <div className="fields">
-          <div className="form-field"><label className="label">Name</label><input className="input" value={form.name || ''} onChange={set('name')} required /></div>
-          <div className="form-field"><label className="label">Tagline</label><input className="input" value={form.tagline || ''} onChange={set('tagline')} /></div>
-          <div className="form-field"><label className="label">Phone</label><input className="input" value={form.phone || ''} onChange={set('phone')} /></div>
-          <div className="form-field"><label className="label">Email</label><input className="input" value={form.email || ''} onChange={set('email')} /></div>
-          <div className="form-field"><label className="label">City</label><input className="input" value={form.city || ''} onChange={set('city')} /></div>
-          <div className="form-field"><label className="label">State</label><input className="input" value={form.state || ''} onChange={set('state')} /></div>
-          <div className="form-field"><label className="label">Pincode</label><input className="input" value={form.pincode || ''} onChange={set('pincode')} /></div>
-          <div className="form-field"><label className="label">Website</label><input className="input" value={form.website || ''} onChange={set('website')} /></div>
+          <label className="form-field"><span className="label">Name</span><input className="input" value={form.name || ''} onChange={set('name')} required /></label>
+          <label className="form-field"><span className="label">Tagline</span><input className="input" value={form.tagline || ''} onChange={set('tagline')} /></label>
+          <label className="form-field"><span className="label">Phone</span><input className="input" value={form.phone || ''} onChange={set('phone')} /></label>
+          <label className="form-field"><span className="label">Email</span><input className="input" value={form.email || ''} onChange={set('email')} /></label>
+          <label className="form-field"><span className="label">City</span><input className="input" value={form.city || ''} onChange={set('city')} /></label>
+          <label className="form-field"><span className="label">State</span><input className="input" value={form.state || ''} onChange={set('state')} /></label>
+          <label className="form-field"><span className="label">Pincode</span><input className="input" value={form.pincode || ''} onChange={set('pincode')} /></label>
+          <label className="form-field"><span className="label">Website</span><input className="input" value={form.website || ''} onChange={set('website')} /></label>
         </div>
-        <div className="form-field"><label className="label">Address</label><input className="input" value={form.address || ''} onChange={set('address')} /></div>
+        <label className="form-field"><span className="label">Address</span><input className="input" value={form.address || ''} onChange={set('address')} /></label>
         <div className="form-actions">
           <button type="button" className="btn btn--outline" onClick={onClose}>Cancel</button>
           <button type="submit" className="btn btn--primary" disabled={busy}>{busy ? 'Saving…' : 'Save changes'}</button>
@@ -148,8 +148,8 @@ function StakeholdersTab({ i, reload }) {
                   <td>{s.phone}</td>
                   <td>
                     <div className="row-actions">
-                      <button type="button" className="btn btn--outline btn--sm" onClick={() => setModal({ index: idx, data: s })}><Pencil size={13} /></button>
-                      <button
+                      <button aria-label="Edit" title="Edit" type="button" className="btn btn--outline btn--sm" onClick={() => setModal({ index: idx, data: s })}><Pencil size={13} /></button>
+                      <button aria-label="Delete" title="Delete"
                         type="button" className="btn btn--outline btn--sm"
                         onClick={async () => { if (await confirm(`Remove ${s.name}?`, { danger: true, confirmLabel: 'Remove' })) { await api.del(`/admin/institute/stakeholders/${idx}`); reload(); } }}
                       >
@@ -194,10 +194,10 @@ function StakeholderModal({ state, onClose, onSaved }) {
     <Modal open={open} title={isEdit ? 'Edit stakeholder' : 'Add stakeholder'} onClose={onClose}>
       <form onSubmit={submit}>
         {error && <p className="form-error">{error}</p>}
-        <div className="form-field"><label className="label">Name</label><input className="input" value={form.name} onChange={set('name')} required /></div>
-        <div className="form-field"><label className="label">Role</label><input className="input" placeholder="e.g., Director" value={form.role} onChange={set('role')} required /></div>
-        <div className="form-field"><label className="label">Email</label><input className="input" type="email" value={form.email} onChange={set('email')} /></div>
-        <div className="form-field"><label className="label">Phone</label><input className="input" value={form.phone} onChange={set('phone')} /></div>
+        <label className="form-field"><span className="label">Name</span><input className="input" value={form.name} onChange={set('name')} required /></label>
+        <label className="form-field"><span className="label">Role</span><input className="input" placeholder="e.g., Director" value={form.role} onChange={set('role')} required /></label>
+        <label className="form-field"><span className="label">Email</span><input className="input" type="email" value={form.email} onChange={set('email')} /></label>
+        <label className="form-field"><span className="label">Phone</span><input className="input" value={form.phone} onChange={set('phone')} /></label>
         <div className="form-actions">
           <button type="button" className="btn btn--outline" onClick={onClose}>Cancel</button>
           <button type="submit" className="btn btn--primary" disabled={busy}>{busy ? 'Saving…' : 'Save'}</button>
@@ -283,12 +283,12 @@ function AuthorizedModal({ state, onClose, onSaved }) {
       <form onSubmit={submit}>
         {error && <p className="form-error">{error}</p>}
         <div className="fields">
-          <div className="form-field"><label className="label">Name</label><input className="input" value={form.name} onChange={set('name')} required /></div>
-          <div className="form-field"><label className="label">Designation</label><input className="input" value={form.designation} onChange={set('designation')} /></div>
-          <div className="form-field"><label className="label">Email</label><input className="input" type="email" value={form.email} onChange={set('email')} required /></div>
-          <div className="form-field"><label className="label">Phone</label><input className="input" value={form.phone} onChange={set('phone')} /></div>
-          <div className="form-field"><label className="label">PAN</label><input className="input" value={form.pan} onChange={set('pan')} /></div>
-          <div className="form-field"><label className="label">Aadhaar</label><input className="input" value={form.aadhaar} onChange={set('aadhaar')} /></div>
+          <label className="form-field"><span className="label">Name</span><input className="input" value={form.name} onChange={set('name')} required /></label>
+          <label className="form-field"><span className="label">Designation</span><input className="input" value={form.designation} onChange={set('designation')} /></label>
+          <label className="form-field"><span className="label">Email</span><input className="input" type="email" value={form.email} onChange={set('email')} required /></label>
+          <label className="form-field"><span className="label">Phone</span><input className="input" value={form.phone} onChange={set('phone')} /></label>
+          <label className="form-field"><span className="label">PAN</span><input className="input" value={form.pan} onChange={set('pan')} /></label>
+          <label className="form-field"><span className="label">Aadhaar</span><input className="input" value={form.aadhaar} onChange={set('aadhaar')} /></label>
         </div>
         <div className="form-actions">
           <button type="button" className="btn btn--outline" onClick={onClose}>Cancel</button>
@@ -323,8 +323,8 @@ function DocumentsTab({ i, reload }) {
                   <td><Badge tone={d.status === 'Verified' ? 'green' : d.status === 'Expiring soon' ? 'amber' : 'gray'}>{d.status}</Badge></td>
                   <td>
                     <div className="row-actions">
-                      <button type="button" className="btn btn--outline btn--sm" onClick={() => setModal({ index: idx, data: d })}><Pencil size={13} /></button>
-                      <button
+                      <button aria-label="Edit" title="Edit" type="button" className="btn btn--outline btn--sm" onClick={() => setModal({ index: idx, data: d })}><Pencil size={13} /></button>
+                      <button aria-label="Delete" title="Delete"
                         type="button" className="btn btn--outline btn--sm"
                         onClick={async () => { if (await confirm(`Remove "${d.name}"?`, { danger: true, confirmLabel: 'Remove' })) { await api.del(`/admin/institute/documents/${idx}`); reload(); } }}
                       >
@@ -369,16 +369,16 @@ function DocumentModal({ state, onClose, onSaved }) {
     <Modal open={open} title={isEdit ? 'Edit document' : 'Add document'} onClose={onClose}>
       <form onSubmit={submit}>
         {error && <p className="form-error">{error}</p>}
-        <div className="form-field"><label className="label">Document name</label><input className="input" value={form.name} onChange={set('name')} required /></div>
-        <div className="form-field"><label className="label">Issued by</label><input className="input" value={form.issuedBy} onChange={set('issuedBy')} required /></div>
+        <label className="form-field"><span className="label">Document name</span><input className="input" value={form.name} onChange={set('name')} required /></label>
+        <label className="form-field"><span className="label">Issued by</span><input className="input" value={form.issuedBy} onChange={set('issuedBy')} required /></label>
         <div className="fields">
-          <div className="form-field"><label className="label">Valid till (optional)</label><input className="input" type="date" value={form.validTill || ''} onChange={set('validTill')} /></div>
-          <div className="form-field">
-            <label className="label">Status</label>
+          <label className="form-field"><span className="label">Valid till (optional)</span><input className="input" type="date" value={form.validTill || ''} onChange={set('validTill')} /></label>
+          <label className="form-field">
+            <span className="label">Status</span>
             <select className="input" value={form.status} onChange={set('status')}>
               <option>Verified</option><option>Expiring soon</option><option>Pending</option>
             </select>
-          </div>
+          </label>
         </div>
         <div className="form-actions">
           <button type="button" className="btn btn--outline" onClick={onClose}>Cancel</button>
@@ -411,8 +411,8 @@ function BeneficiaryTab({ i, reload }) {
                   <td>{b.accountNumber}</td><td>{b.ifsc}</td><td><Badge tone="blue">{b.type}</Badge></td>
                   <td>
                     <div className="row-actions">
-                      <button type="button" className="btn btn--outline btn--sm" onClick={() => setModal({ index: idx, data: b })}><Pencil size={13} /></button>
-                      <button
+                      <button aria-label="Edit" title="Edit" type="button" className="btn btn--outline btn--sm" onClick={() => setModal({ index: idx, data: b })}><Pencil size={13} /></button>
+                      <button aria-label="Delete" title="Delete"
                         type="button" className="btn btn--outline btn--sm"
                         onClick={async () => { if (await confirm(`Remove "${b.accountName}"?`, { danger: true, confirmLabel: 'Remove' })) { await api.del(`/admin/institute/beneficiaries/${idx}`); reload(); } }}
                       >
@@ -457,18 +457,18 @@ function BeneficiaryModal({ state, onClose, onSaved }) {
     <Modal open={open} title={isEdit ? 'Edit bank account' : 'Add bank account'} onClose={onClose} width={520}>
       <form onSubmit={submit}>
         {error && <p className="form-error">{error}</p>}
-        <div className="form-field"><label className="label">Account name</label><input className="input" value={form.accountName} onChange={set('accountName')} required /></div>
+        <label className="form-field"><span className="label">Account name</span><input className="input" value={form.accountName} onChange={set('accountName')} required /></label>
         <div className="fields">
-          <div className="form-field"><label className="label">Bank</label><input className="input" value={form.bank} onChange={set('bank')} required /></div>
-          <div className="form-field"><label className="label">Branch</label><input className="input" value={form.branch} onChange={set('branch')} /></div>
-          <div className="form-field"><label className="label">Account number</label><input className="input" value={form.accountNumber} onChange={set('accountNumber')} required /></div>
-          <div className="form-field"><label className="label">IFSC</label><input className="input" value={form.ifsc} onChange={set('ifsc')} /></div>
-          <div className="form-field">
-            <label className="label">Type</label>
+          <label className="form-field"><span className="label">Bank</span><input className="input" value={form.bank} onChange={set('bank')} required /></label>
+          <label className="form-field"><span className="label">Branch</span><input className="input" value={form.branch} onChange={set('branch')} /></label>
+          <label className="form-field"><span className="label">Account number</span><input className="input" value={form.accountNumber} onChange={set('accountNumber')} required /></label>
+          <label className="form-field"><span className="label">IFSC</span><input className="input" value={form.ifsc} onChange={set('ifsc')} /></label>
+          <label className="form-field">
+            <span className="label">Type</span>
             <select className="input" value={form.type} onChange={set('type')}>
               <option>Current</option><option>Savings</option>
             </select>
-          </div>
+          </label>
         </div>
         <div className="form-actions">
           <button type="button" className="btn btn--outline" onClick={onClose}>Cancel</button>
@@ -533,10 +533,10 @@ function StampModal({ open, stamp, onClose, onSaved }) {
     <Modal open={open} title="Edit stamp & e-signature" onClose={onClose}>
       <form onSubmit={submit}>
         {error && <p className="form-error">{error}</p>}
-        <div className="form-field"><label className="label">Stamp text (top arc)</label><input className="input" value={form.stampText || ''} onChange={set('stampText')} required /></div>
-        <div className="form-field"><label className="label">Stamp subtitle (bottom arc)</label><input className="input" value={form.stampSub || ''} onChange={set('stampSub')} /></div>
-        <div className="form-field"><label className="label">Signatory name</label><input className="input" value={form.signatory || ''} onChange={set('signatory')} required /></div>
-        <div className="form-field"><label className="label">Signatory title</label><input className="input" value={form.signatoryTitle || ''} onChange={set('signatoryTitle')} /></div>
+        <label className="form-field"><span className="label">Stamp text (top arc)</span><input className="input" value={form.stampText || ''} onChange={set('stampText')} required /></label>
+        <label className="form-field"><span className="label">Stamp subtitle (bottom arc)</span><input className="input" value={form.stampSub || ''} onChange={set('stampSub')} /></label>
+        <label className="form-field"><span className="label">Signatory name</span><input className="input" value={form.signatory || ''} onChange={set('signatory')} required /></label>
+        <label className="form-field"><span className="label">Signatory title</span><input className="input" value={form.signatoryTitle || ''} onChange={set('signatoryTitle')} /></label>
         <div className="form-actions">
           <button type="button" className="btn btn--outline" onClick={onClose}>Cancel</button>
           <button type="submit" className="btn btn--primary" disabled={busy}>{busy ? 'Saving…' : 'Save'}</button>

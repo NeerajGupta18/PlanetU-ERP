@@ -165,8 +165,8 @@ export default function Timetable() {
                         <td className="muted">{s.location}</td>
                         <td>
                           <div className="row-actions">
-                            <button type="button" className="btn btn--outline btn--sm" onClick={() => setSlotModal(s)}><Pencil size={13} /></button>
-                            <button
+                            <button aria-label="Edit" title="Edit" type="button" className="btn btn--outline btn--sm" onClick={() => setSlotModal(s)}><Pencil size={13} /></button>
+                            <button aria-label="Delete" title="Delete"
                               type="button" className="btn btn--outline btn--sm"
                               onClick={async () => {
                                 if (!(await confirm(`Delete the "${s.subject}" slot?`, { danger: true, confirmLabel: 'Delete' } ))) return;
@@ -228,17 +228,17 @@ function ReassignModal({ item, employees, onClose, onSaved }) {
           <p className="muted" style={{ marginBottom: 14 }}>
             Reassigning <strong>{item.title}</strong> on {item.date} ({fmtRange(item.start, item.end)}), currently with {item.employee.name}.
           </p>
-          <div className="form-field">
-            <label className="label">Reassign to</label>
+          <label className="form-field">
+            <span className="label">Reassign to</span>
             <select className="input" value={employeeId} onChange={(e) => setEmployeeId(e.target.value)} required>
               <option value="">-- Select employee --</option>
               {others.map((e) => <option key={e.id} value={e.id}>{e.name} - {e.department}</option>)}
             </select>
-          </div>
-          <div className="form-field">
-            <label className="label">Reason (optional)</label>
+          </label>
+          <label className="form-field">
+            <span className="label">Reason (optional)</span>
             <input className="input" placeholder="e.g., Faculty on leave" value={reason} onChange={(e) => setReason(e.target.value)} />
-          </div>
+          </label>
           <div className="form-actions">
             <button type="button" className="btn btn--outline" onClick={onClose}>Cancel</button>
             <button type="submit" className="btn btn--primary" disabled={busy}>{busy ? 'Saving…' : 'Confirm reassignment'}</button>
@@ -278,48 +278,48 @@ function SlotModal({ state, courses, employees, onClose, onSaved }) {
     <Modal open={open} title={isEdit ? 'Edit weekly lecture' : 'Add weekly lecture'} onClose={onClose} width={540}>
       <form onSubmit={submit}>
         {error && <p className="form-error">{error}</p>}
-        <div className="form-field">
-          <label className="label">Subject</label>
+        <label className="form-field">
+          <span className="label">Subject</span>
           <input className="input" value={form.subject} onChange={set('subject')} required />
-        </div>
+        </label>
         <div className="fields">
-          <div className="form-field">
-            <label className="label">Course</label>
+          <label className="form-field">
+            <span className="label">Course</span>
             <select className="input" value={form.courseId} onChange={set('courseId')} required>
               {courses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
-          </div>
-          <div className="form-field">
-            <label className="label">Weekday</label>
+          </label>
+          <label className="form-field">
+            <span className="label">Weekday</span>
             <select className="input" value={form.weekday} onChange={(e) => setForm((f) => ({ ...f, weekday: Number(e.target.value) }))}>
               {WEEKDAYS_SHORT.map((d, idx) => <option key={d} value={idx}>{d}</option>)}
             </select>
-          </div>
-          <div className="form-field">
-            <label className="label">Start time</label>
+          </label>
+          <label className="form-field">
+            <span className="label">Start time</span>
             <input className="input" type="time" value={form.start} onChange={set('start')} required />
-          </div>
-          <div className="form-field">
-            <label className="label">End time</label>
+          </label>
+          <label className="form-field">
+            <span className="label">End time</span>
             <input className="input" type="time" value={form.end} onChange={set('end')} required />
-          </div>
-          <div className="form-field">
-            <label className="label">Faculty / Employee</label>
+          </label>
+          <label className="form-field">
+            <span className="label">Faculty / Employee</span>
             <select className="input" value={form.employeeId} onChange={set('employeeId')} required>
               {employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
             </select>
-          </div>
-          <div className="form-field">
-            <label className="label">Mode</label>
+          </label>
+          <label className="form-field">
+            <span className="label">Mode</span>
             <select className="input" value={form.mode} onChange={set('mode')}>
               <option>Offline</option><option>Online</option>
             </select>
-          </div>
+          </label>
         </div>
-        <div className="form-field">
-          <label className="label">Location</label>
+        <label className="form-field">
+          <span className="label">Location</span>
           <input className="input" value={form.location} onChange={set('location')} placeholder="e.g., Room 112-A3" />
-        </div>
+        </label>
         <div className="form-actions">
           <button type="button" className="btn btn--outline" onClick={onClose}>Cancel</button>
           <button type="submit" className="btn btn--primary" disabled={busy}>{busy ? 'Saving…' : isEdit ? 'Save changes' : 'Add lecture'}</button>

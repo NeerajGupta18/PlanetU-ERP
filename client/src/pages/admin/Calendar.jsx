@@ -138,15 +138,15 @@ export default function Calendar() {
                 <tbody>
                   {events.map((e) => (
                     <tr key={e.id}>
-                      <td className="is-clickable" onClick={() => setSelected(e.start > toISO(startOfMonth(cursor)) ? e.start : toISO(startOfMonth(cursor)))}>{fmtEventDates(e.start, e.end)}</td>
+                      <td><button type="button" className="link-btn" onClick={() => setSelected(e.start > toISO(startOfMonth(cursor)) ? e.start : toISO(startOfMonth(cursor)))}>{fmtEventDates(e.start, e.end)}</button></td>
                       <td><strong>{e.title}</strong></td>
                       <td><Badge tone={EVENT_TYPES[e.type].tone}>{EVENT_TYPES[e.type].label}</Badge></td>
                       <td>{e.startTime ? fmtRange(e.startTime, e.endTime) : 'All day'}</td>
                       <td>{e.location || '-'}</td>
                       <td>
                         <div className="row-actions">
-                          <button type="button" className="btn btn--outline btn--sm" onClick={() => setModal(e)}><Pencil size={13} /></button>
-                          <button type="button" className="btn btn--outline btn--sm" onClick={() => removeEvent(e)}><Trash2 size={13} /></button>
+                          <button aria-label="Edit" title="Edit" type="button" className="btn btn--outline btn--sm" onClick={() => setModal(e)}><Pencil size={13} /></button>
+                          <button aria-label="Delete" title="Delete" type="button" className="btn btn--outline btn--sm" onClick={() => removeEvent(e)}><Trash2 size={13} /></button>
                         </div>
                       </td>
                     </tr>
@@ -194,49 +194,49 @@ function EventModal({ state, onClose, onSaved }) {
     <Modal open={open} title={isEdit ? 'Edit event' : 'Add event'} onClose={onClose} width={560}>
       <form onSubmit={submit}>
         {error && <p className="form-error">{error}</p>}
-        <div className="form-field">
-          <label className="label">Title</label>
+        <label className="form-field">
+          <span className="label">Title</span>
           <input className="input" value={form.title} onChange={set('title')} required />
-        </div>
+        </label>
         <div className="fields">
-          <div className="form-field">
-            <label className="label">Type</label>
+          <label className="form-field">
+            <span className="label">Type</span>
             <select className="input" value={form.type} onChange={set('type')}>
               {Object.entries(EVENT_TYPES).map(([key, t]) => <option key={key} value={key}>{t.label}</option>)}
             </select>
-          </div>
-          <div className="form-field">
-            <label className="label">Audience</label>
+          </label>
+          <label className="form-field">
+            <span className="label">Audience</span>
             <select className="input" value={form.audience} onChange={set('audience')}>
               <option value="all">Everyone</option>
               <option value="student">Students</option>
             </select>
-          </div>
-          <div className="form-field">
-            <label className="label">Start date</label>
+          </label>
+          <label className="form-field">
+            <span className="label">Start date</span>
             <input className="input" type="date" value={form.start} onChange={set('start')} required />
-          </div>
-          <div className="form-field">
-            <label className="label">End date</label>
+          </label>
+          <label className="form-field">
+            <span className="label">End date</span>
             <input className="input" type="date" value={form.end} onChange={set('end')} />
-          </div>
-          <div className="form-field">
-            <label className="label">Start time (optional)</label>
+          </label>
+          <label className="form-field">
+            <span className="label">Start time (optional)</span>
             <input className="input" type="time" value={form.startTime} onChange={set('startTime')} />
-          </div>
-          <div className="form-field">
-            <label className="label">End time (optional)</label>
+          </label>
+          <label className="form-field">
+            <span className="label">End time (optional)</span>
             <input className="input" type="time" value={form.endTime} onChange={set('endTime')} />
-          </div>
+          </label>
         </div>
-        <div className="form-field">
-          <label className="label">Location</label>
+        <label className="form-field">
+          <span className="label">Location</span>
           <input className="input" value={form.location} onChange={set('location')} />
-        </div>
-        <div className="form-field">
-          <label className="label">Description</label>
+        </label>
+        <label className="form-field">
+          <span className="label">Description</span>
           <input className="input" value={form.description} onChange={set('description')} />
-        </div>
+        </label>
         <div className="form-actions">
           <button type="button" className="btn btn--outline" onClick={onClose}>Cancel</button>
           <button type="submit" className="btn btn--primary" disabled={busy}>{busy ? 'Saving…' : isEdit ? 'Save changes' : 'Add event'}</button>

@@ -73,10 +73,10 @@ export default function Certificates() {
       </DataBoundary>
       <Modal open={!!type} title={type ? `Request: ${data?.types[type]}` : ''} onClose={() => setType(null)}>
         <form onSubmit={submit}>
-          <div className="form-field">
-            <label className="label">{type === 'transfer' ? 'Reason for leaving *' : 'What is it needed for? *'}</label>
+          <label className="form-field">
+            <span className="label">{type === 'transfer' ? 'Reason for leaving *' : 'What is it needed for? *'}</span>
             <input className="input" value={purpose} onChange={(e) => setPurpose(e.target.value)} maxLength={300} required autoFocus />
-          </div>
+          </label>
           <div className="form-actions">
             <button type="button" className="btn btn--outline" onClick={() => setType(null)}>Cancel</button>
             <button className="btn btn--primary" disabled={busy}>{busy ? 'Sending...' : 'Send request'}</button>

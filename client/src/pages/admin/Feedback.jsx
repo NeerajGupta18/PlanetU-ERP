@@ -45,19 +45,19 @@ function EditorForm({ base, courses, employees, onClose, onSaved }) {
       <form onSubmit={save}>
         {err && <p className="form-error">{err}</p>}
         <div className="fields">
-          <div className="form-field form-field--full"><label className="label">Title *</label><input className="input" maxLength={150} value={f.title} onChange={set('title')} required /></div>
-          <div className="form-field form-field--full"><label className="label">Short note for the people answering</label><input className="input" maxLength={1000} value={f.description} onChange={set('description')} /></div>
-          <div className="form-field"><label className="label">Who answers</label>
-            <select className="input" value={f.audience} onChange={set('audience')}><option value="students">Students</option><option value="employees">Staff</option></select></div>
+          <label className="form-field form-field--full"><span className="label">Title *</span><input className="input" maxLength={150} value={f.title} onChange={set('title')} required /></label>
+          <label className="form-field form-field--full"><span className="label">Short note for the people answering</span><input className="input" maxLength={1000} value={f.description} onChange={set('description')} /></label>
+          <label className="form-field"><span className="label">Who answers</span>
+            <select className="input" value={f.audience} onChange={set('audience')}><option value="students">Students</option><option value="employees">Staff</option></select></label>
           {f.audience === 'students' && (
-            <div className="form-field"><label className="label">Only one course (optional)</label>
-              <select className="input" value={f.courseId} onChange={set('courseId')}><option value="">All courses</option>{courses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
+            <label className="form-field"><span className="label">Only one course (optional)</span>
+              <select className="input" value={f.courseId} onChange={set('courseId')}><option value="">All courses</option>{courses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
           )}
-          <div className="form-field"><label className="label">About one faculty member (optional)</label>
-            <select className="input" value={f.aboutEmployeeId} onChange={set('aboutEmployeeId')}><option value="">Nobody in particular</option>{employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}</select></div>
-          <div className="form-field"><label className="label">Last date (optional)</label><input className="input" type="date" value={f.closesOn} onChange={set('closesOn')} /></div>
-          <div className="form-field"><label className="label">Status</label>
-            <select className="input" value={f.status} onChange={set('status')}><option value="draft">Draft (not shown yet)</option><option value="open">Open</option><option value="closed">Closed</option></select></div>
+          <label className="form-field"><span className="label">About one faculty member (optional)</span>
+            <select className="input" value={f.aboutEmployeeId} onChange={set('aboutEmployeeId')}><option value="">Nobody in particular</option>{employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}</select></label>
+          <label className="form-field"><span className="label">Last date (optional)</span><input className="input" type="date" value={f.closesOn} onChange={set('closesOn')} /></label>
+          <label className="form-field"><span className="label">Status</span>
+            <select className="input" value={f.status} onChange={set('status')}><option value="draft">Draft (not shown yet)</option><option value="open">Open</option><option value="closed">Closed</option></select></label>
         </div>
         <h4 style={{ margin: '16px 0 8px' }}>Questions</h4>
         {locked && <p className="muted">People have already answered, so the questions can no longer change.</p>}

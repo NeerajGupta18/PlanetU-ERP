@@ -48,10 +48,12 @@ function Tooltip({ tip }) {
 
 function DataTable({ caption, rows, format }) {
   return (
-    <table className="sr-only">
-      <caption>{caption}</caption>
-      <tbody>{rows.map((r) => <tr key={r.label}><th scope="row">{r.full || r.label}</th><td>{r.value === null ? 'No data' : format(r.value)}</td></tr>)}</tbody>
-    </table>
+    <div className="sr-only">
+      <table>
+        <caption>{caption}</caption>
+        <tbody>{rows.map((r) => <tr key={r.label}><th scope="row">{r.full || r.label}</th><td>{r.value === null || r.value === undefined ? 'No data' : format(r.value)}</td></tr>)}</tbody>
+      </table>
+    </div>
   );
 }
 

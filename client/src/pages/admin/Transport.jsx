@@ -153,7 +153,7 @@ function Riders() {
   return (
     <Card title="Riders" action={<button type="button" className="btn btn--primary btn--sm" onClick={() => setAssigning({})}><Plus size={14} /> Add a rider</button>}>
       <div className="toolbar">
-        <div className="toolbar__filters"><select value={status} onChange={(e) => setStatus(e.target.value)}><option value="active">Riding now</option><option value="ended">Stopped</option></select></div>
+        <div className="toolbar__filters"><select aria-label="Show riders" value={status} onChange={(e) => setStatus(e.target.value)}><option value="active">Riding now</option><option value="ended">Stopped</option></select></div>
         <div className="input-wrap" style={{ minWidth: 220 }}><Search size={14} /><input className="input input--icon" placeholder="Name or ID" value={search} onChange={(e) => setSearch(e.target.value)} /></div>
       </div>
       <DataBoundary loading={list.loading && !list.data} error={list.error} data={list.data} reload={list.reload}>

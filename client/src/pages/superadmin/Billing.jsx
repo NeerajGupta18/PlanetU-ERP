@@ -289,12 +289,12 @@ function PlanEditor({ plan, onSaved }) {
       {state.ok && <p className="note" role="status">{state.ok}</p>}
       <div className="fields">
         <div className="form-field form-field--full"><label className="label" htmlFor={`pn-${plan.key}`}>Name</label><input id={`pn-${plan.key}`} className="input" value={f.name} onChange={set('name')} maxLength={40} /></div>
-        <div className="form-field"><label className="label">Monthly price</label><input className="input" type="number" min="1" step="0.01" value={f.monthlyPrice} onChange={set('monthlyPrice')} aria-label={`${plan.key} monthly price`} /></div>
-        <div className="form-field"><label className="label">Annual price</label><input className="input" type="number" min="1" step="0.01" value={f.annualPrice} onChange={set('annualPrice')} aria-label={`${plan.key} annual price`} /></div>
-        <div className="form-field"><label className="label">Students included</label><input className="input" type="number" min="0" value={f.includedStudents} onChange={set('includedStudents')} aria-label={`${plan.key} included students`} /></div>
-        <div className="form-field"><label className="label">Per extra student / month</label><input className="input" type="number" min="0" step="0.01" value={f.extraStudentPrice} onChange={set('extraStudentPrice')} aria-label={`${plan.key} extra student price`} /></div>
-        <div className="form-field form-field--full"><label className="label">Short description</label><input className="input" value={f.description} onChange={set('description')} maxLength={300} /></div>
-        <div className="form-field form-field--full"><label className="label">Features (one per line)</label><textarea className="input" rows={4} value={f.features} onChange={set('features')} /></div>
+        <label className="form-field"><span className="label">Monthly price</span><input className="input" type="number" min="1" step="0.01" value={f.monthlyPrice} onChange={set('monthlyPrice')} aria-label={`${plan.key} monthly price`} /></label>
+        <label className="form-field"><span className="label">Annual price</span><input className="input" type="number" min="1" step="0.01" value={f.annualPrice} onChange={set('annualPrice')} aria-label={`${plan.key} annual price`} /></label>
+        <label className="form-field"><span className="label">Students included</span><input className="input" type="number" min="0" value={f.includedStudents} onChange={set('includedStudents')} aria-label={`${plan.key} included students`} /></label>
+        <label className="form-field"><span className="label">Per extra student / month</span><input className="input" type="number" min="0" step="0.01" value={f.extraStudentPrice} onChange={set('extraStudentPrice')} aria-label={`${plan.key} extra student price`} /></label>
+        <label className="form-field form-field--full"><span className="label">Short description</span><input className="input" value={f.description} onChange={set('description')} maxLength={300} /></label>
+        <label className="form-field form-field--full"><span className="label">Features (one per line)</span><textarea className="input" rows={4} value={f.features} onChange={set('features')} /></label>
       </div>
       <small className="muted">Annual saves {inr0(saving)} against twelve monthly payments{Number(f.monthlyPrice) ? ` (${Math.round((saving / (Number(f.monthlyPrice) * 12)) * 100)}% off)` : ''}.</small>
       <div className="form-actions"><button className="btn btn--primary btn--sm" disabled={state.busy}><Save size={14} /> Save {plan.key}</button></div>

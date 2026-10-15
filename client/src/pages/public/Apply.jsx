@@ -204,13 +204,13 @@ export default function Apply() {
         <Card title="Choose your course">
           <form onSubmit={(e) => saveStep(e, 2)}>
             <div className="fields">
-              <div className="form-field form-field--full"><label className="label">Applying for *</label>
+              <label className="form-field form-field--full"><span className="label">Applying for *</span>
                 <select className="input" value={form.courseId} onChange={set('courseId')} required>
                   <option value="">Select...</option>{info.courses.map((c) => <option key={c.id} value={c.id}>{c.fullName || c.name}</option>)}
-                </select></div>
-              <div className="form-field"><label className="label">Full name *</label><input className="input" value={form.name} onChange={set('name')} required autoComplete="name" /></div>
-              <div className="form-field"><label className="label">Email *</label><input className="input" type="email" value={form.email} onChange={set('email')} required autoComplete="email" /></div>
-              <div className="form-field"><label className="label">Mobile number *</label><input className="input" type="tel" value={form.phone} onChange={set('phone')} required autoComplete="tel" /></div>
+                </select></label>
+              <label className="form-field"><span className="label">Full name *</span><input className="input" value={form.name} onChange={set('name')} required autoComplete="name" /></label>
+              <label className="form-field"><span className="label">Email *</span><input className="input" type="email" value={form.email} onChange={set('email')} required autoComplete="email" /></label>
+              <label className="form-field"><span className="label">Mobile number *</span><input className="input" type="tel" value={form.phone} onChange={set('phone')} required autoComplete="tel" /></label>
             </div>
             {!draft && <RobotCheck onChange={setCaptcha} resetKey={resetKey} />}
             <div className="wizard-actions">
@@ -228,15 +228,15 @@ export default function Apply() {
         <Card title="Personal details">
           <form onSubmit={(e) => saveStep(e, 3)}>
             <div className="fields">
-              <div className="form-field"><label className="label">Date of birth *</label><input className="input" type="date" max={today} value={form.dob || ''} onChange={set('dob')} required /></div>
-              <div className="form-field"><label className="label">Gender</label>
-                <select className="input" value={form.gender} onChange={set('gender')}><option value="">-</option><option>Female</option><option>Male</option><option>Other</option></select></div>
-              <div className="form-field"><label className="label">Nationality</label><input className="input" value={form.personal.nationality} onChange={nest('personal', 'nationality')} /></div>
-              <div className="form-field"><label className="label">Category</label>
-                <select className="input" value={form.personal.category} onChange={nest('personal', 'category')}><option value="">-</option>{CATEGORIES.map((c) => <option key={c}>{c}</option>)}</select></div>
-              <div className="form-field"><label className="label">Blood group</label>
-                <select className="input" value={form.personal.bloodGroup} onChange={nest('personal', 'bloodGroup')}><option value="">-</option>{BLOOD.map((c) => <option key={c}>{c}</option>)}</select></div>
-              <div className="form-field form-field--full"><label className="label">Address *</label><textarea className="input" rows={2} value={form.address} onChange={set('address')} required /></div>
+              <label className="form-field"><span className="label">Date of birth *</span><input className="input" type="date" max={today} value={form.dob || ''} onChange={set('dob')} required /></label>
+              <label className="form-field"><span className="label">Gender</span>
+                <select className="input" value={form.gender} onChange={set('gender')}><option value="">-</option><option>Female</option><option>Male</option><option>Other</option></select></label>
+              <label className="form-field"><span className="label">Nationality</span><input className="input" value={form.personal.nationality} onChange={nest('personal', 'nationality')} /></label>
+              <label className="form-field"><span className="label">Category</span>
+                <select className="input" value={form.personal.category} onChange={nest('personal', 'category')}><option value="">-</option>{CATEGORIES.map((c) => <option key={c}>{c}</option>)}</select></label>
+              <label className="form-field"><span className="label">Blood group</span>
+                <select className="input" value={form.personal.bloodGroup} onChange={nest('personal', 'bloodGroup')}><option value="">-</option>{BLOOD.map((c) => <option key={c}>{c}</option>)}</select></label>
+              <label className="form-field form-field--full"><span className="label">Address *</span><textarea className="input" rows={2} value={form.address} onChange={set('address')} required /></label>
             </div>
             <h4 style={{ margin: '18px 0 6px' }}>Photo and signature</h4>
             <DocumentsPanel code={code} app={app || { ...blankApp(draft) }} accessCode={draft.accessCode} onChange={setApp} types={['photo', 'signature']} showSubmit={false} />
@@ -249,13 +249,13 @@ export default function Apply() {
         <Card title="Parents and guardian">
           <form onSubmit={(e) => saveStep(e, 4)}>
             <div className="fields">
-              <div className="form-field"><label className="label">Father's name</label><input className="input" value={form.guardian.fatherName} onChange={nest('guardian', 'fatherName')} /></div>
-              <div className="form-field"><label className="label">Mother's name</label><input className="input" value={form.guardian.motherName} onChange={nest('guardian', 'motherName')} /></div>
-              <div className="form-field"><label className="label">Guardian to contact *</label><input className="input" value={form.guardian.name} onChange={nest('guardian', 'name')} required /></div>
-              <div className="form-field"><label className="label">Relation</label><input className="input" placeholder="Father, Mother, Uncle..." value={form.guardian.relation} onChange={nest('guardian', 'relation')} /></div>
-              <div className="form-field"><label className="label">Guardian's phone *</label><input className="input" type="tel" value={form.guardian.phone} onChange={nest('guardian', 'phone')} required /></div>
-              <div className="form-field"><label className="label">Guardian's email</label><input className="input" type="email" value={form.guardian.email} onChange={nest('guardian', 'email')} /></div>
-              <div className="form-field"><label className="label">Occupation</label><input className="input" value={form.guardian.occupation} onChange={nest('guardian', 'occupation')} /></div>
+              <label className="form-field"><span className="label">Father's name</span><input className="input" value={form.guardian.fatherName} onChange={nest('guardian', 'fatherName')} /></label>
+              <label className="form-field"><span className="label">Mother's name</span><input className="input" value={form.guardian.motherName} onChange={nest('guardian', 'motherName')} /></label>
+              <label className="form-field"><span className="label">Guardian to contact *</span><input className="input" value={form.guardian.name} onChange={nest('guardian', 'name')} required /></label>
+              <label className="form-field"><span className="label">Relation</span><input className="input" placeholder="Father, Mother, Uncle..." value={form.guardian.relation} onChange={nest('guardian', 'relation')} /></label>
+              <label className="form-field"><span className="label">Guardian's phone *</span><input className="input" type="tel" value={form.guardian.phone} onChange={nest('guardian', 'phone')} required /></label>
+              <label className="form-field"><span className="label">Guardian's email</span><input className="input" type="email" value={form.guardian.email} onChange={nest('guardian', 'email')} /></label>
+              <label className="form-field"><span className="label">Occupation</span><input className="input" value={form.guardian.occupation} onChange={nest('guardian', 'occupation')} /></label>
             </div>
             <Nav busy={busy} onBack={() => setStep(2)} later={later} />
           </form>
@@ -268,23 +268,23 @@ export default function Apply() {
             <p className="muted" style={{ marginTop: 0 }}>Fill in what applies to you. Leave the rest empty.</p>
             <h4 style={{ margin: '4px 0 8px' }}>Last qualification</h4>
             <div className="fields">
-              <div className="form-field"><label className="label">School / college</label><input className="input" value={form.previousEducation.institution} onChange={nest('previousEducation', 'institution')} /></div>
-              <div className="form-field"><label className="label">Qualification</label><input className="input" placeholder="12th, Diploma, B.Sc..." value={form.previousEducation.qualification} onChange={nest('previousEducation', 'qualification')} /></div>
-              <div className="form-field"><label className="label">Board / university</label><input className="input" value={form.previousEducation.board} onChange={nest('previousEducation', 'board')} /></div>
-              <div className="form-field"><label className="label">Year of passing</label><input className="input" inputMode="numeric" maxLength={4} placeholder="2024" value={form.previousEducation.year} onChange={nest('previousEducation', 'year')} /></div>
-              <div className="form-field"><label className="label">Percentage</label><input className="input" inputMode="decimal" placeholder="88.5" value={form.previousEducation.percentage} onChange={nest('previousEducation', 'percentage')} /></div>
+              <label className="form-field"><span className="label">School / college</span><input className="input" value={form.previousEducation.institution} onChange={nest('previousEducation', 'institution')} /></label>
+              <label className="form-field"><span className="label">Qualification</span><input className="input" placeholder="12th, Diploma, B.Sc..." value={form.previousEducation.qualification} onChange={nest('previousEducation', 'qualification')} /></label>
+              <label className="form-field"><span className="label">Board / university</span><input className="input" value={form.previousEducation.board} onChange={nest('previousEducation', 'board')} /></label>
+              <label className="form-field"><span className="label">Year of passing</span><input className="input" inputMode="numeric" maxLength={4} placeholder="2024" value={form.previousEducation.year} onChange={nest('previousEducation', 'year')} /></label>
+              <label className="form-field"><span className="label">Percentage</span><input className="input" inputMode="decimal" placeholder="88.5" value={form.previousEducation.percentage} onChange={nest('previousEducation', 'percentage')} /></label>
             </div>
             <h4 style={{ margin: '18px 0 8px' }}>10th standard</h4>
             <div className="fields fields--3">
-              <div className="form-field"><label className="label">Board</label><input className="input" value={form.previousEducation.tenth.board} onChange={nest2('previousEducation', 'tenth', 'board')} /></div>
-              <div className="form-field"><label className="label">Year</label><input className="input" inputMode="numeric" maxLength={4} value={form.previousEducation.tenth.year} onChange={nest2('previousEducation', 'tenth', 'year')} /></div>
-              <div className="form-field"><label className="label">Percentage</label><input className="input" inputMode="decimal" value={form.previousEducation.tenth.percentage} onChange={nest2('previousEducation', 'tenth', 'percentage')} /></div>
+              <label className="form-field"><span className="label">Board</span><input className="input" value={form.previousEducation.tenth.board} onChange={nest2('previousEducation', 'tenth', 'board')} /></label>
+              <label className="form-field"><span className="label">Year</span><input className="input" inputMode="numeric" maxLength={4} value={form.previousEducation.tenth.year} onChange={nest2('previousEducation', 'tenth', 'year')} /></label>
+              <label className="form-field"><span className="label">Percentage</span><input className="input" inputMode="decimal" value={form.previousEducation.tenth.percentage} onChange={nest2('previousEducation', 'tenth', 'percentage')} /></label>
             </div>
             <h4 style={{ margin: '18px 0 8px' }}>Entrance exam (if any)</h4>
             <div className="fields fields--3">
-              <div className="form-field"><label className="label">Exam</label><input className="input" placeholder="JEE, CET, CUET..." value={form.entrance.exam} onChange={nest('entrance', 'exam')} /></div>
-              <div className="form-field"><label className="label">Roll number</label><input className="input" value={form.entrance.rollNo} onChange={nest('entrance', 'rollNo')} /></div>
-              <div className="form-field"><label className="label">Score / rank</label><input className="input" value={form.entrance.score} onChange={nest('entrance', 'score')} /></div>
+              <label className="form-field"><span className="label">Exam</span><input className="input" placeholder="JEE, CET, CUET..." value={form.entrance.exam} onChange={nest('entrance', 'exam')} /></label>
+              <label className="form-field"><span className="label">Roll number</span><input className="input" value={form.entrance.rollNo} onChange={nest('entrance', 'rollNo')} /></label>
+              <label className="form-field"><span className="label">Score / rank</span><input className="input" value={form.entrance.score} onChange={nest('entrance', 'score')} /></label>
             </div>
             <Nav busy={busy} onBack={() => setStep(3)} later={later} />
           </form>

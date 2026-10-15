@@ -232,7 +232,7 @@ function Residents() {
   return (
     <Card title="Residents" action={<button type="button" className="btn btn--primary btn--sm" onClick={() => setAllot(true)}><Plus size={14} /> Allot a room</button>}>
       <div className="toolbar">
-        <div className="toolbar__filters"><select value={status} onChange={(e) => setStatus(e.target.value)}><option value="active">Staying now</option><option value="vacated">Moved out</option></select></div>
+        <div className="toolbar__filters"><select aria-label="Show residents" value={status} onChange={(e) => setStatus(e.target.value)}><option value="active">Staying now</option><option value="vacated">Moved out</option></select></div>
         <div className="input-wrap" style={{ minWidth: 220 }}><Search size={14} /><input className="input input--icon" placeholder="Name, ID or room" value={search} onChange={(e) => setSearch(e.target.value)} /></div>
       </div>
       <DataBoundary loading={list.loading && !list.data} error={list.error} data={list.data} reload={list.reload}>

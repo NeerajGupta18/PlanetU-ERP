@@ -35,12 +35,12 @@ export function ApplyModal({ types, onClose, onSaved, employee }) {
       <form onSubmit={save}>
         {err && <p className="form-error">{err}</p>}
         <div className="fields">
-          <div className="form-field form-field--full"><label className="label">Leave type *</label>
-            <select className="input" value={f.typeId} onChange={set('typeId')} required>{types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></div>
-          <div className="form-field"><label className="label">From *</label><input className="input" type="date" value={f.fromDate} onChange={(e) => setF((x) => ({ ...x, fromDate: e.target.value, toDate: x.toDate < e.target.value ? e.target.value : x.toDate }))} required /></div>
-          <div className="form-field"><label className="label">To *</label><input className="input" type="date" min={f.fromDate} value={f.halfDay ? f.fromDate : f.toDate} disabled={f.halfDay} onChange={set('toDate')} required /></div>
+          <label className="form-field form-field--full"><span className="label">Leave type *</span>
+            <select className="input" value={f.typeId} onChange={set('typeId')} required>{types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
+          <label className="form-field"><span className="label">From *</span><input className="input" type="date" value={f.fromDate} onChange={(e) => setF((x) => ({ ...x, fromDate: e.target.value, toDate: x.toDate < e.target.value ? e.target.value : x.toDate }))} required /></label>
+          <label className="form-field"><span className="label">To *</span><input className="input" type="date" min={f.fromDate} value={f.halfDay ? f.fromDate : f.toDate} disabled={f.halfDay} onChange={set('toDate')} required /></label>
           <div className="form-field form-field--full"><label><input type="checkbox" checked={f.halfDay} onChange={(e) => setF((x) => ({ ...x, halfDay: e.target.checked }))} /> Half day (one date only)</label></div>
-          <div className="form-field form-field--full"><label className="label">Reason {employee ? '' : '*'}</label><textarea className="input" rows={3} maxLength={500} value={f.reason} onChange={set('reason')} required={!employee} /></div>
+          <label className="form-field form-field--full"><span className="label">Reason {employee ? '' : '*'}</span><textarea className="input" rows={3} maxLength={500} value={f.reason} onChange={set('reason')} required={!employee} /></label>
         </div>
         <p className="muted" style={{ marginTop: 0 }}>Sundays and holidays on the calendar are not counted.</p>
         <div className="form-actions">

@@ -16,14 +16,14 @@ export default function Transport() {
           <EmptyState title="Not on a bus route" hint="Please ask the transport office if you would like to use the college bus." />
         ) : (
           <Card title={c.route}>
-            <div className="fields fields--3">
+            <dl className="fields fields--3">
               <Field label="Your stop">{c.stop}</Field>
               <Field label="Pickup time">{c.pickupTime ? fmtTime(c.pickupTime) : '-'}</Field>
               <Field label="Riding since">{fmtDate(c.from)}</Field>
               <Field label="Vehicle">{c.vehicleNo || '-'}</Field>
               <Field label="Driver">{c.driverName || '-'}{c.driverPhone && <div className="muted">{c.driverPhone}</div>}</Field>
               <Field label="Charge">{inr0(c.monthlyFee)} a month</Field>
-            </div>
+            </dl>
           </Card>
         ))}
         {data?.history.length > 0 && (

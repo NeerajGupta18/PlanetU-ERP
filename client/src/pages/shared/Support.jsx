@@ -26,10 +26,10 @@ function RaiseModal({ base, categories, onClose, onSaved }) {
       <form onSubmit={save}>
         {err && <p className="form-error">{err}</p>}
         <div className="fields">
-          <div className="form-field"><label className="label">Category *</label>
-            <select className="input" value={f.category} onChange={set('category')} required><option value="">Select...</option>{categories.map((c) => <option key={c}>{c}</option>)}</select></div>
-          <div className="form-field form-field--full"><label className="label">Subject *</label><input className="input" maxLength={150} value={f.subject} onChange={set('subject')} required /></div>
-          <div className="form-field form-field--full"><label className="label">What happened? *</label><textarea className="input" rows={5} maxLength={3000} value={f.details} onChange={set('details')} required /></div>
+          <label className="form-field"><span className="label">Category *</span>
+            <select className="input" value={f.category} onChange={set('category')} required><option value="">Select...</option>{categories.map((c) => <option key={c}>{c}</option>)}</select></label>
+          <label className="form-field form-field--full"><span className="label">Subject *</span><input className="input" maxLength={150} value={f.subject} onChange={set('subject')} required /></label>
+          <label className="form-field form-field--full"><span className="label">What happened? *</span><textarea className="input" rows={5} maxLength={3000} value={f.details} onChange={set('details')} required /></label>
           <div className="form-field form-field--full"><label><input type="checkbox" checked={f.anonymous} onChange={(e) => setF((x) => ({ ...x, anonymous: e.target.checked }))} /> Hide my name from the office</label>
             <p className="muted" style={{ margin: '4px 0 0' }}>You can still see replies here. The office cannot see who you are.</p></div>
         </div>

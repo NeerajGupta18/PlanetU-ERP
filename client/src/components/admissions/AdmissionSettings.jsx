@@ -37,11 +37,11 @@ function Form({ s, onClose, toast }) {
           <input type="checkbox" checked={accepting} onChange={(e) => setAccepting(e.target.checked)} />
           <span><strong>Accepting applications</strong> <span className="muted">- untick to close the public form</span></span>
         </label>
-        <div className="form-field"><label className="label">Application fee (₹)</label>
+        <label className="form-field"><span className="label">Application fee (₹)</span>
           <input className="input" type="number" min="0" step="0.01" value={fee} onChange={(e) => setFee(e.target.value)} />
-          <small className="muted">0 means no fee. New applications use the fee that is set when they start. If online payment is switched on for your installation, applicants pay in the last step; otherwise you record the fee here when it is paid at the counter.</small></div>
-        <div className="form-field"><label className="label">Note shown at the top of the form</label>
-          <textarea className="input" rows={4} maxLength={2000} placeholder="e.g. Keep your 12th marksheet and an ID proof ready. Last date to apply is 30 June." value={instructions} onChange={(e) => setInstructions(e.target.value)} /></div>
+          <small className="muted">0 means no fee. New applications use the fee that is set when they start. If online payment is switched on for your installation, applicants pay in the last step; otherwise you record the fee here when it is paid at the counter.</small></label>
+        <label className="form-field"><span className="label">Note shown at the top of the form</span>
+          <textarea className="input" rows={4} maxLength={2000} placeholder="e.g. Keep your 12th marksheet and an ID proof ready. Last date to apply is 30 June." value={instructions} onChange={(e) => setInstructions(e.target.value)} /></label>
       </div>
       <div className="form-actions">
         <button type="button" className="btn btn--outline" onClick={onClose}>Cancel</button>

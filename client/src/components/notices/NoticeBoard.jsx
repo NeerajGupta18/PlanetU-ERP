@@ -49,7 +49,7 @@ export default function NoticeBoard({ base }) {
                 {notices.map((n) => (
                   <article key={n.id} className={`notice-card ${n.priority === 'important' ? 'is-important' : ''} ${n.read ? '' : 'is-new'}`}>
                     <div className="notice-card__head">
-                      <h3>{!n.read && <span className="dot-new" aria-label="New" />}{n.title}</h3>
+                      <h3>{!n.read && <span className="dot-new" role="img" aria-label="New" />}{n.title}</h3>
                       <div className="notice-card__meta">
                         {n.pinned && <Badge tone="gray"><Pin size={11} /> Pinned</Badge>}
                         {n.priority === 'important' && <Badge tone="red">Important</Badge>}

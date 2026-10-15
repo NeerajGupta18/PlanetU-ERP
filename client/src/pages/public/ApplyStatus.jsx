@@ -46,8 +46,8 @@ export default function ApplyStatus() {
         <form onSubmit={find}>
           {error && <p className="form-error">{error}</p>}
           <div className="fields">
-            <div className="form-field"><label className="label">Application number</label><input className="input" value={applicationNo} onChange={(e) => setNo(e.target.value)} placeholder="APP2026-00001" required /></div>
-            <div className="form-field"><label className="label">Access code</label><input className="input" value={accessCode} onChange={(e) => setAccess(e.target.value)} autoComplete="off" required /></div>
+            <label className="form-field"><span className="label">Application number</span><input className="input" value={applicationNo} onChange={(e) => setNo(e.target.value)} placeholder="APP2026-00001" required /></label>
+            <label className="form-field"><span className="label">Access code</span><input className="input" value={accessCode} onChange={(e) => setAccess(e.target.value)} autoComplete="off" required /></label>
           </div>
           <div className="form-actions"><button className="btn btn--primary" disabled={busy}><Search size={15} /> {busy ? 'Looking...' : 'Find application'}</button></div>
         </form>
@@ -60,8 +60,8 @@ export default function ApplyStatus() {
           <form onSubmit={recover} style={{ marginTop: 8 }}>
             {rec.err && <p className="form-error">{rec.err}</p>}
             {rec.msg && <p className="secret-box">{rec.msg}</p>}
-            <div className="form-field"><label className="label">Email you applied with</label>
-              <input className="input" type="email" required value={rec.email} onChange={(e) => setRec((r) => ({ ...r, email: e.target.value }))} /></div>
+            <label className="form-field"><span className="label">Email you applied with</span>
+              <input className="input" type="email" required value={rec.email} onChange={(e) => setRec((r) => ({ ...r, email: e.target.value }))} /></label>
             <RobotCheck onChange={(t) => setRec((r) => ({ ...r, captcha: t }))} resetKey={rec.key} />
             <div className="form-actions"><button className="btn btn--outline">Email me a new access code</button></div>
           </form>

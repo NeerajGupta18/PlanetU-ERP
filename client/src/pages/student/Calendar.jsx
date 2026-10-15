@@ -125,8 +125,8 @@ export default function Calendar() {
                 <thead><tr><th>Date</th><th>Event</th><th>Type</th><th>Time</th><th>Location</th></tr></thead>
                 <tbody>
                   {events.map((e) => (
-                    <tr key={e.id} onClick={() => setSelected(e.start > toISO(startOfMonth(cursor)) ? e.start : toISO(startOfMonth(cursor)))} className="is-clickable">
-                      <td>{fmtEventDates(e.start, e.end)}</td>
+                    <tr key={e.id}>
+                      <td><button type="button" className="link-btn" onClick={() => setSelected(e.start > toISO(startOfMonth(cursor)) ? e.start : toISO(startOfMonth(cursor)))}>{fmtEventDates(e.start, e.end)}</button></td>
                       <td><strong>{e.title}</strong></td>
                       <td><Badge tone={EVENT_TYPES[e.type].tone}>{EVENT_TYPES[e.type].label}</Badge></td>
                       <td>{e.startTime ? fmtRange(e.startTime, e.endTime) : 'All day'}</td>
