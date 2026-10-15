@@ -8,7 +8,7 @@ import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import LectureList from '../../components/attendance/LectureList.jsx';
 import { fmtLong, todayISO } from '../../utils/dates.js';
 
-const tone = (pct) => (pct >= 85 ? 'green' : pct >= 75 ? 'amber' : 'red');
+const tone = (pct) => (pct >= 80 ? 'green' : pct >= 75 ? 'amber' : 'red'); // red below 75%, amber within 5% of it
 
 export default function Attendance() {
   const [tab, setTab] = useTabParam('day');

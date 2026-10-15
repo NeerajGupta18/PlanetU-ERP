@@ -16,7 +16,7 @@ export default function QuizResult() {
   );
 }
 
-const MARK = { true: { Icon: CheckCircle2, color: '#16a34a', label: 'Correct' }, partial: { Icon: MinusCircle, color: '#d97706', label: 'Partly correct' }, false: { Icon: XCircle, color: '#dc2626', label: 'Wrong' }, null: { Icon: Circle, color: '#94a3b8', label: 'Not answered' } };
+const MARK = { true: { Icon: CheckCircle2, color: 'var(--success)', label: 'Correct' }, partial: { Icon: MinusCircle, color: 'var(--warning)', label: 'Partly correct' }, false: { Icon: XCircle, color: '#dc2626', label: 'Wrong' }, null: { Icon: Circle, color: '#94a3b8', label: 'Not answered' } };
 
 function Result({ d, nav, id }) {
   const { quiz, counted, attempts, review } = d;
@@ -28,9 +28,9 @@ function Result({ d, nav, id }) {
         <Card><p style={{ margin: 0 }}>You have an attempt in progress. <button type="button" className="btn btn--primary btn--sm" onClick={() => nav(`/student/quizzes/${id}/take`)}>Resume</button></p></Card>
       ) : counted ? (
         <div className="stats">
-          <StatCard value={`${cr(counted.score)} / ${cr(counted.max)}`} label={`Your ${quiz.scoring === 'latest' ? 'latest' : 'best'} score (attempt ${counted.no})`} icon={CheckCircle2} tone="indigo" />
-          <StatCard value={`${counted.pct}%`} label="Percentage" icon={CheckCircle2} tone="green" />
-          <StatCard value={`${cr(counted.marks)} / ${cr(quiz.weightage)}`} label="Internal marks from this quiz" icon={CheckCircle2} tone="amber" />
+          <StatCard value={`${cr(counted.score)} / ${cr(counted.max)}`} label={`Your ${quiz.scoring === 'latest' ? 'latest' : 'best'} score (attempt ${counted.no})`} icon={CheckCircle2} />
+          <StatCard value={`${counted.pct}%`} label="Percentage" icon={CheckCircle2} />
+          <StatCard value={`${cr(counted.marks)} / ${cr(quiz.weightage)}`} label="Internal marks from this quiz" icon={CheckCircle2} />
         </div>
       ) : (
         <Card><p style={{ margin: 0 }}><strong>Submitted.</strong> {quiz.showResults === 'never' ? 'Your teacher will share your result.' : 'Your score will appear here once the quiz closes.'}</p></Card>

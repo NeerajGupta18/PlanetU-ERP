@@ -29,7 +29,7 @@ export default function Library() {
                         <td>{i.bookTitle}</td><td className="muted">{fmtDate(i.issuedAt.slice(0, 10))}</td>
                         <td>{fmtDate(i.dueDate)}</td>
                         <td>{i.returnedAt ? <Badge tone="gray">Returned{Number(i.fineAmount) > 0 ? ` - fine ₹${i.fineAmount}${i.finePaid ? ' (paid)' : ''}` : ''}</Badge>
-                          : <Badge tone={new Date(i.dueDate) < new Date() ? 'red' : 'blue'}>On loan</Badge>}</td>
+                          : <Badge tone={new Date(i.dueDate) < new Date() ? 'red' : 'blue'}>{new Date(i.dueDate) < new Date() ? 'Overdue' : 'On loan'}</Badge>}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -49,7 +49,7 @@ export default function Library() {
                     <tbody>
                       {catalogue.data.books.map((b) => (
                         <tr key={b.id}><td>{b.title}</td><td>{b.author || '-'}</td><td>{b.category || '-'}</td>
-                          <td><Badge tone={b.availableCopies > 0 ? 'green' : 'red'}>{b.availableCopies} / {b.totalCopies}</Badge></td></tr>
+                          <td><Badge tone={b.availableCopies > 0 ? 'green' : 'gray'}>{b.availableCopies} / {b.totalCopies}</Badge></td></tr>
                       ))}
                     </tbody>
                   </table>
