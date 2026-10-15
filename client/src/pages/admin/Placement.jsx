@@ -24,10 +24,10 @@ export default function Placement() {
       <PageBanner icon={Briefcase} title="Placement" subtitle="Companies, campus drives and what happens to each application." />
       {s && (
         <div className="stats">
-          <StatCard value={s.placed} label="Students placed" icon={Briefcase} tone="green" />
-          <StatCard value={s.openDrives} label="Open drives" icon={Briefcase} tone="indigo" />
-          <StatCard value={s.average != null ? `${s.average} LPA` : '-'} label="Average package" icon={Briefcase} tone="amber" />
-          <StatCard value={s.highest != null ? `${s.highest} LPA` : '-'} label="Highest package" icon={Briefcase} tone="purple" />
+          <StatCard value={s.placed} label="Students placed" icon={Briefcase} />
+          <StatCard value={s.openDrives} label="Open drives" icon={Briefcase} />
+          <StatCard value={s.average != null ? `${s.average} LPA` : '-'} label="Average package" icon={Briefcase} />
+          <StatCard value={s.highest != null ? `${s.highest} LPA` : '-'} label="Highest package" icon={Briefcase} />
         </div>
       )}
       <Card>
@@ -62,7 +62,7 @@ function Companies({ onChanged }) {
     <>
       <div className="toolbar"><span /><button type="button" className="btn btn--primary btn--sm" onClick={() => setEdit({})}><Plus size={14} /> Add company</button></div>
       <DataBoundary loading={loading} error={error} data={data} reload={reload}>
-        {data && (data.companies.length === 0 ? <EmptyState title="No companies yet" hint="Add the companies that visit your campus." /> : (
+        {data && (data.companies.length === 0 ? <EmptyState title="No companies yet" hint="Add the companies that visit your campus." action={{ label: 'Add a company', onClick: () => setEdit({}) }} /> : (
           <div className="table-wrap"><table className="table">
             <thead><tr><th>Company</th><th>Contact</th><th className="num">Drives</th><th /></tr></thead>
             <tbody>{data.companies.map((c) => (
@@ -118,7 +118,7 @@ function Drives({ onChanged }) {
     <>
       <div className="toolbar"><span /><button type="button" className="btn btn--primary btn--sm" onClick={() => setEdit({})}><Plus size={14} /> New drive</button></div>
       <DataBoundary loading={loading} error={error} data={data} reload={reload}>
-        {data && (data.drives.length === 0 ? <EmptyState title="No drives yet" hint="Add a company first, then create a drive for it." /> : (
+        {data && (data.drives.length === 0 ? <EmptyState title="No drives yet" hint="Add a company first, then create a drive for it." action={{ label: 'Create a drive', onClick: () => setEdit({}) }} /> : (
           <div className="table-wrap"><table className="table">
             <thead><tr><th>Drive</th><th>Package</th><th>Dates</th><th className="num">Applicants</th><th className="num">Selected</th><th>Status</th><th /></tr></thead>
             <tbody>{data.drives.map((d) => (

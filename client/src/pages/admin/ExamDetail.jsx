@@ -174,10 +174,10 @@ function Results({ examId, d }) {
   return (
     <>
       <div className="stats">
-        <StatCard value={stats.students} label="Students" icon={GraduationCap} tone="indigo" />
-        <StatCard value={stats.passRate === null ? '-' : `${num(stats.passRate)}%`} label={`Pass rate (${stats.passed} passed, ${stats.failed} failed)`} icon={Eye} tone="green" />
-        <StatCard value={stats.average === null ? '-' : `${num(stats.average)}%`} label="Class average" icon={FileText} tone="amber" />
-        <StatCard value={stats.highest === null ? '-' : `${num(stats.highest)}%`} label={stats.lowest === null ? 'Highest' : `Highest (lowest ${num(stats.lowest)}%)`} icon={Printer} tone="indigo" />
+        <StatCard value={stats.students} label="Students" icon={GraduationCap} />
+        <StatCard value={stats.passRate === null ? '-' : `${num(stats.passRate)}%`} label={`Pass rate (${stats.passed} passed, ${stats.failed} failed)`} icon={Eye} />
+        <StatCard value={stats.average === null ? '-' : `${num(stats.average)}%`} label="Class average" icon={FileText} />
+        <StatCard value={stats.highest === null ? '-' : `${num(stats.highest)}%`} label={stats.lowest === null ? 'Highest' : `Highest (lowest ${num(stats.lowest)}%)`} icon={Printer} />
       </div>
       <div className="toolbar" style={{ marginTop: 14 }}>
         <span className="muted">{stats.incomplete ? `${stats.incomplete} student${stats.incomplete === 1 ? ' has' : 's have'} incomplete marks` : 'All marks are in'}</span>

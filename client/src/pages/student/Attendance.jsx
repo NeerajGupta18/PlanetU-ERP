@@ -1,6 +1,6 @@
 import { CalendarCheck, Clock, Percent } from 'lucide-react';
 import { useFetch } from '../../hooks/useFetch.js';
-import { Badge, Card, PageBanner, StatCard } from '../../components/ui/Ui.jsx';
+import { Badge, Card, PageBanner, StatCard, pending } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import { fmtDay, fmtRange } from '../../utils/dates.js';
 
@@ -24,9 +24,9 @@ function View({ d }) {
   return (
     <>
       <div className="stats">
-        <StatCard value={`${d.overall}%`} label="Overall attendance" icon={Percent} tone={d.overall >= d.threshold ? 'green' : 'rose'} />
-        <StatCard value={`${d.attended} / ${d.total}`} label="Classes attended" icon={CalendarCheck} tone="indigo" />
-        <StatCard value={low.length} label={`Subjects below ${d.threshold}%`} icon={Clock} tone={low.length ? 'amber' : 'green'} />
+        <StatCard value={`${d.overall}%`} label="Overall attendance" icon={Percent} status={d.overall >= d.threshold ? 'good' : 'bad'} hint={d.overall >= d.threshold ? `Above ${d.threshold}%` : `Below ${d.threshold}%`} />
+        <StatCard value={`${d.attended} / ${d.total}`} label="Classes attended" icon={CalendarCheck} />
+        <StatCard value={low.length} label={`Subjects below ${d.threshold}%`} icon={Clock} {...pending(low.length, { act: 'Attend more classes', clear: 'None' })} />
       </div>
 
       <div className="grid-2">

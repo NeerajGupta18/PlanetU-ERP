@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { AlertTriangle, Banknote, CircleDollarSign, Download, FileText, Landmark, Play, Save, TrendingUp } from 'lucide-react';
 import { useFetch } from '../../hooks/useFetch.js';
 import { api } from '../../api/http.js';
-import { Badge, Card, PageBanner, StatCard, Tabs } from '../../components/ui/Ui.jsx';
+import { Badge, Card, PageBanner, StatCard, Tabs, pending } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import { useDialogs } from '../../components/ui/Dialogs.jsx';
 import InstituteBilling from '../../components/billing/InstituteBilling.jsx';
@@ -57,10 +57,10 @@ function Overview({ onManage }) {
       {data && (
         <>
           <div className="stats">
-            <StatCard value={inr0(data.mrr)} label="Monthly recurring revenue" icon={TrendingUp} tone="indigo" />
-            <StatCard value={inr0(data.arr)} label="Annualised (MRR x 12)" icon={Landmark} tone="green" />
-            <StatCard value={inr0(data.collected.thisMonth)} label="Collected this month" icon={Banknote} tone="amber" />
-            <StatCard value={inr0(data.receivables.overdue)} label={`Overdue (${data.receivables.overdueCount} invoice${data.receivables.overdueCount === 1 ? '' : 's'})`} icon={AlertTriangle} tone={data.receivables.overdue ? 'rose' : 'green'} />
+            <StatCard value={inr0(data.mrr)} label="Monthly recurring revenue" icon={TrendingUp} />
+            <StatCard value={inr0(data.arr)} label="Annualised (MRR x 12)" icon={Landmark} />
+            <StatCard value={inr0(data.collected.thisMonth)} label="Collected this month" icon={Banknote} />
+            <StatCard value={inr0(data.receivables.overdue)} label={`Overdue (${data.receivables.overdueCount} invoice${data.receivables.overdueCount === 1 ? '' : 's'})`} icon={AlertTriangle} {...pending(data.receivables.overdue, { level: 'bad', act: 'Follow up', clear: 'Nothing overdue' })} />
           </div>
           <p className="muted" style={{ margin: '4px 0 14px' }}>
             {data.counts.institutes} institutes: {data.counts.active} paying, {data.counts.trialing} on trial, {data.counts.past_due} past due, {data.counts.suspended} paused.
@@ -92,9 +92,9 @@ function Overview({ onManage }) {
           <div className="grid-2" style={{ marginTop: 14, alignItems: 'start' }}>
             <Attention title="Overdue" items={data.attention.overdue} onManage={onManage} render={(x) => `${inr(x.amount)} overdue${x.status === 'past_due' ? ' · in grace period' : ''}`} tone="red" empty="No overdue invoices." />
             <Attention title="Access paused" items={data.attention.suspended} onManage={onManage} render={(x) => SUSPEND_REASON[x.reason] || 'Paused'} tone="red" empty="Nobody is paused." />
-            <Attention title="Trials ending within a week" items={data.attention.trialsEnding} onManage={onManage} render={(x) => `ends ${fmtDate(x.endsOn)}${x.planKey === 'trial' ? ' · no plan chosen' : ''}`} tone="amber" empty="No trials ending soon." />
+            <Attention title="Trials ending within a week" items={data.attention.trialsEnding} onManage={onManage} render={(x) => `ends ${fmtDate(x.endsOn)}${x.planKey === 'trial' ? ' · no plan chosen' : ''}`} empty="No trials ending soon." />
             <Attention title="Renewing in the next 14 days" items={data.attention.renewalsSoon} onManage={onManage} render={(x) => `paid until ${fmtDate(x.paidUntil)}`} tone="blue" empty="No renewals coming up." />
-            <Attention title="Missing billing details" items={data.attention.missingDetails} onManage={onManage} render={() => 'cannot be invoiced until a state is added'} tone="amber" empty="Every paying institute has billing details." />
+            <Attention title="Missing billing details" items={data.attention.missingDetails} onManage={onManage} render={() => 'cannot be invoiced until a state is added'} empty="Every paying institute has billing details." />
             <Attention title="Cancelling" items={data.attention.cancelling} onManage={onManage} render={(x) => `ends ${fmtDate(x.paidUntil)}`} tone="gray" empty="Nobody has asked to cancel." />
           </div>
         </>
@@ -157,9 +157,9 @@ function Institutes({ onManage }) {
                 const st = SUB_STATUS[s.status];
                 return (
                   <tr key={s.tenantId}>
-                    <td><strong>{s.name}</strong><div className="muted">{s.code}</div>{!s.detailsComplete && s.planKey !== 'trial' && <Badge tone="amber">Billing details missing</Badge>}</td>
+                    <td><strong>{s.name}</strong><div className="muted">{s.code}</div>{!s.detailsComplete && s.planKey !== 'trial' && <Badge>Billing details missing</Badge>}</td>
                     <td>{s.planName}{s.planKey !== 'trial' && <div className="muted">{CYCLE_LABEL[s.cycle]}{s.discountPercent ? ` · ${s.discountPercent}% off` : ''}{s.customMonthlyPrice !== null ? ' · custom price' : ''}</div>}</td>
-                    <td><Badge tone={st.tone}>{st.label}</Badge>{s.cancelAtPeriodEnd && <div><Badge tone="amber">Cancelling</Badge></div>}{s.status === 'suspended' && <div className="muted">{SUSPEND_REASON[s.suspendedReason]}</div>}</td>
+                    <td><Badge tone={st.tone}>{st.label}</Badge>{s.cancelAtPeriodEnd && <div><Badge>Cancelling</Badge></div>}{s.status === 'suspended' && <div className="muted">{SUSPEND_REASON[s.suspendedReason]}</div>}</td>
                     <td className="muted">{s.status === 'trialing' ? `trial ends ${fmtDate(s.trialEndsOn)}` : fmtDate(s.paidUntil)}</td>
                     <td style={{ textAlign: 'right' }}>{s.students}</td>
                     <td style={{ textAlign: 'right' }}>{s.mrr ? inr0(s.mrr) : '-'}</td>

@@ -1,3 +1,7 @@
+import { createElement } from 'react';
+import { Link } from 'react-router-dom';
+import { AlertCircle, AlertTriangle, CheckCircle2, Info } from 'lucide-react';
+
 export function PageBanner({ icon: Icon, title, subtitle, actions }) {
   return (
     <header className="banner">
@@ -27,17 +31,34 @@ export function Card({ title, icon: Icon, action, children, className = '' }) {
   );
 }
 
-export function StatCard({ value, label, icon: Icon, tone = 'indigo' }) {
-  return (
-    <div className={`stat stat--${tone}`}>
-      <div>
-        <div className="stat__value">{value}</div>
+/**
+ * A KPI card. It is neutral (no color) unless `status` says the number needs attention or is good news:
+ *   status: 'bad' (overdue, a problem) | 'warn' (needs action soon) | 'good' (done, all paid) | 'info' | 'clear' (nothing to do)
+ * `hint` is the short word shown under the label, such as "Needs action" or "All clear", so meaning is never color only.
+ * `to` makes the whole card a link to the filtered list behind the number. `tone` is the old decorative prop and is ignored.
+ */
+export function StatCard({ value, label, icon: Icon, status = 'neutral', hint, to }) {
+  const empty = value === null || value === undefined || value === '' || value === '-';
+  const body = (
+    <>
+      <div className="stat__body">
+        <div className="stat__value">{empty ? <span className="muted">No data yet</span> : value}</div>
         <div className="stat__label">{label}</div>
+        {hint && <div className="stat__hint">{STATUS_ICON[status] && createElement(STATUS_ICON[status], { size: 13, 'aria-hidden': true })}{hint}</div>}
       </div>
-      {Icon && <Icon size={34} className="stat__icon" strokeWidth={1.5} />}
-    </div>
+      {Icon && <span className="stat__icon" aria-hidden="true"><Icon size={19} strokeWidth={1.8} /></span>}
+    </>
   );
+  const cls = `stat stat--${status}`;
+  return to ? <Link to={to} className={cls}>{body}</Link> : <div className={cls}>{body}</div>;
 }
+
+const STATUS_ICON = { bad: AlertCircle, warn: AlertTriangle, good: CheckCircle2, clear: CheckCircle2, info: Info };
+
+/** Picks a KPI status from a count of things waiting: nothing waiting is "All clear", otherwise it needs action. */
+export const pending = (n, { level = 'warn', clear = 'All clear', act = 'Needs action' } = {}) => (
+  Number(n) > 0 ? { status: level, hint: act } : { status: 'clear', hint: clear }
+);
 
 export const Badge = ({ tone = 'gray', children, className = '' }) => (
   <span className={`badge badge--${tone} ${className}`}>{children}</span>

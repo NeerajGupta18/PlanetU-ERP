@@ -151,7 +151,7 @@ function ReportView({ def, values, setValue, query, needed }) {
         <>
           {d.summary.length > 0 && (
             <div className="stats" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))' }}>
-              {d.summary.slice(0, 8).map(([k, v], i) => <StatCard key={k} value={v} label={k} tone={['indigo', 'green', 'amber', 'rose'][i % 4]} />)}
+              {d.summary.slice(0, 8).map(([k, v], i) => <StatCard key={k} value={v} label={k} />)}
             </div>
           )}
           <Card title={`Preview${d.total ? ` · ${d.total} row${d.total === 1 ? '' : 's'}` : ''}`}>

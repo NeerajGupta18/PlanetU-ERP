@@ -68,9 +68,9 @@ export default function EmployeeDashboard() {
           {data && (
             <>
               <div className="stats">
-                <StatCard value={lectures.length} label="Lectures today" icon={BookOpen} tone="indigo" />
-                <StatCard value={lectures.length - pending} label="Attendance submitted" icon={CheckCircle2} tone="green" />
-                <StatCard value={pending} label="Still to mark" icon={Clock} tone="amber" />
+                <StatCard value={lectures.length} label="Lectures today" icon={BookOpen} to="/employee/attendance" />
+                <StatCard value={lectures.length - pending} label="Attendance submitted" icon={CheckCircle2} to="/employee/attendance" {...(lectures.length && !pending ? { status: 'good', hint: 'All done' } : {})} />
+                <StatCard value={pending} label="Still to mark" icon={Clock} to="/employee/attendance" {...(pending ? { status: 'warn', hint: 'Mark today' } : { status: 'clear', hint: 'Nothing left' })} />
               </div>
               <Card
                 title="Today's lectures" icon={ClipboardCheck}

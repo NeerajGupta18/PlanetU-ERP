@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, BookOpenCheck, ExternalLink, RefreshCw, Trash2 } from 'lucide-react';
 import { useFetch } from '../../hooks/useFetch.js';
 import { api } from '../../api/http.js';
-import { Badge, Card, PageBanner, StatCard } from '../../components/ui/Ui.jsx';
+import { Badge, Card, PageBanner, StatCard, pending } from '../../components/ui/Ui.jsx';
 import { DataBoundary } from '../../components/ui/Feedback.jsx';
 import { useDialogs } from '../../components/ui/Dialogs.jsx';
 import Modal from '../../components/ui/Modal.jsx';
@@ -35,10 +35,10 @@ export default function LearningAssignment({ role }) {
               actions={<Link to={`/${role}/learning`} className="btn btn--outline btn--sm"><ArrowLeft size={14} /> Learning</Link>} />
             {err && <p className="form-error" role="alert">{err}</p>}{msg && <p className="note" role="status">{msg}</p>}
             <div className="stats">
-              <StatCard value={`${c.completed} / ${c.total}`} label="Completed" icon={BookOpenCheck} tone="green" />
-              <StatCard value={c.submitted} label="Awaiting your review" icon={BookOpenCheck} tone="amber" />
-              <StatCard value={c.inProgress + c.assigned} label="Not finished" icon={BookOpenCheck} tone="indigo" />
-              <StatCard value={c.overdue} label="Overdue" icon={BookOpenCheck} tone={c.overdue ? 'rose' : 'green'} />
+              <StatCard value={`${c.completed} / ${c.total}`} label="Completed" icon={BookOpenCheck} />
+              <StatCard value={c.submitted} label="Awaiting your review" icon={BookOpenCheck} {...pending(c.submitted, { act: 'To review' })} />
+              <StatCard value={c.inProgress + c.assigned} label="Not finished" icon={BookOpenCheck} />
+              <StatCard value={c.overdue} label="Overdue" icon={BookOpenCheck} {...pending(c.overdue, { level: 'bad', act: 'Overdue', clear: 'None overdue' })} />
             </div>
             <Card title="Students" action={<span style={{ display: 'flex', gap: 6 }}>
               <button type="button" className="btn btn--outline btn--sm" disabled={busy === 'sync'} onClick={sync}><RefreshCw size={13} /> Add new students</button>

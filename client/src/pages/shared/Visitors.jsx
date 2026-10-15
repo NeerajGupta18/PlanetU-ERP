@@ -3,7 +3,7 @@ import { DoorOpen, LogIn, LogOut, Plus, Printer, Search, X } from 'lucide-react'
 import { api } from '../../api/http.js';
 import { useFetch } from '../../hooks/useFetch.js';
 import { useTabParam } from '../../hooks/useTabParam.js';
-import { Badge, Card, PageBanner, StatCard, Tabs } from '../../components/ui/Ui.jsx';
+import { Badge, Card, PageBanner, StatCard, Tabs, pending } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import Modal from '../../components/ui/Modal.jsx';
 import { useDialogs } from '../../components/ui/Dialogs.jsx';
@@ -41,10 +41,10 @@ export default function Visitors({ role }) {
         actions={<button type="button" className="btn btn--primary btn--sm" onClick={() => setAdding({})}><Plus size={14} /> {admin ? 'Add visitor' : 'Expect a visitor'}</button>} />
       {admin && s && (
         <div className="stats">
-          <StatCard value={s.inCampus} label="Inside now" icon={DoorOpen} tone="green" />
-          <StatCard value={s.expectedToday} label="Expected today" icon={DoorOpen} tone="indigo" />
-          <StatCard value={s.arrivedToday} label="Arrived today" icon={DoorOpen} tone="purple" />
-          <StatCard value={s.overstaying} label="Inside over 8 hours" icon={DoorOpen} tone="amber" />
+          <StatCard value={s.inCampus} label="Inside now" icon={DoorOpen} />
+          <StatCard value={s.expectedToday} label="Expected today" icon={DoorOpen} />
+          <StatCard value={s.arrivedToday} label="Arrived today" icon={DoorOpen} />
+          <StatCard value={s.overstaying} label="Inside over 8 hours" icon={DoorOpen} {...pending(s.overstaying, { act: 'Check on them', clear: 'None' })} />
         </div>
       )}
       <Card>

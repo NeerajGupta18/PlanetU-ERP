@@ -15,10 +15,10 @@ export default function Dashboard() {
           <PageBanner icon={LayoutDashboard} title="Platform Dashboard" subtitle="Every institute running on PlanetU ERP" />
 
           <div className="stats">
-            <StatCard value={data.stats.total} label="Institutes" icon={Building2} tone="indigo" />
-            <StatCard value={data.stats.active} label="Active" icon={CheckCircle2} tone="green" />
-            <StatCard value={data.stats.suspended} label="Suspended" icon={PauseCircle} tone="rose" />
-            <StatCard value={data.stats.users} label="User accounts" icon={Users} tone="amber" />
+            <StatCard value={data.stats.total} label="Institutes" icon={Building2} to="/super-admin/institutes" />
+            <StatCard value={data.stats.active} label="Active" icon={CheckCircle2} to="/super-admin/institutes" />
+            <StatCard value={data.stats.suspended} label="Suspended" icon={PauseCircle} to="/super-admin/institutes" {...(data.stats.suspended ? { status: 'warn', hint: 'Check why' } : { status: 'clear', hint: 'None' })} />
+            <StatCard value={data.stats.users} label="User accounts" icon={Users} />
           </div>
 
           <div className="grid-2">

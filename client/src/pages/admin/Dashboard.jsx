@@ -4,7 +4,7 @@ import {
 } from 'lucide-react';
 import { useFetch } from '../../hooks/useFetch.js';
 import { useTenantConfig } from '../../hooks/useTenantConfig.js';
-import { Badge, Card, PageBanner, StatCard } from '../../components/ui/Ui.jsx';
+import { Badge, Card, PageBanner, StatCard, pending } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import { STATUS } from '../../components/admissions/status.js';
 import { EVENT_TYPES } from '../../utils/eventTypes.js';
@@ -49,14 +49,20 @@ function DashboardView({ d }) {
       </Card>
 
       <div className="stats">
-        {adm && <StatCard value={w.applicationsToReview} label="Applications to review" icon={ClipboardList} tone="rose" />}
-        {fees && <StatCard value={inr(w.feesThisMonth)} label="Fees collected this month" icon={Banknote} tone="green" />}
-        {fees && <StatCard value={inr(w.feesOutstanding)} label="Fees outstanding" icon={Wallet} tone="amber" />}
-        {att && <StatCard value={w.attendancePercent === null ? '-' : `${w.attendancePercent}%`} label="Attendance marked today" icon={CalendarCheck} tone="indigo" />}
-        <StatCard value={d.stats.totalStudents} label={t('students', 'Students')} icon={Users2} tone="indigo" />
-        <StatCard value={d.stats.totalEmployees} label={t('employees', 'Employees')} icon={Users} tone="green" />
-        <StatCard value={d.stats.totalDepartments} label="Departments" icon={Network} tone="amber" />
-        <StatCard value={d.stats.lecturesNext7Days} label="Lectures in next 7 days" icon={CalendarDays} tone="rose" />
+        {adm && <StatCard value={w.applicationsToReview} label="Applications to review" icon={ClipboardList} to="/admin/admissions" {...pending(w.applicationsToReview, { act: 'Review now' })} />}
+        {fees && <StatCard value={inr(w.feesThisMonth)} label="Fees collected this month" icon={Banknote} to="/admin/fees" />}
+        {fees && <StatCard value={inr(w.feesOutstanding)} label="Fees still to collect" icon={Wallet} to="/admin/fees" {...pending(w.feesOutstanding, { act: 'Follow up', clear: 'Nothing due' })} />}
+        {att && (
+          <StatCard
+            value={w.attendancePercent === null ? `${w.lecturesMarked} of ${w.lecturesToday}` : `${w.attendancePercent}%`}
+            label={w.attendancePercent === null ? 'Lectures marked today' : 'Students present today'} icon={CalendarCheck} to="/admin/attendance"
+            {...(w.lecturesToday === 0 ? { status: 'clear', hint: 'No lectures today' } : pending(w.lecturesNotMarked, { act: `${w.lecturesNotMarked} lecture${w.lecturesNotMarked === 1 ? '' : 's'} not marked`, clear: 'All lectures marked' }))}
+          />
+        )}
+        <StatCard value={d.stats.totalStudents} label={t('students', 'Students')} icon={Users2} to="/admin/students" />
+        <StatCard value={d.stats.totalEmployees} label={t('employees', 'Employees')} icon={Users} to="/admin/employees" />
+        <StatCard value={d.stats.totalDepartments} label="Departments" icon={Network} to="/admin/departments" />
+        <StatCard value={d.stats.lecturesNext7Days} label="Lectures in next 7 days" icon={CalendarDays} to="/admin/timetable" />
       </div>
 
       {(adm || att) && (

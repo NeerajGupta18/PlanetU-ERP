@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { AlertTriangle, ArrowLeft, CheckCircle2, Download, FileSpreadsheet, ListChecks, Upload, Users2 } from 'lucide-react';
 import { api } from '../../api/http.js';
 import { useTenantConfig } from '../../hooks/useTenantConfig.js';
-import { Badge, Card, PageBanner, StatCard } from '../../components/ui/Ui.jsx';
+import { Badge, Card, PageBanner, StatCard, pending } from '../../components/ui/Ui.jsx';
 import { EmptyState } from '../../components/ui/Feedback.jsx';
 import { downloadCsv } from '../../utils/csv.js';
 
@@ -110,10 +110,10 @@ function Preview({ p, file, show, setShow, skip, setSkip, busy, students, onBack
   return (
     <>
       <div className="stats">
-        <StatCard value={s.rows} label={`Rows in ${file.name}`} icon={Users2} tone="indigo" />
-        <StatCard value={s.ready} label="Ready to import" icon={CheckCircle2} tone="green" />
-        <StatCard value={s.withErrors} label="Rows with problems" icon={AlertTriangle} tone={s.withErrors ? 'rose' : 'green'} />
-        <StatCard value={s.withWarnings} label="Rows with warnings" icon={AlertTriangle} tone="amber" />
+        <StatCard value={s.rows} label={`Rows in ${file.name}`} icon={Users2} />
+        <StatCard value={s.ready} label="Ready to import" icon={CheckCircle2} status={s.ready ? 'good' : 'neutral'} hint={s.ready ? 'Ready' : undefined} />
+        <StatCard value={s.withErrors} label="Rows with problems" icon={AlertTriangle} {...pending(s.withErrors, { level: 'bad', act: 'Fix before import', clear: 'None' })} />
+        <StatCard value={s.withWarnings} label="Rows with warnings" icon={AlertTriangle} {...pending(s.withWarnings, { act: 'Check these', clear: 'None' })} />
       </div>
 
       {(p.notes.length > 0 || p.unknownColumns.length > 0) && (
@@ -196,9 +196,9 @@ function Done({ r, students, onAgain }) {
   return (
     <Card title="Import finished" icon={CheckCircle2}>
       <div className="stats" style={{ marginBottom: 16 }}>
-        <StatCard value={r.created} label={`${students.replace(/^./, (c) => c.toUpperCase())} imported`} icon={CheckCircle2} tone="green" />
-        <StatCard value={r.skipped} label="Rows skipped" icon={AlertTriangle} tone={r.skipped ? 'amber' : 'green'} />
-        <StatCard value={r.emailsQueued} label="Set-password emails queued" icon={Upload} tone="indigo" />
+        <StatCard value={r.created} label={`${students.replace(/^./, (c) => c.toUpperCase())} imported`} icon={CheckCircle2} status="good" hint="Done" />
+        <StatCard value={r.skipped} label="Rows skipped" icon={AlertTriangle} {...pending(r.skipped, { act: 'See why below', clear: 'None' })} />
+        <StatCard value={r.emailsQueued} label="Set-password emails queued" icon={Upload} />
       </div>
       <p>
         {r.createLogins

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Award, BookOpenCheck, CalendarClock, Clock, ExternalLink, GraduationCap } from 'lucide-react';
 import { useFetch } from '../../hooks/useFetch.js';
-import { Badge, Card, PageBanner, StatCard } from '../../components/ui/Ui.jsx';
+import { Badge, Card, PageBanner, StatCard, pending } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import { fmtDate } from '../../utils/dates.js';
 import { ENROLL_STATUS, PROVIDER_TONE, cr } from '../../utils/learning.js';
@@ -26,10 +26,10 @@ function View({ d }) {
   return (
     <>
       <div className="stats">
-        <StatCard value={`${cr(s.earned)} / ${cr(s.required)}`} label="Compulsory credits earned" icon={Award} tone="indigo" />
-        <StatCard value={s.completed} label={`Courses completed of ${s.total}`} icon={GraduationCap} tone="green" />
-        <StatCard value={s.pendingReview} label="Awaiting review" icon={Clock} tone="amber" />
-        <StatCard value={s.overdue} label="Overdue" icon={CalendarClock} tone={s.overdue ? 'rose' : 'green'} />
+        <StatCard value={`${cr(s.earned)} / ${cr(s.required)}`} label="Compulsory credits earned" icon={Award} />
+        <StatCard value={s.completed} label={`Courses completed of ${s.total}`} icon={GraduationCap} />
+        <StatCard value={s.pendingReview} label="Awaiting review" icon={Clock} />
+        <StatCard value={s.overdue} label="Overdue" icon={CalendarClock} {...pending(s.overdue, { level: 'bad', act: 'Finish these first', clear: 'None overdue' })} />
       </div>
       {s.required > 0 && (
         <Card>

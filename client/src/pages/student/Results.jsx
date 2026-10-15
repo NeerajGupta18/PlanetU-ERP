@@ -16,8 +16,8 @@ export default function Results() {
         ) : (
           <>
             <div className="stats">
-              <StatCard value={data.cgpa === null ? '-' : data.cgpa.toFixed(2)} label="CGPA (semester-end exams)" icon={Award} tone="indigo" />
-              <StatCard value={data.exams.length} label={`Published exam${data.exams.length === 1 ? '' : 's'}`} icon={GraduationCap} tone="green" />
+              <StatCard value={data.cgpa === null ? '-' : data.cgpa.toFixed(2)} label="CGPA (semester-end exams)" icon={Award} />
+              <StatCard value={data.exams.length} label={`Published exam${data.exams.length === 1 ? '' : 's'}`} icon={GraduationCap} />
             </div>
             {data.exams.map((e) => <ExamCard key={e.id} e={e} />)}
           </>

@@ -5,14 +5,15 @@ import { useTenantConfig } from '../../hooks/useTenantConfig.js';
 import { Badge, Card, PageBanner, StatCard } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import { EVENT_TYPES } from '../../utils/eventTypes.js';
-import { fmtDate, fmtEventDates, fmtRange, fmtTime, greeting, MONTHS, parseISO } from '../../utils/dates.js';
+import { todayISO, fmtDate, fmtEventDates, fmtRange, fmtTime, greeting, MONTHS, parseISO } from '../../utils/dates.js';
 
 const nowHHMM = () => {
   const d = new Date();
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 };
 
-const attendanceTone = (pct, t = 75) => (pct >= t + 10 ? 'good' : pct >= t ? 'warn' : 'bad');
+// Red below the minimum, amber when within 5% of it, green otherwise
+const attendanceTone = (pct, t = 75) => (pct >= t + 5 ? 'good' : pct >= t ? 'warn' : 'bad');
 
 export default function Dashboard() {
   const { data, loading, error, reload } = useFetch('/student/dashboard');
@@ -43,10 +44,14 @@ function DashboardView({ d }) {
       />
 
       <div className="stats">
-        <StatCard value={`${d.stats.attendance}%`} label="Overall attendance" icon={Percent} tone="indigo" />
-        <StatCard value={d.stats.lecturesToday} label="Lectures today" icon={BookOpen} tone="green" />
-        <StatCard value={d.stats.upcomingEvents} label="Events in the next 7 days" icon={CalendarDays} tone="amber" />
-        <StatCard value={d.stats.notices} label="Notices" icon={Megaphone} tone="rose" />
+        <StatCard
+          value={`${d.stats.attendance}%`} label="Overall attendance" icon={Percent} to="/student/attendance"
+          status={d.stats.attendance >= (d.attendanceThreshold ?? 75) ? 'good' : 'bad'}
+          hint={d.stats.attendance >= (d.attendanceThreshold ?? 75) ? `Above ${d.attendanceThreshold ?? 75}%` : `Below ${d.attendanceThreshold ?? 75}%`}
+        />
+        <StatCard value={d.stats.lecturesToday} label="Lectures today" icon={BookOpen} to="/student/timetable" />
+        <StatCard value={d.stats.upcomingEvents} label="Events in the next 7 days" icon={CalendarDays} to="/student/calendar" />
+        <StatCard value={d.stats.notices} label="Unread notices" icon={Megaphone} to="/student/notices" {...(d.stats.notices > 0 ? { status: 'info', hint: 'New' } : { status: 'clear', hint: 'All read' })} />
       </div>
 
       {low.length > 0 && (
@@ -65,8 +70,11 @@ function DashboardView({ d }) {
             <Card title="Fees" icon={Wallet} action={d.fees.outstanding > 0 && <Link to="/student/fees" className="btn btn--primary btn--sm">Pay now</Link>}>
               {d.fees.outstanding > 0 ? (
                 <>
-                  <div className="bigfigure bigfigure--bad">{inr(d.fees.outstanding)}</div>
-                  <p className="muted">outstanding{d.fees.next?.dueDate ? ` - next due ${fmtDate(d.fees.next.dueDate)} (${d.fees.next.label})` : ''}</p>
+                  <div className={`bigfigure ${d.fees.next?.dueDate && String(d.fees.next.dueDate).slice(0, 10) < todayISO() ? 'bigfigure--bad' : 'bigfigure--warn'}`}>{inr(d.fees.outstanding)}</div>
+                  <p className="muted">
+                    {d.fees.next?.dueDate && String(d.fees.next.dueDate).slice(0, 10) < todayISO() ? <strong style={{ color: 'var(--danger)' }}>Overdue: </strong> : 'Outstanding'}
+                    {d.fees.next?.dueDate ? ` - next due ${fmtDate(d.fees.next.dueDate)} (${d.fees.next.label})` : ''}
+                  </p>
                 </>
               ) : (
                 <EmptyState title="No fees due" hint="You are all paid up." />
@@ -160,7 +168,7 @@ function DashboardView({ d }) {
               </li>
             ))}
           </ul>
-          <p className="note">Subjects below {d.attendanceThreshold}% are shown in red.</p>
+          <p className="note">Red: below the {d.attendanceThreshold}% minimum. Amber: within 5% of it.</p>
         </Card>
 
         <Card title="Notices" icon={Megaphone} action={hasModule('notices') ? <Link to="/student/notices" className="btn btn--outline btn--sm">All notices</Link> : null}>

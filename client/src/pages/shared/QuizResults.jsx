@@ -27,10 +27,10 @@ export default function QuizResults({ role }) {
               actions={<Link to={`/${role}/quizzes/${id}`} className="btn btn--outline btn--sm"><ArrowLeft size={14} /> Quiz</Link>} />
             {err && <p className="form-error" role="alert">{err}</p>}{msg && <p className="note" role="status">{msg}</p>}
             <div className="stats">
-              <StatCard value={`${st.attempted} / ${st.eligible}`} label="Have submitted" icon={ClipboardCheck} tone="indigo" />
-              <StatCard value={st.average === null ? '-' : `${st.average}%`} label="Class average" icon={ClipboardCheck} tone="green" />
-              <StatCard value={st.highest === null ? '-' : `${st.highest}%`} label="Highest" icon={ClipboardCheck} tone="amber" />
-              <StatCard value={st.lowest === null ? '-' : `${st.lowest}%`} label="Lowest" icon={ClipboardCheck} tone="rose" />
+              <StatCard value={`${st.attempted} / ${st.eligible}`} label="Have submitted" icon={ClipboardCheck} />
+              <StatCard value={st.average === null ? '-' : `${st.average}%`} label="Class average" icon={ClipboardCheck} />
+              <StatCard value={st.highest === null ? '-' : `${st.highest}%`} label="Highest" icon={ClipboardCheck} />
+              <StatCard value={st.lowest === null ? '-' : `${st.lowest}%`} label="Lowest" icon={ClipboardCheck} />
             </div>
             <Card title="Students">
               <div className="table-wrap"><table className="table">
