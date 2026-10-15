@@ -1,11 +1,11 @@
 import { useSearchParams } from 'react-router-dom';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CreditCard, Download, GraduationCap, Mail, Search, Trash2, Upload, Users2 } from 'lucide-react';
+import { Award, CreditCard, Download, GraduationCap, Mail, Percent, Search, Trash2, Upload, Users2, Wallet } from 'lucide-react';
 import { useFetch } from '../../hooks/useFetch.js';
 import { useTenantConfig } from '../../hooks/useTenantConfig.js';
 import { api } from '../../api/http.js';
-import { Badge, Card, Field, PageBanner } from '../../components/ui/Ui.jsx';
+import { Badge, Card, Field, PageBanner, StatCard } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import Modal from '../../components/ui/Modal.jsx';
 import { fmtDate } from '../../utils/dates.js';
@@ -48,7 +48,7 @@ export default function Students() {
       <Card>
         <div className="toolbar">
           <div className="toolbar__filters">
-            <select value={status} onChange={(e) => setStatus(e.target.value)}>
+            <select aria-label="Filter by status" value={status} onChange={(e) => setStatus(e.target.value)}>
               <option value="">All statuses</option><option>Active</option><option>Inactive</option><option>Alumni</option>
             </select>
           </div>
@@ -135,14 +135,16 @@ function Detail({ id, idCards, parentPortal, onClose, onChanged }) {
               </div>
             </div>
 
-            <div className="fields fields--3" style={{ marginBottom: 16 }}>
+            <dl className="fields fields--3" style={{ marginBottom: 16 }}>
               <Field label="Course"><GraduationCap size={13} style={{ verticalAlign: -2 }} /> {s.course}</Field>
               <Field label="Enrollment no.">{s.enrollmentNo}</Field>
               <Field label="Admitted">{s.admissionDate ? fmtDate(s.admissionDate) : '-'}</Field>
               <Field label="Email">{s.email}</Field>
               <Field label="Date of birth">{s.dob ? fmtDate(s.dob) : '-'}</Field>
               <Field label="Guardian">{s.guardian?.name || '-'} {s.guardian?.phone && `(${s.guardian.phone})`}</Field>
-            </div>
+            </dl>
+
+            <Glance id={id} />
 
             <form onSubmit={save}>
               <div className="fields">
@@ -167,6 +169,35 @@ function Detail({ id, idCards, parentPortal, onClose, onChanged }) {
         )}
       </DataBoundary>
     </Modal>
+  );
+}
+
+const inr0 = (n) => `₹${Math.round(Number(n) || 0).toLocaleString('en-IN')}`;
+
+/** Attendance, fees and the latest result in one row, each opening the page with the details. */
+function Glance({ id }) {
+  const { data } = useFetch(`/admin/students/${id}/overview`);
+  if (!data || (!data.attendance && !data.fees && !data.results)) return null;
+  const a = data.attendance; const f = data.fees; const r = data.results?.exams?.[0];
+  return (
+    <div className="stats stats--3" style={{ marginBottom: 16 }}>
+      {a && (
+        <StatCard value={`${a.overall}%`} label="Attendance" icon={Percent} to="/admin/reports"
+          status={a.overall < a.threshold ? 'bad' : a.low.length ? 'warn' : 'good'} sub={`${a.attended} of ${a.total} classes`}
+          hint={a.low.length ? `Low in ${a.low.map((x) => x.subject).slice(0, 2).join(', ')}${a.low.length > 2 ? '...' : ''}` : `Above ${a.threshold}%`}
+        />
+      )}
+      {f && (
+        <StatCard value={inr0(f.outstanding)} label="Fees due" icon={Wallet} to={`/admin/fees?tab=students&student=${id}`}
+          {...(f.overdue > 0 ? { status: 'bad', hint: `${inr0(f.overdue)} overdue` } : f.outstanding > 0 ? { status: 'warn', hint: 'Open ledger' } : { status: 'clear', hint: 'All paid' })}
+        />
+      )}
+      {data.results && (
+        <StatCard value={r ? (r.gpa !== null ? `GPA ${r.gpa.toFixed(2)}` : `${r.pct ?? '-'}%`) : '-'} label={r ? `Latest result: ${r.name}` : 'No results published yet'} icon={Award} to="/admin/exams"
+          status={r?.result === 'fail' ? 'bad' : 'neutral'} sub={data.results.cgpa !== null && data.results.cgpa !== undefined ? `CGPA ${data.results.cgpa.toFixed(2)}` : undefined}
+        />
+      )}
+    </div>
   );
 }
 

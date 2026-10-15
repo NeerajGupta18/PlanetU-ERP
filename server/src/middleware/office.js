@@ -40,7 +40,7 @@ export async function officeAccess(req, res, next) {
       deny();
     }
 
-    req.office = { full: false, scope, reportGroups: office.reportGroups, roles: office.roles };
+    req.office = { full: false, scope, reportGroups: office.reportGroups, roles: office.roles, areas: office.areas };
     req.user = { ...req.user, role: 'admin', staff: { roles: office.roles.map((r) => r.role) } };
     return next();
   } catch (err) {

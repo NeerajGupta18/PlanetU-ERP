@@ -7,7 +7,7 @@ import { Badge, Card, PageBanner, Tabs } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import Modal from '../../components/ui/Modal.jsx';
 import { useDialogs } from '../../components/ui/Dialogs.jsx';
-import { fmtDate } from '../../utils/dates.js';
+import { fmtDate, todayISO } from '../../utils/dates.js';
 
 const inr = (n) => `₹${Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
 
@@ -15,7 +15,9 @@ export default function Library() {
   const [tab, setTab] = useTabParam('catalogue');
   const [newBook, setNewBook] = useState(false);
   const [issuing, setIssuing] = useState(false);
-  const books = useFetch(tab === 'catalogue' ? '/admin/library/books' : null);
+  const [q, setQ] = useState('');
+  const query = q.trim().length > 1 ? `?search=${encodeURIComponent(q.trim())}` : '';
+  const books = useFetch(tab === 'catalogue' ? `/admin/library/books${query}` : null);
   const issues = useFetch(tab === 'issues' ? '/admin/library/issues?status=active' : null);
 
   return (
@@ -28,9 +30,12 @@ export default function Library() {
         <Tabs tabs={[{ id: 'catalogue', label: 'Catalogue' }, { id: 'issues', label: 'On loan' }]} active={tab} onChange={setTab} />
         {tab === 'catalogue' && (
           <>
-            <div className="toolbar"><span /><button type="button" className="btn btn--outline btn--sm" onClick={() => setNewBook(true)}><Plus size={13} /> Add book</button></div>
+            <div className="toolbar">
+              <div className="input-wrap" style={{ maxWidth: 320, flex: 1 }}><Search size={14} /><input className="input input--icon" placeholder="Search title, author or ISBN" aria-label="Search the catalogue" value={q} onChange={(e) => setQ(e.target.value)} /></div>
+              <button type="button" className="btn btn--outline btn--sm" onClick={() => setNewBook(true)}><Plus size={13} /> Add book</button>
+            </div>
             <DataBoundary loading={books.loading} error={books.error} data={books.data} reload={books.reload}>
-              {books.data && (books.data.books.length === 0 ? <EmptyState title="No books yet" hint="Add the books in your library, then issue them to students and staff." action={{ label: 'Add a book', onClick: () => setNewBook(true) }} /> : (
+              {books.data && (books.data.books.length === 0 && query ? <EmptyState title="No book matches" hint={`Nothing found for "${q.trim()}".`} /> : books.data.books.length === 0 ? <EmptyState title="No books yet" hint="Add the books in your library, then issue them to students and staff." action={{ label: 'Add a book', onClick: () => setNewBook(true) }} /> : (
                 <div className="table-wrap">
                   <table className="table">
                     <thead><tr><th>Title</th><th>Author</th><th>ISBN</th><th>Copies</th><th /></tr></thead>
@@ -50,12 +55,12 @@ export default function Library() {
                 <table className="table">
                   <thead><tr><th>Book</th><th>Borrower</th><th>Issued</th><th>Due</th><th /></tr></thead>
                   <tbody>
-                    {issues.data.issues.map((i) => (
+                    {[...issues.data.issues].sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate))).map((i) => (
                       <tr key={i.id}>
                         <td>{i.bookTitle}</td>
                         <td>{i.studentName || i.employeeName} <span className="muted">({i.studentCode || i.employeeCode})</span></td>
                         <td className="muted">{fmtDate(i.issuedAt.slice(0, 10))}</td>
-                        <td><Badge tone={new Date(i.dueDate) < new Date() ? 'red' : 'blue'}>{fmtDate(i.dueDate)}</Badge></td>
+                        <td><Badge tone={String(i.dueDate).slice(0, 10) < todayISO() ? 'red' : 'blue'}>{String(i.dueDate).slice(0, 10) < todayISO() ? 'Overdue since ' : ''}{fmtDate(i.dueDate)}</Badge></td>
                         <td><ReturnButton issue={i} onDone={issues.reload} /></td>
                       </tr>
                     ))}
@@ -83,7 +88,7 @@ function BookRow({ b, onChanged }) {
       <td><strong>{b.title}</strong>{b.category && <div className="muted">{b.category}</div>}</td>
       <td>{b.author || '-'}</td><td className="muted">{b.isbn || '-'}</td>
       <td><Badge tone={b.availableCopies > 0 ? 'green' : 'gray'}>{b.availableCopies} / {b.totalCopies}</Badge></td>
-      <td><button type="button" className="btn btn--outline btn--sm" onClick={remove}><Trash2 size={13} /></button></td>
+      <td><button aria-label="Delete" title="Delete" type="button" className="btn btn--outline btn--sm" onClick={remove}><Trash2 size={13} /></button></td>
     </tr>
   );
 }
@@ -162,11 +167,11 @@ function IssueModal({ onClose, onDone }) {
             </>
           )}
         </div>
-        <div className="form-field" style={{ marginTop: 10 }}><label className="label">Borrower type</label>
+        <label className="form-field" style={{ marginTop: 10 }}><span className="label">Borrower type</span>
           <select className="input" value={borrowerType} onChange={(e) => { setBorrowerType(e.target.value); setBorrower(null); }}>
             <option value="student">Student</option><option value="employee">Employee</option>
           </select>
-        </div>
+        </label>
         <div className="form-field" style={{ marginTop: 10 }}><label className="label">Borrower</label>
           {borrower ? <div className="badge badge--blue">{borrower.name} <button type="button" onClick={() => setBorrower(null)} style={{ marginLeft: 6 }}>×</button></div> : (
             <>

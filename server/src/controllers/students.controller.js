@@ -4,10 +4,41 @@ import { getInstitute } from '../db/repo.js';
 import * as svc from '../services/students.service.js';
 import { streamIdCard } from '../services/idcard.service.js';
 import * as importer from '../services/studentImport.service.js';
+import { studentOverview } from '../services/attendance.service.js';
+import { studentFees } from '../services/fees.service.js';
+import { studentResults } from '../services/exams.service.js';
 
 export const list = async (req, res) => res.json({ students: await svc.listStudents({ course: req.query.courseId, status: req.query.status, search: req.query.search }) });
 export const get = async (req, res) => res.json({ student: await svc.getStudent(req.params.id) });
 export const update = async (req, res) => res.json({ student: await svc.updateStudent(req.params.id, req.body || {}, req.user) });
+/**
+ * One student's record at a glance for the office: attendance, fees and published results, so whoever answers a
+ * parent's call does not have to open three pages. Each part is null when its module is off.
+ */
+export async function overview(req, res) {
+  // The student list is a lookup every office desk may read; this summary (fees, marks) is for the student office only
+  if (req.office && !req.office.full && req.office.areas?.students?.scope !== 'all') throw new HttpError(403, 'Your staff role does not include this.');
+  const has = (m) => req.tenant.modules.includes(m);
+  const { rows: [st] } = await q('select id, attendance from students where id = $1', [req.params.id]);
+  if (!st) throw new HttpError(404, 'Student not found.');
+  const out = { attendance: null, fees: null, results: null };
+  if (has('attendance')) {
+    const o = await studentOverview(st.id, st.attendance || []);
+    out.attendance = { overall: o.overall, attended: o.attended, total: o.total, threshold: o.threshold, low: o.subjects.filter((x) => x.pct < o.threshold).map((x) => ({ subject: x.subject, pct: x.pct })) };
+  }
+  if (has('fees')) {
+    const f = await studentFees(st.id);
+    const today = new Date().toISOString().slice(0, 10);
+    const open = f.items.filter((i) => ['unpaid', 'partial'].includes(i.status));
+    const overdue = open.filter((i) => i.dueDate && String(i.dueDate).slice(0, 10) < today).reduce((a, i) => a + Number(i.amount) - Number(i.paid), 0);
+    out.fees = { ...f.summary, overdue: Math.round(overdue * 100) / 100 };
+  }
+  if (has('exams')) {
+    const r = await studentResults(st.id);
+    out.results = { cgpa: r.cgpa, exams: r.exams.slice(0, 5).map((e) => ({ id: e.id, name: e.name, semester: e.semester, gpa: e.gpa, pct: e.pct, result: e.result })) };
+  }
+  res.json(out);
+}
 export const setPhoto = async (req, res) => res.json({ student: await svc.setPhoto(req.params.id, req.body?.fileId ?? null) });
 
 /** Shared by the admin route (any student) and the student route (their own record only). */

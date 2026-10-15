@@ -6,9 +6,11 @@ import { api } from '../../api/http.js';
 import { Badge, Card, PageBanner } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import Modal from '../../components/ui/Modal.jsx';
+import { useTenantConfig } from '../../hooks/useTenantConfig.js';
 import { useDialogs } from '../../components/ui/Dialogs.jsx';
 
 export default function Employees() {
+  const { t } = useTenantConfig();
   const { confirm, toast } = useDialogs();
   const [department, setDepartment] = useState('');
   const [params] = useSearchParams();
@@ -32,14 +34,14 @@ export default function Employees() {
   return (
     <>
       <PageBanner
-        icon={Users} title="Employees" subtitle="Manage the staff directory used across Timetable, Duties and Payroll"
-        actions={<button type="button" className="btn btn--primary" onClick={() => setModal({ id: null })}><Plus size={15} /> Add Employee</button>}
+        icon={Users} title={t('employees', 'Employees')} subtitle="The staff directory used across Timetable, Duties and Payroll"
+        actions={<button type="button" className="btn btn--primary" onClick={() => setModal({ id: null })}><Plus size={15} /> Add {t('employee', 'Employee').toLowerCase()}</button>}
       />
 
       <Card>
         <div className="toolbar">
           <div className="toolbar__filters">
-            <select value={department} onChange={(e) => setDepartment(e.target.value)}>
+            <select aria-label="Filter by department" value={department} onChange={(e) => setDepartment(e.target.value)}>
               <option value="">All Departments</option>
               {departments.map((d) => <option key={d.id} value={d.name}>{d.name}</option>)}
             </select>
@@ -51,7 +53,7 @@ export default function Employees() {
         </div>
       </Card>
 
-      <Card title="Employee list" icon={Users}>
+      <Card title={`${t('employee', 'Employee')} list`} icon={Users}>
         <DataBoundary loading={emps.loading} error={emps.error} data={emps.data} reload={emps.reload}>
           {emps.data && (
             emps.data.employees.length === 0 ? <EmptyState title="No employees match these filters" /> : (
@@ -69,8 +71,8 @@ export default function Employees() {
                         <td className="muted">{e.shift}</td>
                         <td>
                           <div className="row-actions">
-                            <button type="button" className="btn btn--outline btn--sm" onClick={() => setModal(e)}><Pencil size={13} /></button>
-                            <button
+                            <button aria-label="Edit" title="Edit" type="button" className="btn btn--outline btn--sm" onClick={() => setModal(e)}><Pencil size={13} /></button>
+                            <button aria-label="Delete" title="Delete"
                               type="button" className="btn btn--outline btn--sm"
                               onClick={async () => {
                                 if (!(await confirm(`Delete ${e.name}?`, { danger: true, confirmLabel: 'Delete' } ))) return;
@@ -128,33 +130,33 @@ function EmployeeModal({ state, departments, designations, onClose, onSaved }) {
     <Modal open={open} title={isEdit ? 'Edit employee' : 'Add employee'} onClose={onClose} width={520}>
       <form onSubmit={submit}>
         {error && <p className="form-error">{error}</p>}
-        <div className="form-field">
-          <label className="label">Full name</label>
+        <label className="form-field">
+          <span className="label">Full name</span>
           <input className="input" value={form.name} onChange={set('name')} required />
-        </div>
-        <div className="form-field">
-          <label className="label">Email</label>
+        </label>
+        <label className="form-field">
+          <span className="label">Email</span>
           <input className="input" type="email" value={form.email} onChange={set('email')} required />
-        </div>
+        </label>
         <div className="fields">
-          <div className="form-field">
-            <label className="label">Department</label>
+          <label className="form-field">
+            <span className="label">Department</span>
             <select className="input" value={form.department} onChange={(e) => setForm((f) => ({ ...f, department: e.target.value, designation: '' }))} required>
               {departments.map((d) => <option key={d.id} value={d.name}>{d.name}</option>)}
             </select>
-          </div>
-          <div className="form-field">
-            <label className="label">Designation</label>
+          </label>
+          <label className="form-field">
+            <span className="label">Designation</span>
             <select className="input" value={form.designation} onChange={set('designation')} required>
               <option value="">-- Select --</option>
               {deptDesignations.map((g) => <option key={g.id} value={g.name}>{g.name}</option>)}
             </select>
-          </div>
+          </label>
         </div>
-        <div className="form-field">
-          <label className="label">Shift</label>
+        <label className="form-field">
+          <span className="label">Shift</span>
           <input className="input" value={form.shift} onChange={set('shift')} />
-        </div>
+        </label>
         <div className="form-actions">
           <button type="button" className="btn btn--outline" onClick={onClose}>Cancel</button>
           <button type="submit" className="btn btn--primary" disabled={busy}>{busy ? 'Saving…' : isEdit ? 'Save changes' : 'Add employee'}</button>

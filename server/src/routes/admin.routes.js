@@ -148,6 +148,7 @@ router.post('/students/import', csvUpload, students.importCommit);
 router.post('/students/parents/invite-all', requireModule('parent_portal'), parents.inviteAll);
 router.get('/students', students.list);
 router.get('/students/:id', students.get);
+router.get('/students/:id/overview', students.overview);
 router.put('/students/:id', students.update);
 router.put('/students/:id/photo', students.setPhoto);
 router.param('userId', uuidParam);

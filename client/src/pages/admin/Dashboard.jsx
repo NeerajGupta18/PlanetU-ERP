@@ -155,7 +155,7 @@ function DashboardView({ d }) {
           {hasModule('admissions') && <QuickAction to="/admin/admissions" icon={ClipboardCheck} label={`Review ${t('admission', 'Admissions').toLowerCase()}`} />}
           {hasModule('students') && !office && <QuickAction to="/admin/students/import" icon={Upload} label={`Import ${t('students', 'Students').toLowerCase()}`} />}
           {!office && <QuickAction to="/admin/employees" icon={UserPlus} label={`Add ${t('employee', 'Employee').toLowerCase()}`} />}
-          {hasModule('fees') && <QuickAction to="/admin/fees" icon={Receipt} label="Record payment" />}
+          {hasModule('fees') && <QuickAction to="/admin/fees?tab=students" icon={Receipt} label="Record a payment" />}
           <QuickAction to="/admin/calendar" icon={CalendarDays} label="Add an event" />
           {hasModule('notices') && <QuickAction to="/admin/notices" icon={Megaphone} label="Post a notice" />}
         </div>

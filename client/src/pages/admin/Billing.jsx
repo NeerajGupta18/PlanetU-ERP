@@ -5,7 +5,7 @@ import { api } from '../../api/http.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { loadRazorpay } from '../../hooks/useRazorpay.js';
 import { Badge, Card, PageBanner } from '../../components/ui/Ui.jsx';
-import { DataBoundary } from '../../components/ui/Feedback.jsx';
+import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import Modal from '../../components/ui/Modal.jsx';
 import { useDialogs } from '../../components/ui/Dialogs.jsx';
 import PlanPicker from '../../components/billing/PlanPicker.jsx';
@@ -23,9 +23,14 @@ export default function Billing() {
   return (
     <>
       <PageBanner icon={CreditCard} title="Subscription & billing" subtitle="Your plan, invoices and billing details" />
-      <DataBoundary loading={loading} error={error} data={data} reload={reload}>
-        {data && <View d={data} notice={notice} onChanged={changed} />}
-      </DataBoundary>
+      {error?.status === 404 ? (
+        // Demo institutes have no subscription: say so plainly instead of showing an error with "Try again"
+        <EmptyState title="No subscription for this institute" hint={error.message} />
+      ) : (
+        <DataBoundary loading={loading} error={error} data={data} reload={reload}>
+          {data && <View d={data} notice={notice} onChanged={changed} />}
+        </DataBoundary>
+      )}
     </>
   );
 }

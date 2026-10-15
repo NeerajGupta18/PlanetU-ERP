@@ -1,6 +1,6 @@
 import { useTabParam } from '../../hooks/useTabParam.js';
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { AlertTriangle, Banknote, CalendarClock, FileBarChart2, FileText, Plus, Receipt, Search, Trash2, Wallet } from 'lucide-react';
 import { useFetch } from '../../hooks/useFetch.js';
 import { useTenantConfig } from '../../hooks/useTenantConfig.js';
@@ -22,6 +22,13 @@ export default function Fees() {
   const [newStructure, setNewStructure] = useState(false);
   const [ledgerStudent, setLedgerStudent] = useState(null);
   const openLedger = (st) => { setLedgerStudent(st); setTab('students'); };
+  // A link from a student's record (?student=<id>) opens that student's ledger straight away
+  const [params] = useSearchParams();
+  const linked = params.get('student');
+  useEffect(() => {
+    if (!linked) return;
+    api.get(`/admin/students/${linked}`).then((r) => setLedgerStudent({ id: linked, name: r.student.name, studentCode: r.student.studentCode })).catch(() => {});
+  }, [linked]);
   const structures = useFetch('/admin/fees/structures');
 
   return (
@@ -30,6 +37,7 @@ export default function Fees() {
         icon={Wallet} title="Fees & Payments" subtitle={`Fee plans, charges and payments for ${t('students', 'students').toLowerCase()}`}
         actions={(
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button type="button" className="btn btn--primary btn--sm" onClick={() => { setLedgerStudent(null); setTab('students'); }}><Receipt size={14} /> Record a payment</button>
             <Link to="/admin/reports?report=fee-collection" className="btn btn--outline btn--sm"><FileBarChart2 size={14} /> Collection report</Link>
             <Link to="/admin/reports?report=fee-dues" className="btn btn--outline btn--sm"><FileBarChart2 size={14} /> Outstanding fees</Link>
           </div>
@@ -90,7 +98,7 @@ function StructureRow({ s, onChanged }) {
           <div className="row-actions">
             <button type="button" className="btn btn--outline btn--sm" onClick={() => setAssigning(true)}>Assign to student</button>
             <button type="button" className="btn btn--outline btn--sm" disabled={busy} onClick={bulkAssign}>Bulk assign</button>
-            {s.assignedCount === 0 && <button type="button" className="btn btn--outline btn--sm" onClick={remove}><Trash2 size={13} /></button>}
+            {s.assignedCount === 0 && <button aria-label="Delete" title="Delete" type="button" className="btn btn--outline btn--sm" onClick={remove}><Trash2 size={13} /></button>}
           </div>
         </td>
       </tr>
@@ -184,7 +192,7 @@ function Overview({ onOpen, onSetup }) {
           action={{ label: data.structures ? 'Go to fee structures' : 'Create a fee structure', onClick: onSetup }}
         />
       ) : (
-        <div style={{ display: 'grid', gap: 16, marginTop: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 16, marginTop: 14 }}>
           <div className="stats">
             <StatCard value={inr0(data.collectedThisMonth)} label="Collected this month" icon={Banknote} hint={`${inr0(data.collectedToday)} today, ${inr0(data.collectedLastMonth)} last month`} />
             <StatCard value={inr0(data.outstanding)} label={`Still to collect (${data.studentsWithDues} student${data.studentsWithDues === 1 ? '' : 's'})`} icon={Wallet} {...pending(data.outstanding, { act: 'To collect', clear: 'All paid' })} />
@@ -219,9 +227,16 @@ function StudentLedger({ selected, setSelected }) {
   const list = useFetch(search.length > 1 ? `/admin/students?search=${encodeURIComponent(search)}` : null);
   return (
     <div>
-      <div className="input-wrap" style={{ maxWidth: 340, margin: '12px 0' }}>
-        <Search size={14} /><input className="input input--icon" placeholder="Search a student by name or ID" value={search} onChange={(e) => setSearch(e.target.value)} />
-      </div>
+      {!selected && (
+        <>
+          <p className="muted" style={{ margin: '14px 0 0' }}>Find the student to see their charges, record a payment or add a charge.</p>
+          <div className="input-wrap" style={{ maxWidth: 340, margin: '10px 0 12px' }}>
+            <Search size={14} /><input className="input input--icon" placeholder="Type a name or student ID" aria-label="Search a student by name or ID" value={search} onChange={(e) => setSearch(e.target.value)} autoFocus />
+          </div>
+          {search.trim().length === 1 && <p className="note">Type at least 2 letters.</p>}
+          {list.data && search.trim().length > 1 && list.data.students?.length === 0 && <p className="note">No student matches "{search.trim()}".</p>}
+        </>
+      )}
       {list.data?.students?.length > 0 && !selected && (
         <ul className="picklist">
           {list.data.students.map((s) => (
@@ -252,12 +267,16 @@ function StudentLedgerDetail({ student, onBack }) {
         <div style={{ marginTop: 12 }}>
           <div className="toolbar">
             <strong>{student.name} <span className="muted">({student.studentCode})</span></strong>
-            <button type="button" className="btn btn--outline btn--sm" onClick={onBack}>Change student</button>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button type="button" className="btn btn--primary btn--sm" onClick={() => setPaying(true)} disabled={fees.data.summary.outstanding <= 0}><Banknote size={13} /> Record payment</button>
+              <button type="button" className="btn btn--outline btn--sm" onClick={() => setAddingItem(true)}><Plus size={13} /> Add charge</button>
+              <button type="button" className="btn btn--outline btn--sm" onClick={onBack}>Change student</button>
+            </div>
           </div>
           <div className="stats stats--3" style={{ margin: '12px 0' }}>
-            <StatCard value={inr(fees.data.summary.total)} label="Total charged" icon={Receipt} />
-            <StatCard value={inr(fees.data.summary.paid)} label="Paid" icon={Banknote} />
-            <StatCard value={inr(fees.data.summary.outstanding)} label="Outstanding" icon={Wallet} {...(fees.data.summary.outstanding > 0 ? { status: 'warn', hint: 'To collect' } : { status: 'good', hint: 'Fully paid' })} />
+            <StatCard value={inr0(fees.data.summary.total)} label="Total charged" icon={Receipt} />
+            <StatCard value={inr0(fees.data.summary.paid)} label="Paid" icon={Banknote} />
+            <StatCard value={inr0(fees.data.summary.outstanding)} label="Outstanding" icon={Wallet} {...(fees.data.summary.outstanding > 0 ? { status: 'warn', hint: 'To collect' } : { status: 'good', hint: 'Fully paid' })} />
           </div>
           <div className="table-wrap">
             <table className="table">
@@ -274,10 +293,6 @@ function StudentLedgerDetail({ student, onBack }) {
                 ))}
               </tbody>
             </table>
-          </div>
-          <div className="form-actions" style={{ justifyContent: 'flex-start' }}>
-            <button type="button" className="btn btn--outline btn--sm" onClick={() => setAddingItem(true)}><Plus size={13} /> Add charge</button>
-            <button type="button" className="btn btn--primary btn--sm" onClick={() => setPaying(true)} disabled={fees.data.summary.outstanding <= 0}><Banknote size={13} /> Record payment</button>
           </div>
           {addingItem && <AddItemModal studentId={student.id} onClose={() => setAddingItem(false)} onDone={() => { setAddingItem(false); fees.reload(); }} />}
           {paying && <PayModal student={student} items={fees.data.items} onClose={() => setPaying(false)} onDone={() => { setPaying(false); fees.reload(); }} />}
@@ -366,7 +381,7 @@ function AllPayments() {
                   <tr key={p.id}>
                     <td>{p.receiptNo}</td><td>{p.studentName} <span className="muted">({p.studentCode})</span></td>
                     <td>{inr(p.amount)}</td><td>{p.method.replace('_', ' ')}</td><td className="muted">{fmtDate(p.paidAt.slice(0, 10))}</td>
-                    <td><a className="btn btn--outline btn--sm" href={`/api/admin/fees/payments/${p.id}/receipt.pdf`} target="_blank" rel="noreferrer"><FileText size={13} /></a></td>
+                    <td><a className="btn btn--outline btn--sm" href={`/api/admin/fees/payments/${p.id}/receipt.pdf`} target="_blank" rel="noreferrer"><FileText size={13} /> Receipt</a></td>
                   </tr>
                 ))}
               </tbody>
