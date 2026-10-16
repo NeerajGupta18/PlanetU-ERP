@@ -224,25 +224,65 @@ function Overview({ onOpen, onSetup }) {
 
 function StudentLedger({ selected, setSelected }) {
   const [search, setSearch] = useState('');
+  const [classId, setClassId] = useState('');
   const list = useFetch(search.length > 1 ? `/admin/students?search=${encodeURIComponent(search)}` : null);
+  const classes = useFetch('/admin/courses');
+  const dues = useFetch(classId && !selected ? `/admin/fees/class-dues?courseId=${classId}` : null);
   return (
     <div>
       {!selected && (
         <>
-          <p className="muted" style={{ margin: '14px 0 0' }}>Find the student to see their charges, record a payment or add a charge.</p>
-          <div className="input-wrap" style={{ maxWidth: 340, margin: '10px 0 12px' }}>
-            <Search size={14} /><input className="input input--icon" placeholder="Type a name or student ID" aria-label="Search a student by name or ID" value={search} onChange={(e) => setSearch(e.target.value)} autoFocus />
+          <p className="muted" style={{ margin: '14px 0 0' }}>Find a student to see their charges, record a payment or add a charge, or pick a class to work down its list.</p>
+          <div className="toolbar" style={{ margin: '10px 0 12px' }}>
+            <div className="toolbar__filters">
+              <div className="input-wrap" style={{ minWidth: 260 }}>
+                <Search size={14} /><input className="input input--icon" placeholder="Type a name or student ID" aria-label="Search a student by name or ID" value={search} onChange={(e) => setSearch(e.target.value)} autoFocus />
+              </div>
+              <select className="input" style={{ width: 'auto' }} value={classId} onChange={(e) => { setClassId(e.target.value); setSearch(''); }} aria-label="Collect by class or division">
+                <option value="">Collect by class or division...</option>
+                {(classes.data?.courses || []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
           </div>
           {search.trim().length === 1 && <p className="note">Type at least 2 letters.</p>}
           {list.data && search.trim().length > 1 && list.data.students?.length === 0 && <p className="note">No student matches "{search.trim()}".</p>}
         </>
       )}
-      {list.data?.students?.length > 0 && !selected && (
+      {list.data?.students?.length > 0 && !selected && search.trim().length > 1 && (
         <ul className="picklist">
           {list.data.students.map((s) => (
             <li key={s.id}><button type="button" className="btn btn--outline btn--sm" onClick={() => setSelected(s)}>{s.name} ({s.studentCode})</button></li>
           ))}
         </ul>
+      )}
+      {!selected && classId && search.trim().length < 2 && (
+        <DataBoundary loading={dues.loading} error={dues.error} data={dues.data} reload={dues.reload}>
+          {dues.data && (
+            <>
+              <p className="note" style={{ marginTop: 0 }}>
+                {dues.data.students.length} students · {inr0(dues.data.totals.paid)} collected · <strong>{inr0(dues.data.totals.outstanding)} still to collect</strong>
+                {dues.data.totals.overdue > 0 && <> · {inr0(dues.data.totals.overdue)} overdue</>} · {dues.data.totals.clear} fully paid
+              </p>
+              <div className="table-wrap">
+                <table className="table">
+                  <thead><tr><th>Roll no.</th><th>Student</th><th className="num">Charged</th><th className="num">Paid</th><th className="num">Due</th><th /></tr></thead>
+                  <tbody>
+                    {dues.data.students.map((r) => (
+                      <tr key={r.id}>
+                        <td className="muted">{r.rollNo || '-'}</td>
+                        <td><strong>{r.name}</strong> <span className="muted">({r.studentCode})</span></td>
+                        <td className="num">{inr0(r.total)}</td>
+                        <td className="num">{inr0(r.paid)}</td>
+                        <td className="num">{r.outstanding > 0 ? <>{inr0(r.outstanding)}{r.overdue > 0 && <> <Badge tone="red">Overdue</Badge></>}</> : <Badge tone="green">Clear</Badge>}</td>
+                        <td><button type="button" className={`btn btn--sm ${r.outstanding > 0 ? 'btn--primary' : 'btn--outline'}`} onClick={() => setSelected({ id: r.id, name: r.name, studentCode: r.studentCode })}>{r.outstanding > 0 ? 'Collect' : 'View'}</button></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </DataBoundary>
       )}
       {selected && <StudentLedgerDetail student={selected} onBack={() => setSelected(null)} />}
     </div>

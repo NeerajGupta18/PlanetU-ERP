@@ -3,6 +3,7 @@ import { getInstitute } from '../db/repo.js';
 import * as svc from '../services/fees.service.js';
 import { streamReceipt } from '../services/receipt.service.js';
 
+export const classDues = async (req, res) => res.json(await svc.classDues(req.query.courseId));
 export const summary = async (req, res) => res.json(await svc.summary());
 export const listStructures = async (req, res) => res.json({ structures: await svc.listStructures() });
 export const createStructure = async (req, res) => res.status(201).json({ structure: await svc.createStructure(req.body) });

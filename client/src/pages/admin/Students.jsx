@@ -18,10 +18,13 @@ export default function Students() {
   const [params] = useSearchParams();
   const [search, setSearch] = useState(params.get('search') || '');
   const [status, setStatus] = useState('');
+  const [courseId, setCourseId] = useState(params.get('courseId') || '');
   const [openId, setOpenId] = useState(null);
   const qs = new URLSearchParams();
   if (search) qs.set('search', search);
   if (status) qs.set('status', status);
+  if (courseId) qs.set('courseId', courseId);
+  const classes = useFetch('/admin/courses');
   const list = useFetch(`/admin/students?${qs}`);
   const { confirm, toast } = useDialogs();
 
@@ -48,23 +51,29 @@ export default function Students() {
       <Card>
         <div className="toolbar">
           <div className="toolbar__filters">
+            <select aria-label={`Filter by ${t('course', 'course').toLowerCase()}`} value={courseId} onChange={(e) => setCourseId(e.target.value)}>
+              <option value="">All {t('courses', 'courses').toLowerCase()} and divisions</option>
+              {(classes.data?.courses || []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
             <select aria-label="Filter by status" value={status} onChange={(e) => setStatus(e.target.value)}>
               <option value="">All statuses</option><option>Active</option><option>Inactive</option><option>Alumni</option>
             </select>
+            {list.data && <span className="muted">{list.data.students.length} {list.data.students.length === 1 ? 'record' : 'records'}</span>}
           </div>
           <div className="input-wrap" style={{ minWidth: 220 }}>
-            <Search size={14} /><input className="input input--icon" placeholder="Name, email or ID" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Search size={14} /><input className="input input--icon" aria-label="Search students" placeholder="Name, email or ID" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
         </div>
         <DataBoundary loading={list.loading} error={list.error} data={list.data} reload={list.reload}>
           {list.data && (list.data.students.length === 0 ? <EmptyState title={`No ${t('students', 'students').toLowerCase()} yet`} hint="Enrol accepted applicants from Admissions, or import existing students from a spreadsheet." action={<><Link className="btn btn--primary btn--sm" to="/admin/students/import">Import students</Link><Link className="btn btn--outline btn--sm" to="/admin/admissions">Go to Admissions</Link></>} /> : (
             <div className="table-wrap">
               <table className="table">
-                <thead><tr><th>ID</th><th>Name</th><th>{t('course', 'Course')}</th><th>Sem / Sec</th><th>Batch</th><th>Status</th><th /></tr></thead>
+                <thead><tr><th>ID</th><th>Roll no.</th><th>Name</th><th>{t('course', 'Course')}</th><th>Sem / Sec</th><th>Batch</th><th>Status</th><th /></tr></thead>
                 <tbody>
                   {list.data.students.map((s) => (
                     <tr key={s.id}>
                       <td>{s.studentCode}</td>
+                      <td className="muted">{s.rollNo || '-'}</td>
                       <td><strong>{s.name}</strong><div className="muted">{s.email}</div></td>
                       <td>{s.course}</td>
                       <td>{s.semester} / {s.section || '-'}</td>

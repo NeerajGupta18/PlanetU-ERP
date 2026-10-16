@@ -1,5 +1,5 @@
 import { toISO } from '../utils/dates.js';
-import { q } from '../db/pool.js';
+import { isUuid, q } from '../db/pool.js';
 import { HttpError } from '../middleware/error.js';
 import { audit } from '../db/audit.js';
 import { nextNumber } from '../db/series.js';
@@ -210,6 +210,34 @@ export async function recordPayment(body, admin) {
   await audit(admin, 'fees.payment', 'student', studentId, { receiptNo, amount: total, method });
   await notifyStudent(studentId, { kind: 'fees', title: `Payment of ₹${total.toLocaleString('en-IN')} received`, body: `Receipt ${receiptNo}. Thank you.`, link: '/student/fees' }, { parents: true });
   return getPayment(p.id);
+}
+
+/**
+ * Every active student of one class or division with what they have been charged, paid and what is overdue, so the fee
+ * desk can work down a whole class and collect from each in turn.
+ */
+export async function classDues(courseId) {
+  if (!isUuid(courseId)) throw new HttpError(400, 'Choose a class.');
+  const { rows } = await q(
+    `select s.id, s.name, s.student_code as "studentCode", s.roll_no as "rollNo",
+            coalesce(sum(i.amount) filter (where i.status <> 'waived'), 0)::float8 as total,
+            coalesce(sum(p.paid) filter (where i.status <> 'waived'), 0)::float8 as paid,
+            coalesce(sum(i.amount - p.paid) filter (where i.status in ('unpaid', 'partial') and i.due_date < current_date), 0)::float8 as overdue
+     from students s
+     left join student_fee_items i on i.student_id = s.id
+     left join lateral (select coalesce(sum(a.amount), 0) as paid from payment_allocations a where a.fee_item_id = i.id) p on true
+     where s.course_id = $1 and s.status = 'Active'
+     group by s.id order by s.student_code`, [courseId],
+  );
+  const students = rows.map((r) => ({ ...r, outstanding: Math.round((r.total - r.paid) * 100) / 100 }));
+  return {
+    students,
+    totals: {
+      total: students.reduce((a, r) => a + r.total, 0), paid: students.reduce((a, r) => a + r.paid, 0),
+      outstanding: Math.round(students.reduce((a, r) => a + r.outstanding, 0) * 100) / 100,
+      overdue: students.reduce((a, r) => a + r.overdue, 0), clear: students.filter((r) => r.outstanding <= 0 && r.total > 0).length,
+    },
+  };
 }
 
 /* ---------------- overview for the Fees page ---------------- */

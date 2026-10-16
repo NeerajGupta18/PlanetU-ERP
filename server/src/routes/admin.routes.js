@@ -159,6 +159,7 @@ router.get('/students/:id/id-card.pdf', students.idCard);
 
 router.use('/fees', requireModule('fees'));
 router.get('/fees/summary', fees.summary);
+router.get('/fees/class-dues', fees.classDues);
 router.get('/fees/structures', fees.listStructures);
 router.post('/fees/structures', fees.createStructure);
 router.delete('/fees/structures/:id', fees.deleteStructure);
