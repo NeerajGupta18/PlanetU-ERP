@@ -5,18 +5,18 @@ import { DataBoundary } from '../../components/ui/Feedback.jsx';
 import LectureList from '../../components/attendance/LectureList.jsx';
 import { fmtLong } from '../../utils/dates.js';
 
-/** Faculty: today's lectures from the Timetable, each opening its marking sheet. */
+/** Faculty: their lectures today (a school class teacher: the class register), each opening its marking sheet. */
 export default function Attendance() {
   const { data, loading, error, reload } = useFetch('/employee/attendance/today');
   return (
     <>
       <PageBanner
         icon={ClipboardCheck} title="Mark attendance"
-        subtitle={data ? `${fmtLong(data.date)} · attendance can only be marked on the day of the lecture` : 'Today\'s lectures'}
+        subtitle={data ? `${fmtLong(data.date)} · ${data.daily ? 'the class teacher takes attendance once a day' : 'only the teacher of a lecture marks it, and only on the day'}` : 'Today\'s attendance'}
       />
-      <Card title="Today's lectures">
+      <Card title={data?.daily ? 'Class register for today' : 'Your lectures today'}>
         <DataBoundary loading={loading} error={error} data={data} reload={reload}>
-          {data && <LectureList lectures={data.lectures} holiday={data.holiday} markTo={(l) => `/employee/attendance/${l.slotId}`} />}
+          {data && <LectureList lectures={data.lectures} holiday={data.holiday} daily={data.daily} markTo={(l) => `/employee/attendance/${l.slotId}`} />}
         </DataBoundary>
       </Card>
     </>

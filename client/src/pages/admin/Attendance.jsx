@@ -28,8 +28,8 @@ export default function Attendance() {
 
 function CourseSelect({ courses, value, onChange }) {
   return (
-    <select className="input" value={value} onChange={(e) => onChange(e.target.value)} aria-label="Course" style={{ width: 'auto' }}>
-      <option value="">All courses</option>
+    <select className="input" value={value} onChange={(e) => onChange(e.target.value)} aria-label="Class or division" style={{ width: 'auto' }}>
+      <option value="">All classes and divisions</option>
       {courses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
     </select>
   );
@@ -50,10 +50,10 @@ function DaySheet({ courses }) {
           <input type="date" className="input" value={date} max={todayISO()} onChange={(e) => e.target.value && setDate(e.target.value)} aria-label="Date" style={{ width: 'auto' }} />
           <CourseSelect courses={courses} value={courseId} onChange={setCourseId} />
         </div>
-        {data && !data.holiday && <span className="muted">{fmtLong(date)} · {pending} of {data.lectures.length} not yet submitted</span>}
+        {data && !data.holiday && <span className="muted">{fmtLong(date)} · {pending} of {data.lectures.length} {data.daily ? 'class registers' : 'lectures'} not yet submitted</span>}
       </div>
       <DataBoundary loading={loading} error={error} data={data} reload={reload}>
-        {data && <LectureList lectures={data.lectures} holiday={data.holiday} showFaculty markTo={(l) => `/admin/attendance/${l.slotId}?date=${date}`} />}
+        {data && <LectureList lectures={data.lectures} holiday={data.holiday} daily={data.daily} showFaculty markTo={(l) => `/admin/attendance/${l.slotId}?date=${date}`} />}
       </DataBoundary>
     </>
   );

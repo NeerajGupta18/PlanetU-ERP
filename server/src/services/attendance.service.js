@@ -8,6 +8,13 @@
  *
  * Only SUBMITTED sessions count towards percentages; a draft is faculty's work in progress.
  * Present and Late both count as attended.
+ *
+ * Two ways of taking attendance, chosen by the kind of institute:
+ *   - schools: ONE register a day for each class, taken in the first period by the CLASS TEACHER (a teacher of other
+ *     periods has nothing to mark). If a class has no class teacher yet, the first period's own teacher takes it.
+ *   - colleges and universities: a register for EVERY lecture, taken only by the teacher assigned to that lecture.
+ * Both use the same sessions and the same reassignment rule, so a lecture handed to someone else for a day moves
+ * the register with it.
  */
 import { q } from '../db/pool.js';
 import { HttpError } from '../middleware/error.js';
@@ -25,6 +32,21 @@ export const today = () => toISO(new Date());
 
 /* ---------------------------------------------------------------- lectures */
 
+/** True when this institute takes one register a day (a school) instead of one per lecture. */
+export async function isDailyRegister() {
+  const { rows: [t] } = await q('select type from tenants where id = app_tenant()');
+  return t?.type === 'school';
+}
+
+// The first lecture of a class on a weekday: the one that carries the school's daily register
+const FIRST_OF_DAY = `s.id = (select f.id from timetable_slots f where f.course_id = s.course_id and f.weekday = s.weekday order by f.start_time, f.id limit 1)`;
+const rules = (daily) => ({
+  owner: daily ? 'coalesce(c.class_teacher_id, s.employee_id)' : 's.employee_id',
+  subject: daily ? "'Daily attendance'" : 's.subject',
+  only: daily ? `and ${FIRST_OF_DAY}` : '',
+  flag: daily ? 'true' : 'false',
+});
+
 const isHoliday = async (date) => (
   (await q("select 1 from events where type = 'holiday' and start_date <= $1 and end_date >= $1 limit 1", [date])).rowCount > 0
 );
@@ -34,57 +56,64 @@ const isHoliday = async (date) => (
  * date (wrong weekday, holiday, unknown slot).
  */
 export async function findLecture(slotId, date) {
+  const daily = await isDailyRegister();
+  const r = rules(daily);
   const { rows: [l] } = await q(
-    `select s.id as "slotId", s.course_id as "courseId", c.name as course, s.subject, s.weekday,
-            s.start_time as start, s.end_time as "end", s.mode, s.location,
-            s.employee_id as "ownerId", coalesce(r.to_employee_id, s.employee_id) as "facultyId",
-            (r.to_employee_id is not null) as reassigned, e.name as "facultyName"
+    `select s.id as "slotId", s.course_id as "courseId", c.name as course, ${r.subject} as subject, s.weekday,
+            s.start_time as start, s.end_time as "end", s.mode, s.location, ${r.flag} as daily,
+            ${r.owner} as "ownerId", coalesce(rs.to_employee_id, ${r.owner}) as "facultyId",
+            (rs.to_employee_id is not null) as reassigned, e.name as "facultyName"
      from timetable_slots s
      join courses c on c.id = s.course_id
-     left join reassignments r on r.slot_id = s.id and r.on_date = $2
-     join employees e on e.id = coalesce(r.to_employee_id, s.employee_id)
-     where s.id = $1`,
+     left join reassignments rs on rs.slot_id = s.id and rs.on_date = $2
+     join employees e on e.id = coalesce(rs.to_employee_id, ${r.owner})
+     where s.id = $1 ${r.only}`,
     [slotId, date],
   );
   if (!l || parseISO(date).getDay() !== l.weekday || await isHoliday(date)) return null;
   return l;
 }
 
-const LECTURE_SQL = `
-  select s.id as "slotId", s.course_id as "courseId", c.name as course, s.subject, s.mode, s.location,
-         s.start_time as start, s.end_time as "end",
-         coalesce(r.to_employee_id, s.employee_id) as "facultyId", e.name as "facultyName",
-         (r.to_employee_id is not null) as reassigned,
+const lectureSql = (daily) => {
+  const r = rules(daily);
+  return `
+  select s.id as "slotId", s.course_id as "courseId", c.name as course, ${r.subject} as subject, s.mode, s.location,
+         s.start_time as start, s.end_time as "end", ${r.flag} as daily,
+         coalesce(rs.to_employee_id, ${r.owner}) as "facultyId", e.name as "facultyName",
+         (rs.to_employee_id is not null) as reassigned,
          a.id as "sessionId", coalesce(a.status, 'none') as "sessionStatus",
          (select count(*)::int from students st where st.course_id = s.course_id and st.status = 'Active') as roster,
          (select count(*)::int from attendance_records ar where ar.session_id = a.id) as marked,
          (select count(*)::int from attendance_records ar where ar.session_id = a.id and ar.status in ${ATTENDED}) as attended
   from timetable_slots s
   join courses c on c.id = s.course_id
-  left join reassignments r on r.slot_id = s.id and r.on_date = $1
-  join employees e on e.id = coalesce(r.to_employee_id, s.employee_id)
+  left join reassignments rs on rs.slot_id = s.id and rs.on_date = $1
+  join employees e on e.id = coalesce(rs.to_employee_id, ${r.owner})
   left join attendance_sessions a on a.slot_id = s.id and a.on_date = $1`;
+};
 
 /** Faculty home: the lectures this employee is taking on `date`, with how far their marking is. */
 export async function lecturesForEmployee(employeeId, date) {
-  if (await isHoliday(date)) return { date, holiday: true, lectures: [] };
+  const daily = await isDailyRegister();
+  if (await isHoliday(date)) return { date, holiday: true, daily, lectures: [] };
   const { rows } = await q(
-    `${LECTURE_SQL} where s.weekday = $2 and coalesce(r.to_employee_id, s.employee_id) = $3
+    `${lectureSql(daily)} where s.weekday = $2 and coalesce(rs.to_employee_id, ${rules(daily).owner}) = $3 ${rules(daily).only}
      order by s.start_time, c.name`,
     [date, parseISO(date).getDay(), employeeId],
   );
-  return { date, holiday: false, lectures: rows };
+  return { date, holiday: false, daily, lectures: rows };
 }
 
 /** Admin overview: every lecture on `date` (optionally one course) and whether it has been marked. */
 export async function daySheet(date, courseId) {
-  if (await isHoliday(date)) return { date, holiday: true, lectures: [] };
+  const daily = await isDailyRegister();
+  if (await isHoliday(date)) return { date, holiday: true, daily, lectures: [] };
   const { rows } = await q(
-    `${LECTURE_SQL} where s.weekday = $2 ${courseId ? 'and s.course_id = $3' : ''}
+    `${lectureSql(daily)} where s.weekday = $2 ${courseId ? 'and s.course_id = $3' : ''} ${rules(daily).only}
      order by s.start_time, c.name`,
     courseId ? [date, parseISO(date).getDay(), courseId] : [date, parseISO(date).getDay()],
   );
-  return { date, holiday: false, lectures: rows };
+  return { date, holiday: false, daily, lectures: rows };
 }
 
 /* ------------------------------------------------------------ marking sheet */

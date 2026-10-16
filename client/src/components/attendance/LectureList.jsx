@@ -16,9 +16,13 @@ export function SessionBadge({ l }) {
  *   showFaculty  admin view: show who is teaching it
  *   markTo(l)    link target for the marking sheet
  */
-export default function LectureList({ lectures, holiday, markTo, showFaculty = false }) {
+export default function LectureList({ lectures, holiday, markTo, showFaculty = false, daily = false }) {
   if (holiday) return <EmptyState title="Holiday" hint="No lectures run on this date, so there is nothing to mark." />;
-  if (!lectures.length) return <EmptyState title="No lectures" hint="Nothing on the timetable for this date." />;
+  if (!lectures.length) {
+    return daily
+      ? <EmptyState title="No class register for you today" hint="In a school the class teacher takes the attendance once a day. You are not the class teacher of a class that meets today." />
+      : <EmptyState title="No lectures" hint="Nothing assigned to you on the timetable for this date." />;
+  }
   return (
     <ul className="schedule">
       {lectures.map((l) => (
@@ -32,6 +36,7 @@ export default function LectureList({ lectures, holiday, markTo, showFaculty = f
             </div>
             <div className="schedule__meta">
               <span><Building size={12} /> {l.course} · {l.roster} students</span>
+              {l.daily && <span>Daily register</span>}
               <span>{l.mode === 'Online' ? <Video size={12} /> : <MapPin size={12} />} {l.location}</span>
               {showFaculty && <span>{l.facultyName}</span>}
             </div>

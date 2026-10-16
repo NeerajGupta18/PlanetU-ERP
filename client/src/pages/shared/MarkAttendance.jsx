@@ -61,6 +61,8 @@ function Sheet({ role, data, backTo }) {
   }, [dirty]);
 
   const set = (id, status) => { setNotice(''); setMarks((m) => ({ ...m, [id]: status })); };
+  // Tap the few who are absent first, then mark everyone not yet marked as present
+  const setRest = (status) => { setNotice(''); setMarks((m) => Object.fromEntries(students.map((s) => [s.id, m[s.id] || status]))); };
   const setAll = (status) => { setNotice(''); setMarks(Object.fromEntries(students.map((s) => [s.id, status]))); };
 
   // Students who checked in with the QR code: bring their marks into the sheet without touching what the teacher changed
@@ -104,6 +106,7 @@ function Sheet({ role, data, backTo }) {
         actions={<Link to={backTo} className="btn btn--outline btn--sm"><ArrowLeft size={14} /> Back</Link>}
       />
 
+      {lecture.daily && <p className="note" style={{ marginTop: 0 }}>This is the daily class register. It is taken once a day by the class teacher, and it counts for the whole day.</p>}
       {role === 'employee' && editable && !submitted && lecture.date === todayISO() && <QrCheckinPanel slotId={lecture.slotId} onCheckedIn={loadCheckins} />}
 
       <Card
@@ -123,6 +126,7 @@ function Sheet({ role, data, backTo }) {
           <div className="toolbar">
             <div className="toolbar__filters">
               <button type="button" className="btn btn--outline btn--sm" onClick={() => setAll('present')}>Mark all present</button>
+              <button type="button" className="btn btn--outline btn--sm" onClick={() => setRest('present')} disabled={counts.none === 0}>Mark the rest present</button>
               <button type="button" className="btn btn--outline btn--sm" onClick={() => setAll('absent')}>Mark all absent</button>
               <button type="button" className="btn btn--outline btn--sm" onClick={() => setAll(null)}>Clear</button>
             </div>

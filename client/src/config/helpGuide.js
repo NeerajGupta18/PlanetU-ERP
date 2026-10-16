@@ -203,8 +203,8 @@ export const HELP = [
   {
     id: 'mark', who: ['teaching'], title: 'Mark attendance', module: 'attendance', to: '/employee/attendance',
     steps: [
-      'Your home page lists today\'s lectures. Tap Mark next to the lecture.',
-      'Tap "Mark all present", then change the few who were absent (A) or late (L).',
+      'Open Mark attendance. In a college or university it lists only the lectures assigned to you today; in a school, the class teacher sees the class register for the day.',
+      'Tap Mark next to the lecture. Tap the few who are absent (A) or late (L), then "Mark the rest present" (or start with "Mark all present").',
       'Choose "Submit attendance". Students and parents of absent students are told at once.',
       'You can also start a QR check-in so students mark themselves from their phones.',
     ],
