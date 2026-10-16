@@ -949,3 +949,19 @@ kbd { font: inherit; font-size: 11px; padding: 1px 6px; border: 1px solid var(--
 .getapp-banner { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 8px 16px; background: var(--brand-50); border-bottom: 1px solid var(--brand-100); }
 .getapp-banner__text { flex: 1 1 240px; font-size: 13.5px; font-weight: 600; color: var(--text); }
 .getapp-banner .icon-btn { margin-left: auto; }
+/* In-app QR scanner */
+.scanner { position: relative; max-width: 420px; margin: 0 auto 10px; border-radius: 14px; overflow: hidden; background: #0b0d1a; aspect-ratio: 1 / 1; }
+.scanner__video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.scanner__frame { position: absolute; inset: 14%; border: 3px solid #fff; border-radius: 16px; box-shadow: 0 0 0 999px rgba(11, 13, 26, 0.45); pointer-events: none; }
+.scanner__wait { position: absolute; inset: auto 0 12px; margin: 0; text-align: center; color: #fff; font-size: 13px; }
+.scan-start { display: grid; justify-items: center; gap: 12px; text-align: center; padding: 8px 0; color: var(--brand); }
+.scan-start p { margin: 0; color: var(--text); max-width: 420px; }
+.btn--lg { padding: 13px 26px; font-size: 16px; }
+.scan-result { display: grid; justify-items: center; gap: 8px; text-align: center; padding: 22px 16px; border-radius: 14px; margin-bottom: 14px; border: 1px solid; }
+.scan-result strong { font-size: 20px; }
+.scan-result.is-ok { background: #ecfdf3; border-color: #abefc6; color: #067647; }
+.scan-result.is-bad { background: #fef3f2; border-color: #fecdca; color: #b42318; }
+.qr-panel__code--big img { width: min(70vh, 92vw) !important; height: auto !important; }
+.lecture-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.lecture-rows li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; }
+.lecture-rows li > div { display: grid; gap: 2px; min-width: 0; }

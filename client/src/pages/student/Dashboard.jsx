@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { AlertTriangle, Award, BookOpen, CalendarDays, Clock, FileText, GraduationCap, LayoutDashboard, MapPin, Megaphone, Percent, Video, Wallet } from 'lucide-react';
+import { AlertTriangle, Award, BookOpen, CalendarDays, Clock, FileText, GraduationCap, LayoutDashboard, MapPin, Megaphone, Percent, ScanLine, Video, Wallet } from 'lucide-react';
 import { useFetch } from '../../hooks/useFetch.js';
 import { useTenantConfig } from '../../hooks/useTenantConfig.js';
 import { Badge, Card, PageBanner, StatCard, pending } from '../../components/ui/Ui.jsx';
@@ -51,6 +51,7 @@ function DashboardView({ d }) {
         icon={LayoutDashboard}
         title={`${greeting()}, ${first}`}
         subtitle={`${d.student.course}, Semester ${d.student.semester}, Section ${d.student.section}  |  Roll no. ${d.student.rollNo}`}
+        actions={hasModule('qr_checkin') && hasModule('attendance') ? <Link to="/student/checkin" className="btn btn--primary btn--sm"><ScanLine size={15} /> Scan attendance</Link> : null}
       />
 
       <div className="stats stats--3">

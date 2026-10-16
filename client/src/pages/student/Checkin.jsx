@@ -1,79 +1,87 @@
-import { useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { CheckCircle2, QrCode } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { CheckCircle2, ScanLine, XCircle } from 'lucide-react';
 import { api } from '../../api/http.js';
 import { useFetch } from '../../hooks/useFetch.js';
 import { Badge, Card, PageBanner } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
+import QrScanner from '../../components/campus/QrScanner.jsx';
+import { deviceId, getPosition } from '../../lib/device.js';
 import { fmtRange } from '../../utils/dates.js';
 
 /**
- * Student check-in. The teacher's QR code opens this page with ?slot=...&code=...; the code is sent straight away.
- * A student can also open the page, pick the lecture and type the 6-digit code shown in class.
+ * Scan to mark attendance. The teacher shows a QR code in class; the student opens this page, taps Scan and points
+ * the camera at it. The QR is replaced every few seconds and only this scanner can use it, so there is nothing to type.
  */
 export default function Checkin() {
-  const [params, setParams] = useSearchParams();
   const { data, loading, error, reload } = useFetch('/student/checkin/today');
-  const [code, setCode] = useState('');
-  const [slotId, setSlotId] = useState(params.get('slot') || '');
-  const [msg, setMsg] = useState(null);
+  const [scanning, setScanning] = useState(false);
   const [busy, setBusy] = useState(false);
-  const auto = useRef(false);
+  const [result, setResult] = useState(null);
+  const pos = useRef(null);
+  const needsLocation = (data?.lectures || []).some((l) => l.needsLocation);
 
-  async function send(slot, c) {
-    setBusy(true); setMsg(null);
-    try {
-      const r = await api.post('/student/checkin', { slotId: slot, code: c });
-      setMsg({ ok: true, text: r.already ? 'You were already marked for this lecture.' : r.status === 'late' ? 'You are checked in, marked late.' : 'You are checked in. Marked present.' });
-      setCode(''); reload();
-    } catch (err) { setMsg({ ok: false, text: err.message }); } finally { setBusy(false); }
+  async function open() {
+    setResult(null); setScanning(true);
+    if (needsLocation) pos.current = await getPosition(10000); // ask now, so the scan itself is quick
   }
 
-  // Arrived from the QR code: submit once, then tidy the address bar so a refresh does not resend an old code
-  useEffect(() => {
-    const slot = params.get('slot'); const c = params.get('code');
-    if (!auto.current && slot && c && data) {
-      auto.current = true; setParams({}, { replace: true }); send(slot, c);
-    }
-  }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const open = (data?.lectures || []).filter((l) => l.checkinOpen);
-  useEffect(() => { if (!slotId && open.length === 1) setSlotId(open[0].slotId); }, [open.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  async function onCode(text) {
+    setBusy(true);
+    try {
+      let p = pos.current;
+      if (needsLocation && (!p || Date.now() - p.at > 45000)) p = pos.current = await getPosition(6000);
+      const r = await api.post('/student/checkin', { token: text, deviceId: deviceId(), ...(needsLocation && p ? { lat: p.lat, lng: p.lng } : {}) });
+      setResult({ ok: true, ...r });
+      setScanning(false); reload();
+    } catch (err) {
+      setResult({ ok: false, message: err.message });
+      setScanning(false);
+    } finally { setBusy(false); }
+  }
 
   return (
     <>
-      <PageBanner icon={QrCode} title="Check in" subtitle="Scan the QR code your teacher shows in class, or type the 6-digit code." />
-      {msg && <p className={msg.ok ? 'note' : 'form-error'} role={msg.ok ? 'status' : 'alert'} style={{ fontSize: 15 }}>{msg.ok && <CheckCircle2 size={16} style={{ verticalAlign: '-3px' }} />} {msg.text}</p>}
+      <PageBanner icon={ScanLine} title="Scan to mark attendance" subtitle="Point the camera at the QR code your teacher shows in class." />
+
+      {result && (
+        <div className={`scan-result ${result.ok ? 'is-ok' : 'is-bad'}`} role={result.ok ? 'status' : 'alert'}>
+          {result.ok ? <CheckCircle2 size={44} /> : <XCircle size={44} />}
+          <strong>{result.ok ? (result.already ? 'Already marked' : 'Attendance marked successfully') : 'Attendance not marked'}</strong>
+          <span>{result.ok
+            ? `${result.subject || 'This lecture'}: ${result.status === 'late' ? 'you are marked late.' : 'you are marked present.'}`
+            : result.message}</span>
+          <button type="button" className="btn btn--outline" onClick={open}>{result.ok ? 'Scan another' : 'Try again'}</button>
+        </div>
+      )}
+
       <DataBoundary loading={loading} error={error} data={data} reload={reload}>
         {data && (
           <>
-            <Card title="Enter the code">
-              <form onSubmit={(e) => { e.preventDefault(); if (slotId && code.length === 6) send(slotId, code); }}>
-                <div className="fields">
-                  <div className="form-field form-field--full"><label className="label" htmlFor="ci-slot">Lecture</label>
-                    <select id="ci-slot" className="input" value={slotId} onChange={(e) => setSlotId(e.target.value)}>
-                      <option value="">Choose...</option>{open.map((l) => <option key={l.slotId} value={l.slotId}>{l.subject} ({fmtRange(l.start, l.end)})</option>)}
-                    </select>
-                    {open.length === 0 && <small className="muted">No lecture has check-in open right now.</small>}</div>
-                  <div className="form-field form-field--full"><label className="label" htmlFor="ci-code">6-digit code</label>
-                    <input id="ci-code" className="input" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))} style={{ fontSize: 22, letterSpacing: 6, textAlign: 'center' }} /></div>
+            {scanning ? (
+              <Card title="Scanning...">
+                <QrScanner onResult={onCode} paused={busy} />
+                <p className="muted" style={{ textAlign: 'center' }}>{busy ? 'Checking...' : 'Hold the phone steady so the whole QR code is inside the square.'}</p>
+                <div className="form-actions" style={{ justifyContent: 'center' }}><button type="button" className="btn btn--outline" onClick={() => setScanning(false)}>Cancel</button></div>
+              </Card>
+            ) : !result && (
+              <Card>
+                <div className="scan-start">
+                  <ScanLine size={48} />
+                  <p>Open the camera and scan the QR code on the projector. You must be in the class: the code changes every few seconds, so a photo of it will not work.</p>
+                  {needsLocation && <small className="muted">Your teacher has asked for your location, so please allow it when your phone asks.</small>}
+                  <button type="button" className="btn btn--primary btn--lg" onClick={open}><ScanLine size={18} /> Scan QR code</button>
                 </div>
-                <div className="form-actions"><button className="btn btn--primary" disabled={busy || !slotId || code.length !== 6}>Check in</button></div>
-              </form>
-            </Card>
+              </Card>
+            )}
             <Card title="Today's lectures">
               {data.lectures.length === 0 ? <EmptyState title="No lectures today" /> : (
-                <div className="table-wrap"><table className="table">
-                  <thead><tr><th>Time</th><th>Subject</th><th>Faculty</th><th>Check-in</th></tr></thead>
-                  <tbody>{data.lectures.map((l) => (
-                    <tr key={l.slotId}>
-                      <td>{fmtRange(l.start, l.end)}</td><td><strong>{l.subject}</strong></td><td>{l.facultyName}</td>
-                      <td>{l.myStatus && l.markedVia === 'qr' ? <Badge tone="green">You checked in ({l.myStatus})</Badge> : l.checkinOpen ? <Badge tone="blue">Open</Badge> : <Badge tone="gray">Not open</Badge>}</td>
-                    </tr>
-                  ))}</tbody>
-                </table></div>
+                <ul className="lecture-rows">{data.lectures.map((l) => (
+                  <li key={l.slotId}>
+                    <div><strong>{l.subject}</strong><small className="muted">{fmtRange(l.start, l.end)} · {l.facultyName}</small></div>
+                    {l.myStatus && l.markedVia === 'qr' ? <Badge tone="green">Marked ({l.myStatus})</Badge> : l.checkinOpen ? <Badge tone="blue">Open: scan now</Badge> : <Badge tone="gray">Not open</Badge>}
+                  </li>
+                ))}</ul>
               )}
-              <p className="muted" style={{ marginTop: 10 }}>The code proves you have it in front of you, so please do not share it with classmates who are not in the room.</p>
             </Card>
           </>
         )}

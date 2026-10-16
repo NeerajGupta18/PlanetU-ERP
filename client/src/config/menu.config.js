@@ -1,4 +1,5 @@
 import {
+  ScanLine,
   Inbox, BedDouble, Banknote, DoorOpen, Briefcase, NotebookPen, QrCode, BookOpen, BookOpenCheck, Boxes, Bus, Building2, CalendarCheck, CalendarOff, CalendarDays, CircleDollarSign, ClipboardCheck, CreditCard, FileBarChart2, FileText, LifeBuoy, Star, GraduationCap, LayoutDashboard, ListChecks, Megaphone, School, Network, Server, Settings2, Table2, UserRound, Users, Users2, Wallet,
 } from 'lucide-react';
 
@@ -48,7 +49,7 @@ export const MENU_TREE = {
     { label: 'Timetable', to: '/student/timetable', icon: Table2, module: 'timetable' },
     { label: 'Attendance', icon: CalendarCheck, sections: [
       { label: 'My attendance', to: '/student/attendance', module: 'attendance' },
-      { label: 'Check in', to: '/student/checkin', module: 'attendance' },
+      { label: 'Scan to mark attendance', to: '/student/checkin', module: 'qr_checkin' },
     ] },
     { label: 'Coursework', icon: NotebookPen, sections: [
       { label: 'Assignments', to: '/student/assignments', module: 'assignments' },
@@ -190,7 +191,8 @@ export const BOTTOM_NAV = {
   student: [
     { label: 'Home', to: '/student/dashboard', icon: LayoutDashboard },
     { label: 'Timetable', to: '/student/timetable', icon: Table2, module: 'timetable' },
-    { label: 'Attendance', to: '/student/attendance', icon: CalendarCheck, module: 'attendance', also: ['/student/checkin'] },
+    { label: 'Scan', to: '/student/checkin', icon: ScanLine, module: 'qr_checkin' },
+    { label: 'Attendance', to: '/student/attendance', icon: CalendarCheck, module: 'attendance' },
     { label: 'Fees', to: '/student/fees', icon: Wallet, module: 'fees' },
   ],
   parent: [
