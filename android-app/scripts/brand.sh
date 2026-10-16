@@ -21,3 +21,12 @@ cat > "$RES/values/ic_launcher_background.xml" <<'XML'
 </resources>
 XML
 echo "Icons set."
+
+# The in-app attendance scanner needs the camera (and, if a teacher asks for it, the location)
+MANIFEST=android/app/src/main/AndroidManifest.xml
+add_perm() { grep -q "$1" "$MANIFEST" || sed -i "s#<application#$2\n    <application#" "$MANIFEST"; }
+add_perm 'android.permission.CAMERA' '    <uses-permission android:name="android.permission.CAMERA" />'
+add_perm 'android.permission.ACCESS_FINE_LOCATION' '    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />'
+add_perm 'android.permission.ACCESS_COARSE_LOCATION' '    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />'
+add_perm 'android.hardware.camera' '    <uses-feature android:name="android.hardware.camera" android:required="false" />'
+echo "Camera and location permissions set."
