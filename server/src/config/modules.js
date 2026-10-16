@@ -39,6 +39,7 @@ export const MODULES = [
   { key: 'placement', label: 'Placement', core: false, implemented: true },
   { key: 'parent_portal', label: 'Parent portal', core: false, implemented: true },
   { key: 'visitors', label: 'Visitor Management', core: false, implemented: true },
+  { key: 'qr_checkin', label: 'QR check-in (in-app scanner)', core: false, implemented: true },
 ];
 
 export const MODULE_KEYS = MODULES.map((m) => m.key);
@@ -59,7 +60,7 @@ export const PRESETS = {
   },
   college: {
     label: 'College',
-    modules: [...CORE_MODULES, ...base, 'hostel', 'transport', 'placement', 'parent_portal'],
+    modules: [...CORE_MODULES, ...base, 'hostel', 'transport', 'placement', 'parent_portal', 'qr_checkin'],
     terminology: {
       institute: 'College', student: 'Student', students: 'Students', course: 'Course', courses: 'Courses',
       semester: 'Semester', department: 'Department', departments: 'Departments', employee: 'Faculty', employees: 'Faculty',
@@ -68,7 +69,7 @@ export const PRESETS = {
   },
   university: {
     label: 'University',
-    modules: [...CORE_MODULES, ...base, 'hostel', 'transport', 'placement', 'parent_portal'],
+    modules: [...CORE_MODULES, ...base, 'hostel', 'transport', 'placement', 'parent_portal', 'qr_checkin'],
     terminology: {
       institute: 'University', student: 'Student', students: 'Students', course: 'Programme', courses: 'Programmes',
       semester: 'Semester', department: 'School / Department', departments: 'Schools / Departments',
