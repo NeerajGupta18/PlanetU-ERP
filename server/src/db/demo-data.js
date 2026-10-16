@@ -4,7 +4,12 @@
  * The SAME login IDs (ADM001, EMP001, ...) exist in every tenant on purpose:
  * only the institute code decides whose data you get.
  */
+import crypto from 'node:crypto';
+
 const year = new Date().getFullYear();
+const p2 = (n) => String(n).padStart(2, '0');
+const p3 = (n) => String(n).padStart(3, '0');
+const p4 = (n) => String(n).padStart(4, '0');
 const session = `${year}-${String(year + 1).slice(2)}`;
 
 const college = {
@@ -42,6 +47,7 @@ const college = {
   designations: [
     ['Professor', 'Computer Science'], ['Associate Professor', 'Computer Science'], ['Assistant Professor', 'Computer Science'],
     ['Head of Department', 'English'], ['Associate Professor', 'Mathematics'],
+    ['Assistant Professor', 'English'], ['Assistant Professor', 'Mathematics'],
   ],
   employees: [
     ['EMP001', 'Amandeep Kaur', 'Professor', 'Computer Science', 'Employee shift'],
@@ -51,6 +57,21 @@ const college = {
     ['EMP005', 'Muskaan Arora', 'Head of Department', 'English', 'General shift'],
     ['EMP006', 'Kavita Sharma', 'Associate Professor', 'Mathematics', 'General shift'],
   ],
+  // A second set of teachers, one per subject. Division A is taught by the first six, division B by these, division C by a mix.
+  moreEmployees: [
+    ['EMP012', 'Vikas Malhotra', 'Associate Professor', 'Computer Science', 'Employee shift'],
+    ['EMP013', 'Pallavi Nair', 'Assistant Professor', 'Computer Science', 'Employee shift'],
+    ['EMP014', 'Gaurav Bansal', 'Assistant Professor', 'Computer Science', 'Employee shift'],
+    ['EMP015', 'Isha Kapoor', 'Assistant Professor', 'Computer Science', 'Employee shift'],
+    ['EMP016', 'Ritu Saxena', 'Assistant Professor', 'English', 'General shift'],
+    ['EMP017', 'Manoj Tiwari', 'Assistant Professor', 'Mathematics', 'General shift'],
+  ],
+  classTeachers: ['EMP002', 'EMP012', 'EMP003'],
+  roster: {
+    codePrefix: 'STU2026', roll: (n) => `BCA24-${p3(n)}`, enroll: (n) => `ENR2024BCA${p3(n)}`, domain: 'student.horizon.example',
+    phone: '+91 98123', dobYears: [2004, 2005], admitted: '2024-07-15', offset: 0,
+    areas: ['Karve Nagar', 'Wakad', 'Pimpri', 'Kothrud', 'Baner', 'Hadapsar', 'Aundh', 'Viman Nagar', 'Hinjewadi', 'Kharadi'],
+  },
   course: { code: 'BCA', name: 'BCA', fullName: 'Bachelor of Computer Applications', department: 'Computer Science', years: 3 },
   subjects: ['Python Programming', 'Data Structures', 'Database Management', 'Web Technologies', 'English Communication', 'Discrete Mathematics'],
   place: { room: 'Room 112-A3 - Main Block', lab: 'Computer Lab 2 - Block C' },
@@ -92,6 +113,7 @@ const school = {
   ],
   designations: [
     ['PGT', 'Science'], ['TGT', 'Science'], ['PGT', 'Languages'], ['TGT', 'Languages'], ['PGT', 'Mathematics'], ['Head Teacher', 'Languages'],
+    ['TGT', 'Mathematics'],
   ],
   employees: [
     ['EMP001', 'Meera Kulkarni', 'PGT', 'Mathematics', 'General shift'],
@@ -101,6 +123,21 @@ const school = {
     ['EMP005', 'Imran Shaikh', 'TGT', 'Science', 'General shift'],
     ['EMP006', 'Pooja Nair', 'PGT', 'Languages', 'General shift'],
   ],
+  moreEmployees: [
+    ['EMP012', 'Anjali Deshpande', 'TGT', 'Mathematics', 'General shift'],
+    ['EMP013', 'Sachin Gaikwad', 'TGT', 'Science', 'General shift'],
+    ['EMP014', 'Farida Sayyed', 'TGT', 'Languages', 'General shift'],
+    ['EMP015', 'Prakash Naik', 'TGT', 'Languages', 'General shift'],
+    ['EMP016', 'Swati Jadhav', 'TGT', 'Science', 'General shift'],
+    ['EMP017', 'Dinesh Kamble', 'TGT', 'Mathematics', 'General shift'],
+  ],
+  // Each class has a class teacher who takes the daily attendance in the first period
+  classTeachers: ['EMP001', 'EMP012', 'EMP004'],
+  roster: {
+    codePrefix: 'GPS2026', roll: (n, d, k) => `9${d}-${p2(k)}`, enroll: (n) => `GPS/2026/${p4(n)}`, domain: 'student.greenfield.example',
+    phone: '+91 98200', dobYears: [2010, 2011], admitted: `${year}-04-10`, offset: 17,
+    areas: ['Aundh', 'Baner', 'Pashan', 'Kothrud', 'Wakad', 'Pimple Saudagar', 'Sus', 'Balewadi', 'Bavdhan', 'Warje'],
+  },
   course: { code: 'CLASS9A', name: 'Class 9-A', fullName: 'Class 9, Section A', department: 'Science', years: 1 },
   subjects: ['Mathematics', 'Science', 'English', 'Hindi', 'Social Science', 'Computer Applications'],
   place: { room: 'Room 9A - Main Building', lab: 'Science Lab - Block B' },
@@ -148,7 +185,7 @@ const university = {
   designations: [
     ['Professor', 'School of Computer Science & Engineering'], ['Associate Professor', 'School of Computer Science & Engineering'],
     ['Assistant Professor', 'School of Computer Science & Engineering'], ['Dean', 'School of Design'],
-    ['Associate Professor', 'School of Management'],
+    ['Associate Professor', 'School of Management'], ['Assistant Professor', 'School of Design'], ['Assistant Professor', 'School of Management'],
   ],
   employees: [
     ['EMP001', 'Prasad Khandekar', 'Professor', 'School of Computer Science & Engineering', 'Employee shift'],
@@ -158,6 +195,20 @@ const university = {
     ['EMP005', 'Omkar Patwardhan', 'Dean', 'School of Design', 'General shift'],
     ['EMP006', 'Shalini Rao', 'Associate Professor', 'School of Management', 'General shift'],
   ],
+  moreEmployees: [
+    ['EMP012', 'Meenal Phadke', 'Associate Professor', 'School of Computer Science & Engineering', 'Employee shift'],
+    ['EMP013', 'Sandeep Gokhale', 'Assistant Professor', 'School of Computer Science & Engineering', 'Employee shift'],
+    ['EMP014', 'Tanvi Bhosale', 'Assistant Professor', 'School of Computer Science & Engineering', 'Employee shift'],
+    ['EMP015', 'Akash Mane', 'Assistant Professor', 'School of Computer Science & Engineering', 'Employee shift'],
+    ['EMP016', 'Kiran Lele', 'Assistant Professor', 'School of Computer Science & Engineering', 'Employee shift'],
+    ['EMP017', 'Sneha Apte', 'Assistant Professor', 'School of Management', 'General shift'],
+  ],
+  classTeachers: ['EMP003', 'EMP013', 'EMP004'],
+  roster: {
+    codePrefix: 'MIT2026', roll: (n) => `CSAI24-${p3(n)}`, enroll: (n) => `ENR2024CSAI${p3(n)}`, domain: 'student.mitwpu.example',
+    phone: '+91 98220', dobYears: [2004, 2005], admitted: '2024-07-20', offset: 41,
+    areas: ['Kothrud', 'Baner', 'Hinjewadi', 'Warje', 'Karve Nagar', 'Bavdhan', 'Aundh', 'Pashan', 'Erandwane', 'Sinhagad Road'],
+  },
   course: { code: 'BTCSAI', name: 'B.Tech CSE (AI & DS)', fullName: 'B.Tech Computer Science Engineering (AI & Data Science)', department: 'School of Computer Science & Engineering', years: 4 },
   subjects: ['Machine Learning', 'Data Structures & Algorithms', 'Deep Learning', 'Database Management', 'Computer Networks', 'Professional Communication'],
   place: { room: 'Room 304 - Academic Block 2', lab: 'AI & DS Lab - Block 2' },
@@ -169,5 +220,71 @@ const university = {
 };
 
 export const DEMO_TENANTS = [college, school, university];
+
+/* ------------------------------------------------------------------------------------------------------------------
+ * The classes and students. Every institute has three divisions of 40 students. A division is its own class (course):
+ * its own roster, timetable, fee plan, exams and attendance. The three students listed in each spec above are the
+ * first three of division A, so the well-known demo logins (STU2026001, GPS2026001, MIT2026001) still work.
+ * ------------------------------------------------------------------------------------------------------------------ */
+export const DIVISIONS = ['A', 'B', 'C'];
+export const PER_DIVISION = 40;
+
+const MALE = ['Aarav', 'Vihaan', 'Arjun', 'Reyansh', 'Ishaan', 'Kabir', 'Advait', 'Atharv', 'Dhruv', 'Yash', 'Rohan', 'Karan', 'Siddharth', 'Pranav', 'Tejas', 'Omkar', 'Harsh', 'Nikhil', 'Varun', 'Shreyas', 'Aditya', 'Rahul', 'Sahil', 'Mayur', 'Amit', 'Rishi', 'Neel', 'Parth', 'Chirag', 'Gaurav', 'Manav', 'Soham', 'Aniket', 'Vedant', 'Hrithik', 'Kunal', 'Sanket', 'Prathamesh', 'Ayush', 'Jayesh'];
+const FEMALE = ['Ananya', 'Diya', 'Saanvi', 'Aadhya', 'Myra', 'Kiara', 'Anika', 'Ira', 'Navya', 'Pari', 'Riya', 'Sneha', 'Pooja', 'Kavya', 'Tanvi', 'Shruti', 'Isha', 'Meera', 'Neha', 'Priya', 'Sanika', 'Simran', 'Aditi', 'Gauri', 'Mansi', 'Radhika', 'Sakshi', 'Trisha', 'Vaishnavi', 'Zoya', 'Aarohi', 'Bhavya', 'Disha', 'Janhvi', 'Khushi', 'Manasi', 'Nidhi', 'Prachi', 'Rutuja', 'Swara'];
+const SURNAMES = ['Sharma', 'Patil', 'Kulkarni', 'Deshmukh', 'Joshi', 'Gupta', 'Mehta', 'Singh', 'Gill', 'Verma', 'Kapoor', 'Nair', 'Iyer', 'Rao', 'Khan', 'Shaikh', 'Pawar', 'Jadhav', 'More', 'Shinde', 'Bhosale', 'Chavan', 'Gaikwad', 'Kamble', 'Naik', 'Desai', 'Bhatia', 'Malhotra', 'Saxena', 'Tiwari', 'Agarwal', 'Menon', 'Pillai', 'Thakur', 'Mishra'];
+const BLOOD = ['O+', 'B+', 'A+', 'O+', 'B+', 'A+', 'AB+', 'O-', 'A-', 'B-'];
+
+/** A fixed number in [0, 1) from a string, so the sample students are the same every time. */
+const unit = (key) => crypto.createHash('md5').update(key).digest().readUInt32BE(0) / 2 ** 32;
+
+/** The class (course) for one division: Class 9-B, BCA - Division B, ... */
+export function divisionCourse(spec, division) {
+  const c = spec.course;
+  if (spec.type === 'school') return { code: `CLASS9${division}`, name: `Class 9-${division}`, fullName: `Class 9, Section ${division}`, department: c.department, years: c.years };
+  return { code: `${c.code}-${division}`, name: `${c.name} - Division ${division}`, fullName: `${c.fullName} (Division ${division})`, department: c.department, years: c.years };
+}
+
+/** All students of an institute (3 divisions x 40): the named ones first, then generated ones. Each has `section` = its division. */
+export function rosterFor(spec) {
+  const r = spec.roster;
+  const totals = spec.students[0].att.map(([, total]) => total);
+  const used = new Set(spec.students.map((s) => s.name.toLowerCase()));
+  const emails = new Set(spec.students.map((s) => s.email.toLowerCase()));
+  const out = [];
+  const total = DIVISIONS.length * PER_DIVISION;
+  for (let n = 1; n <= total; n += 1) {
+    const division = DIVISIONS[Math.floor((n - 1) / PER_DIVISION)];
+    const k = ((n - 1) % PER_DIVISION) + 1;
+    const named = spec.students[n - 1];
+    if (named) { out.push({ ...named, section: division }); continue; }
+    const code = `${r.codePrefix}${p3(n)}`;
+    const female = unit(`g|${spec.code}|${n}`) < 0.48;
+    const pool = female ? FEMALE : MALE;
+    const first = pool[(n * 7 + r.offset) % pool.length];
+    let li = (n * 11 + r.offset * 3) % SURNAMES.length;
+    let name = `${first} ${SURNAMES[li]}`;
+    while (used.has(name.toLowerCase())) { li = (li + 1) % SURNAMES.length; name = `${first} ${SURNAMES[li]}`; }
+    used.add(name.toLowerCase());
+    let email = `${first}.${SURNAMES[li]}@${r.domain}`.toLowerCase();
+    if (emails.has(email)) email = `${first}.${SURNAMES[li]}${n}@${r.domain}`.toLowerCase();
+    emails.add(email);
+    const dad = MALE[(n * 5 + r.offset + 3) % MALE.length];
+    const dobYear = r.dobYears[0] + Math.floor(unit(`y|${code}`) * (r.dobYears[1] - r.dobYears[0] + 1));
+    // Roughly seven in ten students attend well, some are borderline, and a few are below the 75% minimum
+    const u = unit(`a|${code}`); const v = unit(`b|${code}`);
+    const rate = u < 0.14 ? 0.58 + 0.14 * v : u < 0.3 ? 0.72 + 0.07 * v : 0.82 + 0.15 * v;
+    out.push({
+      code, roll: r.roll(n, division, k), enroll: r.enroll(n), name, email,
+      phone: `${r.phone} ${String(10000 + n * 37).slice(-5)}`,
+      dob: `${dobYear}-${p2(1 + Math.floor(unit(`m|${code}`) * 12))}-${p2(1 + Math.floor(unit(`d|${code}`) * 28))}`,
+      gender: female ? 'Female' : 'Male', blood: BLOOD[n % BLOOD.length],
+      semester: spec.students[0].semester, section: division, batch: spec.students[0].batch, admitted: r.admitted,
+      address: `#${10 + ((n * 13) % 190)}, ${r.areas[n % r.areas.length]}, Pune, Maharashtra - 4110${p2(10 + (n % 60))}`,
+      guardian: { name: `${dad} ${SURNAMES[li]}`, relation: 'Father', phone: `${r.phone} ${String(20000 + n * 53).slice(-5)}`, email: `${dad}.${SURNAMES[li]}${n}@example.com`.toLowerCase() },
+      att: totals.map((t, i) => [Math.round(t * Math.min(1, rate * (0.96 + 0.08 * unit(`s${i}|${code}`)))), t]),
+    });
+  }
+  return out;
+}
 
 export const DEMO_PASSWORDS = { admin: 'Admin@123', student: 'Student@123', parent: 'Parent@123', employee: 'Employee@123', super_admin: 'SuperAdmin@123' };

@@ -41,12 +41,12 @@ describe('Students list & detail', () => {
   it('lists the institute\'s students only, with search and status filters', async () => {
     const all = await json('GET', '/api/admin/students', { cookie: admin });
     assert.equal(all.status, 200);
-    assert.equal(all.body.students.length, 3);
-    const searched = await json('GET', '/api/admin/students?search=Aarav', { cookie: admin });
+    assert.equal(all.body.students.length, 120); // three divisions of 40
+    const searched = await json('GET', '/api/admin/students?search=Aarav%20Sharma', { cookie: admin });
     assert.equal(searched.body.students.length, 1);
     assert.equal(searched.body.students[0].name, 'Aarav Sharma');
     const active = await json('GET', '/api/admin/students?status=Active', { cookie: admin });
-    assert.equal(active.body.students.length, 3);
+    assert.equal(active.body.students.length, 120);
     const school = await json('GET', '/api/admin/students', { cookie: schoolAdmin });
     assert.ok(school.body.students.every((s) => !all.body.students.some((a) => a.id === s.id)));
   });
@@ -63,7 +63,7 @@ describe('Students list & detail', () => {
     const r = await json('GET', `/api/admin/students/${target.id}`, { cookie: admin });
     assert.equal(r.status, 200);
     assert.ok(Array.isArray(r.body.student.attendance) && r.body.student.attendance.length > 0);
-    assert.equal(r.body.student.course, 'BCA');
+    assert.equal(r.body.student.course, 'BCA - Division A');
     assert.equal((await json('GET', '/api/admin/students/00000000-0000-0000-0000-000000000000', { cookie: admin })).status, 404);
   });
 });

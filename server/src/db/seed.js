@@ -13,7 +13,9 @@ import crypto from 'node:crypto';
 import { q, switchTenant, withTx } from './pool.js';
 import { nextNumber } from './series.js';
 import { provisionTenant } from '../services/tenant.service.js';
-import { DEMO_PASSWORDS, DEMO_TENANTS } from './demo-data.js';
+import {
+  DEMO_PASSWORDS, DEMO_TENANTS, DIVISIONS, divisionCourse, rosterFor,
+} from './demo-data.js';
 import { addDays, parseISO, toISO } from '../utils/dates.js';
 
 /* ---------- rolling demo data (dates re-anchored to "today") ---------- */
@@ -110,8 +112,8 @@ export async function refreshRollingData() {
   }
   const { rows: slots } = await q(
     `select s.id, e.emp_code from timetable_slots s join employees e on e.id = s.employee_id
-     where s.weekday = $1 order by s.start_time`,
-    [day.getDay()],
+     where s.weekday = $1 and s.course_id = $2 order by s.start_time`,
+    [day.getDay(), course?.id || null],
   );
   const target = slots[1];
   if (target) {
@@ -136,10 +138,19 @@ const chance = (key) => crypto.createHash('md5').update(key).digest().readUInt32
  * with the weakest student a little under the 75% minimum so the "below 75%" lists are not empty.
  */
 async function topUpAttendanceHistory(now, holidays) {
-  const { rows: slots } = await q(
-    `select s.id, s.weekday, s.course_id, s.subject, s.start_time::text as start, s.end_time::text as "end", s.employee_id
-     from timetable_slots s join courses c on c.id = s.course_id`,
+  const { rows: [t] } = await q('select type from tenants where id = app_tenant()');
+  const daily = t?.type === 'school';
+  // A school takes one register a day (the first lecture of the class, by the class teacher); other institutes one per lecture
+  const { rows: all } = await q(
+    `select s.id, s.weekday, s.course_id, s.subject, s.start_time::text as start, s.end_time::text as "end",
+            coalesce(c.class_teacher_id, s.employee_id) as class_teacher, s.employee_id
+     from timetable_slots s join courses c on c.id = s.course_id order by s.course_id, s.weekday, s.start_time, s.id`,
   );
+  const seen = new Set();
+  const slots = daily
+    ? all.filter((x) => { const k = `${x.course_id}|${x.weekday}`; if (seen.has(k)) return false; seen.add(k); return true; })
+      .map((x) => ({ ...x, subject: 'Daily attendance', employee_id: x.class_teacher }))
+    : all;
   if (!slots.length) return;
   const { rows: studs } = await q("select id, student_code as code, course_id, attendance from students where status = 'Active' order by student_code");
   const rate = new Map();
@@ -149,6 +160,8 @@ async function topUpAttendanceHistory(now, holidays) {
   }
   const lowest = [...rate.entries()].sort((x, y) => x[1] - y[1])[0];
   if (lowest && lowest[1] < 0.8) rate.set(lowest[0], 0.74);
+  const byCourse = new Map();
+  for (const st of studs) { if (!byCourse.has(st.course_id)) byCourse.set(st.course_id, []); byCourse.get(st.course_id).push(st); }
 
   const { rows: done } = await q("select slot_id, on_date::text as d from attendance_sessions where on_date >= $1::date and slot_id is not null", [toISO(addDays(now, -46))]);
   const have = new Set(done.map((r) => `${r.slot_id}|${r.d}`));
@@ -163,10 +176,14 @@ async function topUpAttendanceHistory(now, holidays) {
         [sl.id, iso, sl.course_id, sl.subject, sl.start, sl.end, sl.employee_id],
       );
       if (!sess) continue;
-      for (const st of studs.filter((x) => x.course_id === sl.course_id)) {
+      const ids = []; const marks = [];
+      for (const st of byCourse.get(sl.course_id) || []) {
         const r = chance(`${st.code}|${iso}|${sl.start}`);
-        const status = r < rate.get(st.id) ? (chance(`late|${st.code}|${iso}|${sl.start}`) < 0.06 ? 'late' : 'present') : 'absent';
-        await q('insert into attendance_records (session_id, student_id, status) values ($1, $2, $3)', [sess.id, st.id, status]);
+        ids.push(st.id);
+        marks.push(r < rate.get(st.id) ? (chance(`late|${st.code}|${iso}|${sl.start}`) < 0.06 ? 'late' : 'present') : 'absent');
+      }
+      if (ids.length) {
+        await q('insert into attendance_records (session_id, student_id, status) select $1, x.s, x.m from unnest($2::uuid[], $3::text[]) as x(s, m)', [sess.id, ids, marks]);
       }
     }
   }
@@ -248,7 +265,25 @@ async function seedTenant(spec, hashes) {
     for (const role of roles) await q('insert into staff_roles (employee_id, role, department_id) values ($1, $2, $3)', [e.id, role, role === 'hod' ? deptId : null]);
     staffIds.push(e.id);
   }
-  await q("insert into number_series (key, prefix, padding, next_value) values ('employee', 'EMP', 3, $1)", [spec.employees.length + office.length + 1]);
+  // A second set of teachers (EMP012 onward), so each division has its own faculty for its lectures
+  const more = [];
+  for (const [code, name, designation, department, shift] of spec.moreEmployees || []) {
+    const email = `${name.toLowerCase().replace(/[^a-z]+/g, '.')}@${spec.code.replace('demo-', '')}.example`;
+    const { rows: [e] } = await q(
+      `insert into employees (emp_code, name, email, department_id, designation_id, shift)
+       values ($1, $2, $3, $4, $5, $6) returning id`,
+      [code, name, email, dept[department], desig[`${department}|${designation}`], shift],
+    );
+    more.push(e.id);
+    await q("insert into users (role, login_id, email, name, password_hash, employee_id) values ('employee', $1, $2, $3, $4, $5)", [code, email, name, hashes.employee, e.id]);
+  }
+  await q("insert into number_series (key, prefix, padding, next_value) values ('employee', 'EMP', 3, $1)", [spec.employees.length + office.length + more.length + 1]);
+  const idByCode = new Map([...spec.employees, ...(spec.moreEmployees || [])].map(([code], i) => [code, i < spec.employees.length ? emp[i] : more[i - spec.employees.length]]));
+  // Who teaches subject k in each division: A the first set, B the second set, C a mix of both (never two places at once)
+  const teachersFor = (di) => {
+    if (!more.length) return emp;
+    return di === 0 ? emp : di === 1 ? more : emp.map((id, k) => (k % 2 ? more[k] : id));
+  };
 
   // Leave: the standard types, one request waiting and one already approved, so the screens are not empty
   for (const [name, days] of [['Casual leave', 12], ['Sick leave', 10], ['Earned leave', 15], ['Leave without pay', null]]) {
@@ -277,19 +312,27 @@ async function seedTenant(spec, hashes) {
     await q('insert into feedback_questions (form_id, position, text, kind, required) values ($1, $2, $3, $4, $5)', [form.id, i + 1, text, kind, kind === 'rating']);
   }
 
-  const c = spec.course;
-  const { rows: [course] } = await q(
-    'insert into courses (code, name, full_name, department_id, years) values ($1, $2, $3, $4, $5) returning id',
-    [c.code, c.name, c.fullName, dept[c.department], c.years],
-  );
+  // Three divisions, each its own class with its own students, timetable, fee plan and exams
+  const courses = [];
+  for (const [di, division] of DIVISIONS.entries()) {
+    const c = divisionCourse(spec, division);
+    const classTeacher = idByCode.get((spec.classTeachers || [])[di]) || null;
+    const { rows: [row] } = await q(
+      'insert into courses (code, name, full_name, department_id, years, class_teacher_id) values ($1, $2, $3, $4, $5, $6) returning id',
+      [c.code, c.name, c.fullName, dept[c.department], c.years, classTeacher],
+    );
+    courses.push({ division, id: row.id, teachers: teachersFor(di) });
+  }
+  const course = courses[0];
+  const courseOf = new Map(courses.map((c) => [c.division, c.id]));
 
-  for (const s of spec.students) {
+  for (const s of rosterFor(spec)) {
     const attendance = s.att.map(([attended, total], k) => ({ subject: spec.subjects[k], attended, total }));
     const { rows: [st] } = await q(
       `insert into students (student_code, roll_no, enrollment_no, name, email, phone, dob, gender, blood_group, nationality,
          course_id, semester, section, batch, admission_date, status, address, guardian, attendance)
        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'Indian', $10, $11, $12, $13, $14, 'Active', $15, $16, $17) returning id`,
-      [s.code, s.roll, s.enroll, s.name, s.email, s.phone, s.dob, s.gender, s.blood, course.id, s.semester, s.section,
+      [s.code, s.roll, s.enroll, s.name, s.email, s.phone, s.dob, s.gender, s.blood, courseOf.get(s.section), s.semester, s.section,
         s.batch, s.admitted, s.address, s.guardian, JSON.stringify(attendance)],
     );
     await q(
@@ -359,29 +402,37 @@ async function seedTenant(spec, hashes) {
     );
   }
 
-  // Weekly repeating timetable. weekday: 1 = Mon ... 5 = Fri. Subject k is taught by employee k.
+  // Weekly repeating timetable for every division. weekday: 1 = Mon ... 5 = Fri. Division A has subject k taught by the first
+  // set's teacher k; B and C are shifted by one and two subjects, so at any hour the three divisions are in three different
+  // lectures and no teacher is ever in two places.
   const periods = [['09:00', '10:00'], ['10:00', '11:00'], ['11:15', '12:15'], ['12:15', '13:15']];
   const grid = { 1: [0, 1, 5, 4], 2: [2, 0, 3, 1], 3: [5, 2, 4, 3], 4: [1, 3, 0, 2], 5: [4, 5, 0, 1] };
   const labs = new Set(['3-3', '4-2', '4-3']);
-  for (const [weekday, subjectIdx] of Object.entries(grid)) {
-    for (const [p, k] of subjectIdx.entries()) {
-      const isLab = labs.has(`${weekday}-${p + 1}`);
-      const online = k === 4;
-      await q(
-        `insert into timetable_slots (course_id, weekday, start_time, end_time, subject, employee_id, mode, location)
-         values ($1, $2, $3, $4, $5, $6, $7, $8)`,
-        [course.id, Number(weekday), periods[p][0], periods[p][1], isLab ? `${spec.subjects[k]} (Lab)` : spec.subjects[k],
-          emp[k], online ? 'Online' : 'Offline', online ? 'Google Meet' : isLab ? spec.place.lab : spec.place.room],
-      );
+  const n = spec.subjects.length;
+  for (const [di, dv] of courses.entries()) {
+    for (const [weekday, subjectIdx] of Object.entries(grid)) {
+      for (const [p, k0] of subjectIdx.entries()) {
+        const k = (k0 + di) % n;
+        const isLab = labs.has(`${weekday}-${p + 1}`);
+        const online = k === 4;
+        await q(
+          `insert into timetable_slots (course_id, weekday, start_time, end_time, subject, employee_id, mode, location)
+           values ($1, $2, $3, $4, $5, $6, $7, $8)`,
+          [dv.id, Number(weekday), periods[p][0], periods[p][1], isLab ? `${spec.subjects[k]} (Lab)` : spec.subjects[k],
+            dv.teachers[k], online ? 'Online' : 'Offline', online ? 'Google Meet' : isLab ? spec.place.lab : spec.place.room],
+        );
+      }
     }
   }
 
-  await seedExams(spec, course.id, emp);
+  for (const dv of courses) {
+    await seedExams(spec, dv.id, dv.teachers);
+    await seedAssignments(spec, dv.id, dv.teachers);
+    await seedFees(spec, dv.id);
+  }
   await seedLearningAndQuizzes(spec, course.id, emp);
-  await seedAssignments(spec, course.id, emp);
   await seedVisitors(emp);
-  await seedFees(spec, course.id);
-  if (['college', 'university'].includes(spec.type)) await seedPlacement(course.id);
+  if (['college', 'university'].includes(spec.type)) await seedPlacement(courses.map((c) => c.id));
   await seedLibrary(spec, emp);
   await refreshRollingData();
 }
@@ -389,7 +440,7 @@ async function seedTenant(spec, hashes) {
 /** Two assignments for the first subject: one with a graded answer, one still open. */
 async function seedAssignments(spec, courseId, emp) {
   const subject = spec.subjects[0];
-  const { rows: studs } = await q('select id from students where tenant_id = app_tenant() order by student_code limit 3');
+  const { rows: studs } = await q('select id from students where course_id = $1 order by student_code limit 3', [courseId]);
   const now = new Date();
   const { rows: [a1] } = await q(
     `insert into assignments (course_id, subject, title, description, due_at, max_marks, status, created_by_employee, published_at)
@@ -411,7 +462,49 @@ async function seedAssignments(spec, courseId, emp) {
   }
 }
 
-/** A fee plan for the class with one student fully paid for the first term, one part paid and one overdue. */
+/**
+ * Charges for every active student of the structure's class, in one statement. Gives the same result as the fee
+ * service's bulkAssign, without a separate round trip per student (the sample classes have 40 students each).
+ */
+async function assignFast(structureId) {
+  await q(
+    `insert into student_fee_items (student_id, label, amount, due_date, source, structure_id)
+     select st.id, i.label, i.amount, i.due_date, 'structure', i.structure_id
+     from fee_structure_items i join fee_structures fs on fs.id = i.structure_id
+     join students st on st.course_id = fs.course_id and st.status = 'Active'
+     where i.structure_id = $1`, [structureId],
+  );
+}
+
+/**
+ * Sample payments in bulk. Each row pays one fee item in full or in part: { itemId, studentId, amount, method, paidAt }.
+ * Receipt numbers come from the same series the fee desk uses, in the order given.
+ */
+async function payFast(rows) {
+  if (!rows.length) return;
+  const { rows: [r] } = await q(
+    `insert into number_series (key, prefix, padding, next_value) values ('receipt', $2, 5, $1::int + 1)
+     on conflict (tenant_id, key) do update set next_value = number_series.next_value + $1::int
+     returning prefix, padding, next_value - $1::int as first`, [rows.length, `RCPT${new Date().getFullYear()}-`],
+  );
+  const receipts = rows.map((_, i) => `${r.prefix}${String(r.first + i).padStart(r.padding, '0')}`);
+  const { rows: made } = await q(
+    `insert into payments (student_id, receipt_no, amount, method, note, paid_at)
+     select * from unnest($1::uuid[], $2::text[], $3::numeric[], $4::text[], $5::text[], $6::timestamptz[]) returning id, receipt_no`,
+    [rows.map((x) => x.studentId), receipts, rows.map((x) => x.amount), rows.map((x) => x.method), rows.map(() => 'Demo payment'), rows.map((x) => x.paidAt.toISOString())],
+  );
+  const idOf = new Map(made.map((m) => [m.receipt_no, m.id]));
+  await q(
+    'insert into payment_allocations (payment_id, fee_item_id, amount) select * from unnest($1::uuid[], $2::uuid[], $3::numeric[])',
+    [receipts.map((x) => idOf.get(x)), rows.map((x) => x.itemId), rows.map((x) => x.amount)],
+  );
+  await q(
+    `update student_fee_items i set status = case when (select sum(a.amount) from payment_allocations a where a.fee_item_id = i.id) >= i.amount - 0.01 then 'paid' else 'partial' end
+     where i.id = any ($1::uuid[])`, [[...new Set(rows.map((x) => x.itemId))]],
+  );
+}
+
+/** A fee plan for the class with a realistic spread for the fee desk: about a quarter have paid term 1, a quarter part of it, the rest still owe it. */
 async function seedFees(spec, courseId) {
   const school = spec.type === 'school';
   const now = new Date();
@@ -426,15 +519,26 @@ async function seedFees(spec, courseId) {
       { label: 'Term 2 tuition', amount: term, dueDate: toISO(addDays(now, 40)) },
     ],
   });
-  const system = { id: null, role: 'admin' };
-  await feesSvc.bulkAssign(s.id, system);
-  const { rows: studs } = await q("select id from students where tenant_id = app_tenant() and course_id = $1 and status = 'Active' order by student_code limit 3", [courseId]);
-  const pays = [[studs[0], term, 'upi', 3], [studs[1], term / 2, 'cash', 9]];
-  for (const [st, amount, method, daysAgo] of pays) {
-    if (!st) continue;
-    const p = await feesSvc.recordPayment({ studentId: st.id, amount, method, note: 'Demo payment' }, system);
-    await q("update payments set paid_at = now() - ($2 || ' days')::interval where id = $1", [p.id, String(daysAgo)]);
+  await assignFast(s.id);
+  const { rows: items } = await q(
+    `select i.id, i.student_id, i.label, i.amount::float8 as amount from student_fee_items i join students st on st.id = i.student_id
+     where i.structure_id = $1 order by st.student_code, i.due_date`, [s.id],
+  );
+  const byStudent = new Map();
+  for (const it of items) { if (!byStudent.has(it.student_id)) byStudent.set(it.student_id, []); byStudent.get(it.student_id).push(it); }
+  const methods = ['upi', 'cash', 'bank_transfer', 'card'];
+  const pays = [];
+  for (const [k, [studentId, list]] of [...byStudent.entries()].entries()) {
+    const kind = k % 4;
+    if (kind > 1) continue;
+    const paidAt = new Date(now.getTime() - (3 + (k % 9)) * 86400000);
+    const method = methods[k % methods.length];
+    const term1 = list.find((x) => x.label === 'Term 1 tuition');
+    // The first student has paid term 1 only and the second half of it; from the fifth on, every fourth student has paid the whole year
+    if (kind === 0 && k >= 4) for (const it of list) pays.push({ itemId: it.id, studentId, amount: it.amount, method, paidAt });
+    else pays.push({ itemId: term1.id, studentId, amount: kind === 0 ? term : term / 2, method, paidAt });
   }
+  await payFast(pays);
 }
 
 /**
@@ -451,21 +555,28 @@ async function seedFeeHistory(spec, courseId, now) {
   }
   const prevYear = `${now.getFullYear() - 1}-${String(now.getFullYear() % 100).padStart(2, '0')}`;
   const s = await feesSvc.createStructure({ name: 'Previous term (monthly)', courseId, academicYear: prevYear, items });
-  const system = { id: null, role: 'admin' };
-  await feesSvc.bulkAssign(s.id, system);
-  const { rows: studs } = await q("select id from students where tenant_id = app_tenant() and course_id = $1 and status = 'Active' order by student_code", [courseId]);
+  await assignFast(s.id);
+  const { rows: charges } = await q(
+    `select i.id, i.label, i.student_id, st.student_code from student_fee_items i join students st on st.id = i.student_id
+     where i.structure_id = $1 order by st.student_code`, [s.id],
+  );
+  const byStudent = new Map();
+  for (const c of charges) { if (!byStudent.has(c.student_id)) byStudent.set(c.student_id, []); byStudent.get(c.student_id).push(c); }
   const methods = ['upi', 'cash', 'bank_transfer', 'card', 'upi'];
   // Most pay each month; a couple of times a student pays two instalments together the month after
   const late = { '4|2': 3, '2|1': 1 };
   const plan = [];
-  for (let m = 5; m >= 1; m -= 1) for (const [k, st] of studs.entries()) plan.push({ k, st, m, paidIn: late[`${m}|${k}`] ?? m });
-  plan.sort((a, b) => b.paidIn - a.paidIn || b.m - a.m);
-  for (const { k, st, m, paidIn } of plan) {
-    const p = await feesSvc.recordPayment({ studentId: st.id, amount, method: methods[(m + k) % methods.length], note: 'Demo payment' }, system);
-    // Paid a few days either side of the 10th, the later students a little later
-    const paidOn = new Date(now.getFullYear(), now.getMonth() - paidIn, 6 + k * 3 + (m % 3), 11, 30);
-    await q('update payments set paid_at = $2 where id = $1', [p.id, paidOn.toISOString()]);
+  for (let m = 5; m >= 1; m -= 1) {
+    for (const [k, [sid, list]] of [...byStudent.entries()].entries()) {
+      plan.push({ k, sid, m, item: list.find((x) => x.label === `Previous term instalment ${6 - m}`), paidIn: late[`${m}|${k}`] ?? m });
+    }
   }
+  plan.sort((a, b) => b.paidIn - a.paidIn || b.m - a.m);
+  await payFast(plan.map(({ k, sid, m, item, paidIn }) => ({
+    itemId: item.id, studentId: sid, amount, method: methods[(m + k) % methods.length],
+    // Paid a few days either side of the 10th, the later students a little later
+    paidAt: new Date(now.getFullYear(), now.getMonth() - paidIn, 6 + (k % 12) * 3 % 24 + (m % 3), 11, 30),
+  })));
 }
 
 /** A small shelf and three loans (one overdue, one due back soon), so the library desk is not empty. */
@@ -518,7 +629,7 @@ async function seedVisitors(emp) {
 }
 
 /** Companies, drives and a few applications so the Placement screens have something to show. */
-async function seedPlacement(courseId) {
+async function seedPlacement(courseIds) {
   const mk = async (name, industry, website) => (await q(
     'insert into placement_companies (name, industry, website, contact_name, contact_email) values ($1, $2, $3, $4, $5) returning id',
     [name, industry, website, 'Talent Acquisition', `careers@${website.replace(/^https?:\/\//, '')}`],
@@ -533,8 +644,8 @@ async function seedPlacement(courseId) {
     [company, title, 'Campus drive. Bring a printed resume and your college ID. Details of the rounds will be shared with shortlisted students.', ctc, loc,
       toISO(addDays(now, driveIn)), toISO(addDays(now, applyIn)), status, extra.courses || [], extra.sem || null, extra.att ?? null],
   )).rows[0].id;
-  const d1 = await drive(c1, 'Graduate Engineer Trainee', 6.5, 'Pune', 12, 8, 'open', { courses: [courseId], att: 60 });
-  await drive(c2, 'Data Analyst', 8, 'Bengaluru', 20, 15, 'open', { courses: [courseId], sem: 6 });
+  const d1 = await drive(c1, 'Graduate Engineer Trainee', 6.5, 'Pune', 12, 8, 'open', { courses: courseIds, att: 60 });
+  await drive(c2, 'Data Analyst', 8, 'Bengaluru', 20, 15, 'open', { courses: courseIds, sem: 6 });
   const d3 = await drive(c3, 'Associate Analyst', 5.2, 'Mumbai', -20, -25, 'closed');
   await drive(c1, 'Software Developer (Next Batch)', 9, 'Pune', 40, 34, 'draft');
   const { rows: studs } = await q('select id from students where tenant_id = app_tenant() order by student_code limit 3');
@@ -557,7 +668,7 @@ async function seedExams(spec, courseId, emp) {
   const day = (offset) => { const d = new Date(); d.setDate(d.getDate() + offset); return d.toISOString().slice(0, 10); };
   const sem = spec.students[0].semester;
   const credits = [4, 4, 3, 3, 2, 2];
-  const { rows: students } = await q('select id, student_code from students order by student_code');
+  const { rows: students } = await q('select id, student_code from students where course_id = $1 order by student_code', [courseId]);
   const mkExam = async (name, kind, semester, start, end, published) => (await q(
     `insert into exams (course_id, semester, name, kind, start_date, end_date, status, published_at)
      values ($1, $2, $3, $4, $5, $6, $7, $8) returning id`,
@@ -579,12 +690,16 @@ async function seedExams(spec, courseId, emp) {
   const pastPapers = await mkPapers(past, 100, 40, 'submitted');
   const base = [84, 77, 62, 71, 66, 58];
   const wobble = [4, -3, 6, -5, 2, -8];
+  const papersCol = []; const studentsCol = []; const marksCol = [];
   for (const [i, st] of students.entries()) {
     for (const [k, paperId] of pastPapers.entries()) {
       let marks = Math.max(0, Math.min(100, base[i % base.length] + wobble[(k + i) % wobble.length]));
       if (i === 2 && k === spec.subjects.length - 1) marks = 36; // one failed paper
-      await q('insert into exam_marks (paper_id, student_id, marks, absent) values ($1, $2, $3, false)', [paperId, st.id, marks]);
+      papersCol.push(paperId); studentsCol.push(st.id); marksCol.push(marks);
     }
+  }
+  if (papersCol.length) {
+    await q('insert into exam_marks (paper_id, student_id, marks, absent) select x.p, x.s, x.m, false from unnest($1::uuid[], $2::uuid[], $3::numeric[]) as x(p, s, m)', [papersCol, studentsCol, marksCol]);
   }
 
   const upcoming = await mkExam('Mid-Semester Examination', 'mid_term', sem, day(10), day(15), false);

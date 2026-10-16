@@ -115,6 +115,17 @@ case-sensitive. The Super Admin needs no institute code.
 | `demo-school`  | School — *Greenfield Public School* | `ADM001` | `GPS2026001` | `EMP001` |
 | `demo-university` | University — *MIT World Peace University, Pune* | `ADM001` | `MIT2026001` | `EMP001` |
 
+Each institute has **3 divisions of 40 students** (120 in all), each division its own class with its own timetable, fee plan
+and exams: Horizon `BCA-A/B/C`, Greenfield `Class 9-A/B/C`, MIT-WPU `B.Tech CSE (AI & DS) - Division A/B/C`. The ID in the table is
+the first student of division A; students are numbered `STU2026001`-`STU2026120` (`GPS2026...`, `MIT2026...`), so division B starts at 041 and C at 081.
+Each institute has 12 teachers (`EMP001`-`EMP006` and `EMP012`-`EMP017`) plus office staff (`EMP007`-`EMP011`). Teachers are assigned
+by subject and division, so no teacher is in two places at once.
+
+**Who takes attendance.** A **school** takes one register a day for each class, in the first period, by the **class teacher**
+(set on the class, under Classes; Greenfield: `EMP001` for 9-A, `EMP012` for 9-B, `EMP004` for 9-C). A **college or university** takes
+a register for **every lecture**, and only the teacher the lecture is assigned to (or whoever it is reassigned to for that day) can mark it.
+The admin can view and correct any register.
+
 | Role        | Password         |
 |-------------|------------------|
 | Super Admin *(no institute code)* — `SA001` | `SuperAdmin@123` |

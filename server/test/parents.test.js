@@ -206,6 +206,8 @@ describe('The office creates and links parents', () => {
     assert.equal((await json('GET', `/api/admin/students/${ids.STU2026002}/parents`, { cookie: admin })).body.parents.length, 1, "the first parent is untouched");
   });
   it('invites every student that has no parent yet and has a guardian email', async () => {
+    // The demo college has 120 students; keep only the three well-known ones in play so the counts below stay exact
+    await withTx({ tenantId }, () => q("update students set guardian = jsonb_set(guardian, '{email_bak}', coalesce(guardian->'email', '\"\"'::jsonb)) || '{\"email\": \"\"}'::jsonb where student_code not in ('STU2026001','STU2026002','STU2026003')"));
     const original = (await withTx({ tenantId }, () => q("select guardian from students where student_code = 'STU2026003'"))).rows[0].guardian;
     await withTx({ tenantId }, () => q("update students set guardian = guardian || '{\"email\": \"\"}'::jsonb where student_code = 'STU2026003'"));
     const none = await json('POST', '/api/admin/students/parents/invite-all', { cookie: admin });
@@ -219,6 +221,7 @@ describe('The office creates and links parents', () => {
     assert.deepEqual(made.rows.map((x) => x.login_id), ['PAR-STU2026003']);
     const again = await json('POST', '/api/admin/students/parents/invite-all', { cookie: admin });
     assert.equal(again.body.created, 0, 'running it twice does not duplicate anyone');
+    await withTx({ tenantId }, () => q("update students set guardian = (guardian - 'email_bak') || jsonb_build_object('email', guardian->'email_bak') where guardian ? 'email_bak'"));
   });
   it('is closed to students and other institutes', async () => {
     assert.equal((await json('GET', `/api/admin/students/${ids.STU2026001}/parents`, { cookie: student })).status, 403);

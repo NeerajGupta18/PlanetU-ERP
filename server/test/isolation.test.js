@@ -17,7 +17,7 @@ import { closePool, q, withTx } from '../src/db/pool.js';
 import { issueCaptchaToken } from '../src/services/captcha.service.js';
 
 // Each demo institute: 6 teachers plus 5 office staff with staff roles (principal, accountant, librarian, gate security, head of department)
-const DEMO_EMPLOYEES = 11;
+const DEMO_EMPLOYEES = 17; // 6 teachers, 5 office staff and 6 more faculty
 
 let server;
 let base;
@@ -406,6 +406,6 @@ describe('Vendor console: provisioning and configuration', () => {
     const list = (await call(sessions.superAdmin, 'GET', '/api/super-admin/tenants')).body.tenants;
     const college = list.find((t) => t.code === 'demo-college');
     assert.equal(college.employees, DEMO_EMPLOYEES);
-    assert.equal(college.students, 3);
+    assert.equal(college.students, 120);
   });
 });

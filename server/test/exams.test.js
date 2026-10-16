@@ -147,7 +147,7 @@ describe('Row Level Security (database)', () => {
     const demoCollegeExams = await withTx({ tenantId }, async () => (await q('select count(*)::int as n from exams')).rows[0].n);
     assert.ok(demoCollegeExams >= 2, 'seeded demo exams exist');
     await withTx({ tenantId: schoolId }, async () => {
-      assert.equal((await q("select count(*)::int as n from exams where name = 'End-Semester Examination'")).rows[0].n, 1, 'school sees only its own');
+      assert.equal((await q("select count(*)::int as n from exams where name = 'End-Semester Examination'")).rows[0].n, 3, 'school sees only its own (one per division)');
     });
   });
 });
