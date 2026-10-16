@@ -206,7 +206,7 @@ export const HELP = [
       'Open Mark attendance. In a college or university it lists only the lectures assigned to you today; in a school, the class teacher sees the class register for the day.',
       'Tap Mark next to the lecture. Tap the few who are absent (A) or late (L), then "Mark the rest present" (or start with "Mark all present").',
       'Choose "Submit attendance". Students and parents of absent students are told at once.',
-      'You can also start a QR check-in so students mark themselves from their phones.',
+      'In a college or university you can also start a QR check-in: choose how long it stays open, show the QR on the projector, and students scan it inside the app. Schools do not use this.',
     ],
   },
   {
@@ -260,7 +260,7 @@ export const HELP = [
     id: 'student-att', who: ['student'], title: 'Check your attendance', module: 'attendance', to: '/student/attendance',
     steps: [
       'Open Attendance to see each subject. Red means below 75%, amber means close to it.',
-      'If your teacher starts a QR check-in, open Check in and scan the code to mark yourself present.',
+      'If your teacher starts a QR check-in, open Scan in the PlanetU app, tap Scan QR code and point the camera at the projector. You will see "Attendance marked successfully". The code changes every few seconds, so a photo will not work.',
     ],
   },
   {

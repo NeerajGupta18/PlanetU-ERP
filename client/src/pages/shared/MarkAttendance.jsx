@@ -107,7 +107,7 @@ function Sheet({ role, data, backTo }) {
       />
 
       {lecture.daily && <p className="note" style={{ marginTop: 0 }}>This is the daily class register. It is taken once a day by the class teacher, and it counts for the whole day.</p>}
-      {role === 'employee' && editable && !submitted && lecture.date === todayISO() && <QrCheckinPanel slotId={lecture.slotId} onCheckedIn={loadCheckins} />}
+      {role === 'employee' && !lecture.daily && editable && !submitted && lecture.date === todayISO() && <QrCheckinPanel slotId={lecture.slotId} onCheckedIn={loadCheckins} />}
 
       <Card
         title={`${students.length} students`}
