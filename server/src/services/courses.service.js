@@ -31,8 +31,10 @@ export const COURSE_DEPENDANTS = [
 
 const SELECT = `
   select c.id, c.code, c.name, c.full_name as "fullName", c.years, c.department_id as "departmentId", d.name as "departmentName",
+         c.class_teacher_id as "classTeacherId", ct.name as "classTeacherName",
          (select count(*)::int from students s where s.course_id = c.id) as students
-  from courses c left join departments d on d.id = c.department_id`;
+  from courses c left join departments d on d.id = c.department_id
+  left join employees ct on ct.id = c.class_teacher_id`;
 
 const text = (v, label, max, required = false) => {
   const s = String(v ?? '').trim();
@@ -51,7 +53,11 @@ async function clean(body, current) {
   if (departmentId) {
     if (!isUuid(departmentId) || !(await q('select 1 from departments where id = $1', [departmentId])).rowCount) throw new HttpError(400, 'Choose a department from the list.');
   } else departmentId = null;
-  return { code, name: text(b.name, 'Name', 80, true), fullName: text(b.fullName, 'Full name', 150), years, departmentId };
+  let classTeacherId = b.classTeacherId || null;
+  if (classTeacherId) {
+    if (!isUuid(classTeacherId) || !(await q("select 1 from employees where id = $1", [classTeacherId])).rowCount) throw new HttpError(400, 'Choose a class teacher from the list of employees.');
+  } else classTeacherId = null;
+  return { code, name: text(b.name, 'Name', 80, true), fullName: text(b.fullName, 'Full name', 150), years, departmentId, classTeacherId };
 }
 
 const dupMessage = 'Another one already uses that code. Codes must be different (capital letters do not count).';
@@ -71,7 +77,7 @@ export async function createCourse(actor, body) {
   const c = await clean(body);
   let id;
   try {
-    ({ rows: [{ id }] } = await q('insert into courses (code, name, full_name, department_id, years) values ($1,$2,$3,$4,$5) returning id', [c.code, c.name, c.fullName, c.departmentId, c.years]));
+    ({ rows: [{ id }] } = await q('insert into courses (code, name, full_name, department_id, years, class_teacher_id) values ($1,$2,$3,$4,$5,$6) returning id', [c.code, c.name, c.fullName, c.departmentId, c.years, c.classTeacherId]));
   } catch (e) { if (e.code === '23505') throw new HttpError(409, dupMessage); throw e; }
   await audit(actor, 'course.create', 'course', id, { code: c.code, name: c.name });
   return getCourse(id);
@@ -81,7 +87,7 @@ export async function updateCourse(actor, id, body) {
   const cur = await getCourse(id);
   const c = await clean(body, cur);
   try {
-    await q('update courses set code=$2, name=$3, full_name=$4, department_id=$5, years=$6 where id=$1', [id, c.code, c.name, c.fullName, c.departmentId, c.years]);
+    await q('update courses set code=$2, name=$3, full_name=$4, department_id=$5, years=$6, class_teacher_id=$7 where id=$1', [id, c.code, c.name, c.fullName, c.departmentId, c.years, c.classTeacherId]);
   } catch (e) { if (e.code === '23505') throw new HttpError(409, dupMessage); throw e; }
   await audit(actor, 'course.update', 'course', id, { code: c.code });
   return getCourse(id);

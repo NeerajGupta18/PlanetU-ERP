@@ -15,6 +15,7 @@ export default function Courses() {
   const one = t('course', 'Course'); const many = t('courses', 'Courses');
   const list = useFetch('/admin/courses');
   const depts = useFetch('/admin/departments');
+  const emps = useFetch('/admin/employees');
   const [modal, setModal] = useState(null); // a course, or {} for a new one
 
   const remove = async (c) => {
@@ -36,13 +37,14 @@ export default function Courses() {
             : (
               <div className="table-wrap">
                 <table className="table">
-                  <thead><tr><th>Code</th><th>Name</th><th>Department</th><th className="num">Years</th><th className="num">{t('students', 'Students')}</th><th>Actions</th></tr></thead>
+                  <thead><tr><th>Code</th><th>Name</th><th>Department</th><th>Class teacher</th><th className="num">Years</th><th className="num">{t('students', 'Students')}</th><th>Actions</th></tr></thead>
                   <tbody>
                     {list.data.courses.map((c) => (
                       <tr key={c.id}>
                         <td><strong>{c.code}</strong></td>
                         <td>{c.name}{c.fullName && c.fullName !== c.name && <><br /><small className="muted">{c.fullName}</small></>}</td>
                         <td className="muted">{c.departmentName || '-'}</td>
+                        <td className="muted">{c.classTeacherName || '-'}</td>
                         <td className="num">{c.years}</td>
                         <td className="num"><span className="count-pill">{c.students}</span></td>
                         <td>
@@ -59,21 +61,21 @@ export default function Courses() {
             ))}
         </DataBoundary>
       </Card>
-      {modal && <CourseModal course={modal} one={one} departments={depts.data?.departments || []} onClose={() => setModal(null)} onSaved={() => { setModal(null); list.reload(); }} />}
+      {modal && <CourseModal course={modal} one={one} departments={depts.data?.departments || []} employees={emps.data?.employees || []} onClose={() => setModal(null)} onSaved={() => { setModal(null); list.reload(); }} />}
     </>
   );
 }
 
-function CourseModal({ course, one, departments, onClose, onSaved }) {
+function CourseModal({ course, one, departments, employees, onClose, onSaved }) {
   const isNew = !course.id;
-  const [f, setF] = useState({ code: course.code || '', name: course.name || '', fullName: course.fullName || '', years: course.years || 1, departmentId: course.departmentId || '' });
+  const [f, setF] = useState({ code: course.code || '', name: course.name || '', fullName: course.fullName || '', years: course.years || 1, departmentId: course.departmentId || '', classTeacherId: course.classTeacherId || '' });
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
   const set = (k) => (e) => setF((c) => ({ ...c, [k]: e.target.value }));
 
   const submit = async (e) => {
     e.preventDefault(); setBusy(true); setErr('');
-    const body = { ...f, years: Number(f.years), departmentId: f.departmentId || null };
+    const body = { ...f, years: Number(f.years), departmentId: f.departmentId || null, classTeacherId: f.classTeacherId || null };
     try { if (isNew) await api.post('/admin/courses', body); else await api.put(`/admin/courses/${course.id}`, body); onSaved(); } catch (ex) { setErr(ex.message); } finally { setBusy(false); }
   };
 
@@ -88,6 +90,9 @@ function CourseModal({ course, one, departments, onClose, onSaved }) {
           <div className="form-field form-field--full"><label className="label" htmlFor="co-full">Full name (optional)</label><input id="co-full" className="input" maxLength={150} placeholder="e.g. Bachelor of Computer Applications" value={f.fullName} onChange={set('fullName')} /></div>
           <div className="form-field form-field--full"><label className="label" htmlFor="co-dept">Department (optional)</label>
             <select id="co-dept" className="input" value={f.departmentId} onChange={set('departmentId')}><option value="">None</option>{departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></div>
+          <div className="form-field form-field--full"><label className="label" htmlFor="co-ct">Class teacher (optional)</label>
+            <select id="co-ct" className="input" value={f.classTeacherId} onChange={set('classTeacherId')}><option value="">None</option>{employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}</select>
+            <small className="muted">In a school, the class teacher takes the daily attendance for this class. Colleges and universities take attendance lecture by lecture, by each lecture&apos;s own teacher.</small></div>
         </div>
         <div className="form-actions"><button type="button" className="btn btn--outline" onClick={onClose}>Cancel</button><button className="btn btn--primary" disabled={busy}>{busy ? 'Saving...' : 'Save'}</button></div>
       </form>
