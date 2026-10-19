@@ -248,24 +248,25 @@ describe('Classroom location (optional)', () => {
   });
 });
 
-describe('Schools do not have QR check-in', () => {
-  it('a school is not given the module, and the server refuses even if it is switched on', async () => {
+describe('Colleges and universities have QR check-in, schools do not', () => {
+  it('a school student is refused, and the school has no check-in at all', async () => {
     const school = await login('demo-school', 'student', 'GPS2026001', 'Student@123');
-    const r1 = await json('GET', '/api/student/checkin/today', { cookie: school });
-    assert.equal(r1.status, 403); assert.equal(r1.body.code, 'MODULE_DISABLED');
-    const sid = (await withTx({ platform: true }, () => q("select id from tenants where code = 'demo-school'"))).rows[0].id;
-    try {
-      await withTx({ platform: true }, () => q("update tenants set modules = array_append(modules, 'qr_checkin') where id = $1", [sid]));
-      const r2 = await json('GET', '/api/student/checkin/today', { cookie: school });
-      assert.equal(r2.status, 403); assert.equal(r2.body.code, 'CHECKIN_NOT_FOR_SCHOOLS');
-    } finally {
-      await withTx({ platform: true }, () => q("update tenants set modules = array_remove(modules, 'qr_checkin') where id = $1", [sid]));
-    }
+    const r = await json('GET', '/api/student/checkin/today', { cookie: school });
+    assert.equal(r.status, 403); assert.equal(r.body.code, 'CHECKIN_NOT_FOR_SCHOOLS');
+    assert.equal((await json('POST', '/api/student/checkin', { cookie: school, body: { token: 'x' } })).status, 403);
   });
 
-  it('colleges and universities have it, and the school preset does not', async () => {
-    const rows = (await withTx({ platform: true }, () => q("select code, 'qr_checkin' = any (modules) as has from tenants where code like 'demo-%'"))).rows;
-    const by = Object.fromEntries(rows.map((r) => [r.code, r.has]));
-    assert.deepEqual([by['demo-college'], by['demo-university'], by['demo-school']], [true, true, false]);
+  it('a college needs nothing switched on: Attendance is enough (as on a live server)', async () => {
+    await withTx({ platform: true }, () => q("update tenants set modules = array_remove(modules, 'qr_checkin') where code in ('demo-college', 'demo-university')"));
+    const r = await json('GET', '/api/student/checkin/today', { cookie: ck.c1 });
+    assert.equal(r.status, 200);
+    assert.equal((await json('GET', `/api/employee/attendance/checkin?slotId=${slotId}`, { cookie: empA })).status, 200);
+  });
+
+  it('a university student can open check-in too', async () => {
+    const rows = (await withTx({ platform: true }, () => q("select id from tenants where code = 'demo-university'"))).rows;
+    const login1 = (await withTx({ tenantId: rows[0].id }, () => q("select login_id from users where role = 'student' and status = 'active' order by login_id limit 1"))).rows[0].login_id;
+    const uni = await login('demo-university', 'student', login1, 'Student@123');
+    assert.equal((await json('GET', '/api/student/checkin/today', { cookie: uni })).status, 200);
   });
 });
