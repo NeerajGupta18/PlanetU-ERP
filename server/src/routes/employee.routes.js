@@ -75,9 +75,9 @@ router.use('/attendance', requireModule('attendance'), requireModule('timetable'
 router.get('/attendance/today', attendance.myLectures);
 router.get('/attendance/lecture', attendance.getSheet);
 router.put('/attendance/lecture', attendance.saveSheet);
-router.get('/attendance/checkin', requireModule('qr_checkin'), checkin.state);
-router.post('/attendance/checkin', requireModule('qr_checkin'), checkin.open);
-router.post('/attendance/checkin/close', requireModule('qr_checkin'), checkin.close);
+router.get('/attendance/checkin', checkin.state);
+router.post('/attendance/checkin', checkin.open);
+router.post('/attendance/checkin/close', checkin.close);
 
 // Faculty enter marks only for the papers an admin assigned to them
 router.use('/exams', requireModule('exams'));

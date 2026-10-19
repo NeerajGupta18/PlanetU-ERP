@@ -1,5 +1,5 @@
 /**
- * QR check-in for attendance (colleges and universities only). A teacher opens check-in for today's lecture and
+ * QR check-in for attendance (colleges and universities only; it comes with the Attendance module, nothing to switch on). A teacher opens check-in for today's lecture and
  * shows a QR code on the projector. The QR holds a signed token (not a link, not a typed code) that is replaced every
  * 10 seconds, and only the scanner inside the app sends it to the server. A phone camera app just shows meaningless
  * text, and a photo of the screen goes stale in seconds. The teacher chooses how long check-in stays open (5, 10, ...
@@ -41,10 +41,11 @@ function distanceM(aLat, aLng, bLat, bLng) {
 }
 const validPoint = (lat, lng) => Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
 
-/** Check-in is for colleges and universities. A school's class teacher takes the daily register instead. */
+/** Check-in is for colleges and universities (it comes with the Attendance module). A school's class teacher takes the daily register instead. */
+export const CHECKIN_TYPES = ['college', 'university'];
 async function assertEnabled() {
   const { rows: [t] } = await q('select type from tenants where id = app_tenant()');
-  if (t?.type === 'school') throw err(403, 'QR check-in is not used in schools. The class teacher marks attendance.', 'CHECKIN_NOT_FOR_SCHOOLS');
+  if (!CHECKIN_TYPES.includes(t?.type)) throw err(403, 'QR check-in is only for colleges and universities. In a school the class teacher marks attendance.', 'CHECKIN_NOT_FOR_SCHOOLS');
 }
 const same = (a, b) => a.length === b.length && crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
 
