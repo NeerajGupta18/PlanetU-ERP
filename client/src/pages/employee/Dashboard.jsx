@@ -3,7 +3,7 @@ import { AlertTriangle, CalendarCheck, CalendarOff, ClipboardCheck, FileCheck2, 
 import { useFetch } from '../../hooks/useFetch.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useTenantConfig } from '../../hooks/useTenantConfig.js';
-import { Badge, Card, PageBanner, StatCard, pending } from '../../components/ui/Ui.jsx';
+import { Badge, Card, PageBanner, StatCard, pending, CollapsibleCards } from '../../components/ui/Ui.jsx';
 import { DataBoundary } from '../../components/ui/Feedback.jsx';
 import LectureList from '../../components/attendance/LectureList.jsx';
 import TodoCard from '../../components/campus/TodoCard.jsx';
@@ -27,7 +27,7 @@ export default function EmployeeDashboard() {
   const leaveLeft = leaveBal.reduce((a, b) => a + Number(b.left || 0), 0);
 
   return (
-    <>
+    <CollapsibleCards>
       <PageBanner icon={LayoutDashboard} title={`${greeting()}, ${firstName(user.name)}`} subtitle={fmtLong(todayISO())} />
 
       {teaching && c && (
@@ -93,6 +93,6 @@ export default function EmployeeDashboard() {
           <p style={{ margin: 0 }}>{leaveBal.map((b) => `${b.name}: ${b.left} left`).join('  -  ')}</p>
         </Card>
       )}
-    </>
+    </CollapsibleCards>
   );
 }

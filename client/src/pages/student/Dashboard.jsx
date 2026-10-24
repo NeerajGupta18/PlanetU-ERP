@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { AlertTriangle, Award, BookOpen, CalendarDays, Clock, FileText, GraduationCap, LayoutDashboard, MapPin, Megaphone, Percent, ScanLine, Video, Wallet } from 'lucide-react';
 import { useFetch } from '../../hooks/useFetch.js';
 import { useTenantConfig } from '../../hooks/useTenantConfig.js';
-import { Badge, Card, PageBanner, StatCard, pending } from '../../components/ui/Ui.jsx';
+import { Badge, Card, PageBanner, StatCard, pending, CollapsibleCards } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import { EVENT_TYPES } from '../../utils/eventTypes.js';
 import TodoCard from '../../components/campus/TodoCard.jsx';
@@ -46,7 +46,7 @@ function DashboardView({ d }) {
   const nextClass = liveNow ? { ...liveNow, live: true } : lectures.find((i) => i.start > now) || null;
 
   return (
-    <>
+    <CollapsibleCards>
       <PageBanner
         icon={LayoutDashboard}
         title={`${greeting()}, ${first}`}
@@ -198,6 +198,6 @@ function DashboardView({ d }) {
           </ul>
         </Card>
       </div>
-    </>
+    </CollapsibleCards>
   );
 }

@@ -5,7 +5,7 @@ import {
 import { useFetch } from '../../hooks/useFetch.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useTenantConfig } from '../../hooks/useTenantConfig.js';
-import { Badge, Card, PageBanner, StatCard, pending } from '../../components/ui/Ui.jsx';
+import { Badge, Card, PageBanner, StatCard, pending, CollapsibleCards } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import { BarChart, LineChart } from '../../components/ui/Charts.jsx';
 import AttentionList from '../../components/campus/AttentionList.jsx';
@@ -67,7 +67,7 @@ function DashboardView({ d }) {
   const attStatus = attNow === null ? { status: 'neutral' } : attNow < 75 ? { status: 'bad', hint: 'Below the 75% minimum' } : { status: 'good', hint: 'Above the 75% minimum' };
 
   return (
-    <>
+    <CollapsibleCards>
       <PageBanner icon={LayoutDashboard} title={office ? 'Institute overview' : 'Dashboard'} subtitle={`${d.institute.name}  |  ${fmtLong(todayISO())}`} />
 
       <SetupChecklist />
@@ -160,7 +160,7 @@ function DashboardView({ d }) {
           {hasModule('notices') && <QuickAction to="/admin/notices" icon={Megaphone} label="Post a notice" />}
         </div>
       </Card>
-    </>
+    </CollapsibleCards>
   );
 }
 

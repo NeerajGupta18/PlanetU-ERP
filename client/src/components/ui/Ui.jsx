@@ -1,6 +1,6 @@
-import { createElement } from 'react';
+import { createContext, createElement, useContext, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertCircle, AlertTriangle, CheckCircle2, Info } from 'lucide-react';
+import { AlertCircle, AlertTriangle, CheckCircle2, ChevronDown, Info } from 'lucide-react';
 
 export function PageBanner({ icon: Icon, title, subtitle, actions }) {
   return (
@@ -17,16 +17,43 @@ export function PageBanner({ icon: Icon, title, subtitle, actions }) {
   );
 }
 
-export function Card({ title, icon: Icon, action, children, className = '' }) {
+/* Dashboards wrap their sections in <CollapsibleCards>: every Card inside then gets a drop-down arrow (KPI cards are not Cards, so they stay put). */
+const CollapseContext = createContext(false);
+export function CollapsibleCards({ children }) {
+  return <CollapseContext.Provider value>{children}</CollapseContext.Provider>;
+}
+const COLLAPSE_KEY = 'planetu.collapsed';
+const readClosed = (key) => { try { return !!JSON.parse(localStorage.getItem(COLLAPSE_KEY) || '{}')[key]; } catch { return false; } };
+const saveClosed = (key, v) => {
+  try { const m = JSON.parse(localStorage.getItem(COLLAPSE_KEY) || '{}'); if (v) m[key] = 1; else delete m[key]; localStorage.setItem(COLLAPSE_KEY, JSON.stringify(m)); } catch { /* private mode: the card still opens and closes */ }
+};
+
+export function Card({ title, icon: Icon, action, children, className = '', collapsible }) {
+  const inDashboard = useContext(CollapseContext);
+  const can = (collapsible ?? inDashboard) && !!title;
+  // The remembered state is per card name, ignoring counts such as "To do (4)"
+  const key = typeof title === 'string' ? title.replace(/\s*\(.*\)\s*$/, '') : null;
+  const [closed, setClosed] = useState(() => (can && key ? readClosed(key) : false));
+  const toggle = () => setClosed((c) => { if (key) saveClosed(key, !c); return !c; });
+  const heading = <>{Icon && <Icon size={17} />} {title}</>;
   return (
-    <section className={`card ${className}`}>
+    <section className={`card ${className} ${can ? 'card--collapsible' : ''} ${can && closed ? 'is-closed' : ''}`}>
       {(title || action) && (
         <div className="card__head">
-          <h2 className="card__title">{Icon && <Icon size={17} />} {title}</h2>
+          {can ? (
+            <h2 className="card__title card__title--toggle">
+              <button type="button" className="card__toggle" aria-expanded={!closed} onClick={toggle}>{heading}</button>
+            </h2>
+          ) : <h2 className="card__title">{heading}</h2>}
           {action}
+          {can && (
+            <button type="button" className="card__chevron" aria-label={`${closed ? 'Show' : 'Hide'} ${typeof title === 'string' ? title : 'section'}`} aria-expanded={!closed} onClick={toggle}>
+              <ChevronDown size={18} />
+            </button>
+          )}
         </div>
       )}
-      {children}
+      {!(can && closed) && children}
     </section>
   );
 }

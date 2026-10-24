@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { AlertTriangle, BarChart3, Building2, CheckCircle2, Clock, Hourglass, LayoutDashboard, ListTodo, Moon, TrendingUp } from 'lucide-react';
 import { useFetch } from '../../hooks/useFetch.js';
-import { Badge, Card, PageBanner, StatCard, pending } from '../../components/ui/Ui.jsx';
+import { Badge, Card, PageBanner, StatCard, pending, CollapsibleCards } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import { BarChart } from '../../components/ui/Charts.jsx';
 import AttentionList from '../../components/campus/AttentionList.jsx';
@@ -32,7 +32,7 @@ function View({ d }) {
   const series = b.series.map((s) => ({ label: MONTHS[Number(s.month.slice(5)) - 1], full: `${MONTHS[Number(s.month.slice(5)) - 1]} ${s.month.slice(0, 4)}`, value: s.collected }));
 
   return (
-    <>
+    <CollapsibleCards>
       <PageBanner icon={LayoutDashboard} title="Platform Dashboard" subtitle="Every institute running on PlanetU ERP" />
 
       <div className="stats stats--3">
@@ -79,6 +79,6 @@ function View({ d }) {
           </div>
         )}
       </Card>
-    </>
+    </CollapsibleCards>
   );
 }
