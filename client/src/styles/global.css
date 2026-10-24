@@ -278,14 +278,15 @@ a { color: var(--brand-600); }
 .card__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 10px; }
 .card__title { display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--text); }
 .card__title svg { color: var(--brand); flex: none; }
-.grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start; } /* start: a short card ends where its content ends instead of stretching to its neighbour and leaving a blank box */
 @media (max-width: 1000px) { .grid-2 { grid-template-columns: 1fr; } }
 
-.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
-@media (max-width: 1100px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 520px) { .stats { gap: 10px; } }
-.stats--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-@media (max-width: 900px) { .stats--3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* KPI cards wrap and the last row stretches, so there is never an empty slot beside the final card */
+.stats { display: flex; flex-wrap: wrap; gap: 16px; }
+.stats > * { flex: 1 1 calc(25% - 12px); min-width: 0; }
+.stats--3 > * { flex: 1 1 calc(33.333% - 11px); }
+@media (max-width: 1100px) { .stats > *, .stats--3 > * { flex-basis: calc(50% - 8px); } }
+@media (max-width: 520px) { .stats { gap: 10px; } .stats > *, .stats--3 > * { flex-basis: calc(50% - 5px); } }
 
 /* KPI card. Neutral by default; it only takes a color when its number needs action (or is good news),
    and then it also shows a word ("Needs action", "All clear") so the meaning is not carried by color alone. */
@@ -965,3 +966,27 @@ kbd { font: inherit; font-size: 11px; padding: 1px 6px; border: 1px solid var(--
 .lecture-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .lecture-rows li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; }
 .lecture-rows li > div { display: grid; gap: 2px; min-width: 0; }
+
+/* Collapsible dashboard sections */
+.card--collapsible .card__head { margin-bottom: 14px; }
+.card--collapsible.is-closed .card__head { margin-bottom: 0; }
+.card__title--toggle { flex: 1 1 auto; min-width: 0; margin: 0; }
+.card__toggle { display: flex; align-items: center; gap: 8px; width: 100%; padding: 2px 0; border: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.card__toggle svg { color: var(--brand); flex: none; }
+.card__chevron { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border: 0; border-radius: 8px; background: none; color: var(--muted); cursor: pointer; }
+.card__chevron:hover { background: var(--brand-50); color: var(--brand); }
+.card__chevron svg { transition: transform 0.18s ease; }
+.card--collapsible.is-closed .card__chevron svg { transform: rotate(-90deg); }
+.card--collapsible { padding-top: 14px; padding-bottom: 16px; }
+
+/* Lists and tables that show their first four rows and scroll for the rest (see lib/autoScroll.js) */
+.is-scroll { overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--brand-100) transparent;
+  background: linear-gradient(var(--surface) 30%, transparent), linear-gradient(transparent, var(--surface) 70%) 0 100%, radial-gradient(farthest-side at 50% 0, rgba(31, 36, 64, 0.16), transparent), radial-gradient(farthest-side at 50% 100%, rgba(31, 36, 64, 0.16), transparent) 0 100%;
+  background-repeat: no-repeat; background-size: 100% 24px, 100% 24px, 100% 8px, 100% 8px; background-attachment: local, local, scroll, scroll; }
+.is-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+.is-scroll::-webkit-scrollbar-thumb { background: var(--brand-100); border-radius: 8px; }
+.is-scroll:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.table-wrap.is-scroll { overflow-x: auto; }
+.table-wrap.is-scroll thead th { position: sticky; top: 0; z-index: 2; background: var(--head-bg); box-shadow: 0 1px 0 var(--border); }
+.card .state { padding: 12px 12px; gap: 4px; }
+.card .state svg { width: 24px; height: 24px; }
