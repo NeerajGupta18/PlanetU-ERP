@@ -139,7 +139,7 @@ function Sheet({ role, data, backTo }) {
           </div>
         )}
 
-        <div className="table-wrap">
+        <div className="table-wrap" data-noscroll>
           <table className="table mark-table">
             <thead><tr><th>Roll no.</th><th>Student</th><th style={{ width: 190 }}>Attendance <span className="muted mark-table__key">(P present, A absent, L late)</span></th></tr></thead>
             <tbody>

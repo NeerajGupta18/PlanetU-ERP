@@ -188,7 +188,7 @@ const noItems = <EmptyState title="No lectures or duties found" hint="Try a diff
 function ListView({ items }) {
   if (!items.length) return noItems;
   return (
-    <div className="table-wrap tt-table">
+    <div className="table-wrap tt-table" data-noscroll>
       <table className="table">
         <thead>
           <tr><th>Type</th><th>Date</th><th>Time</th><th>Title/Subject</th><th>Faculty/Employee</th><th>Department</th><th>Course</th><th>Location</th></tr>

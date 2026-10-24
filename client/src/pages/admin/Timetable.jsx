@@ -97,7 +97,7 @@ export default function Timetable() {
                 </div>
 
                 {schedule.data.items.length === 0 ? <EmptyState title="No lectures or duties found" hint="Try a different date range or clear the filters." /> : (
-                  <div className="table-wrap tt-table">
+                  <div className="table-wrap tt-table" data-noscroll>
                     <table className="table">
                       <thead><tr><th>Type</th><th>Date</th><th>Time</th><th>Subject</th><th>Faculty/Employee</th><th>Department</th><th>Mode</th><th>Actions</th></tr></thead>
                       <tbody>

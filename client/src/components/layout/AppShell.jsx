@@ -21,6 +21,7 @@ import BrandMark from '../ui/BrandMark.jsx';
 import SidebarNav from './SidebarNav.jsx';
 import Breadcrumbs from './Breadcrumbs.jsx';
 import SearchPalette from './SearchPalette.jsx';
+import { startAutoScroll } from '../../lib/autoScroll.js';
 
 function Dropdown({ button, children, align = 'right' }) {
   const [open, setOpen] = useState(false);
@@ -83,6 +84,8 @@ export default function AppShell() {
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('erp.sidebar') === 'collapsed');
   const [drawer, setDrawer] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const mainRef = useRef(null);
+  useEffect(() => startAutoScroll(mainRef.current), []);
 
   useEffect(() => { setDrawer(false); }, [location.pathname]);
 
@@ -185,7 +188,7 @@ export default function AppShell() {
           </div>
         </header>
 
-        <main className="content" id="main" tabIndex={-1}>
+        <main className="content" id="main" tabIndex={-1} ref={mainRef}>
           <Breadcrumbs flat={flat} />
           <SectionTabs links={links} />
           {user.role === 'admin' && billing && !locked && location.pathname !== '/admin/billing' && <BillingBanner b={billing} />}

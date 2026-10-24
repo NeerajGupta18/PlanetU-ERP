@@ -118,7 +118,7 @@ function Sheet({ url, back, initial }) {
           {avg !== null && <span className="muted">average {num(Math.round(avg * 100) / 100)} · high {num(Math.max(...info.entered))} · low {num(Math.min(...info.entered))}</span>}
         </div>
 
-        <div className="table-wrap">
+        <div className="table-wrap" data-noscroll>
           <table className="table">
             <thead><tr><th>Student</th><th style={{ width: 130 }}>Marks (/ {num(paper.maxMarks)})</th><th style={{ width: 96 }}>Absent</th></tr></thead>
             <tbody>
