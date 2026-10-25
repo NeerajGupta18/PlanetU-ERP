@@ -1030,3 +1030,37 @@ a.stepbar__btn:hover .stepbar__dot, button.stepbar__btn:not(:disabled):hover .st
 .stat__value { font-family: var(--font-head); }
 /* 16px on phones so iPhone does not zoom into a field when it is tapped */
 @media (max-width: 640px) { .input, select.input, textarea.input, .toolbar__filters input, .toolbar__filters select { font-size: 16px; } }
+
+/* =========================================================
+   Day 1 shared pieces: page header, forms, empty and error states
+   ========================================================= */
+/* Page header (PageHeader in components/ui/Ui.jsx) */
+.banner__text { min-width: 0; }
+.banner__back { display: inline-flex; align-items: center; gap: 4px; margin-bottom: 2px; font-size: 13px; font-weight: 600; color: var(--muted); text-decoration: none; }
+.banner__back:hover { color: var(--brand); }
+.banner__next { display: inline-flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 14px; font-weight: 600; color: var(--accent-hover); text-decoration: none; }
+a.banner__next:hover { text-decoration: underline; }
+.banner__next-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px var(--accent-bg); flex: none; }
+.banner + .stepbar { margin-top: 2px; }
+
+/* Forms (FormField, FormError, FormActions) */
+.form-field__req { color: var(--danger); }
+.form-hint { margin: 0; font-size: 13px; color: var(--muted); }
+.field-error { display: flex; align-items: flex-start; gap: 6px; margin: 0; font-size: 13px; font-weight: 600; color: var(--danger); }
+.field-error svg { flex: none; margin-top: 2px; }
+.form-field.has-error .input { border-color: var(--danger); }
+.form-field.has-error .input:focus { outline-color: var(--danger-bg); }
+.form-error { display: flex; align-items: flex-start; gap: 8px; }
+.form-error svg { flex: none; margin-top: 2px; }
+.form-error__fix { margin-top: 2px; font-weight: 600; }
+@media (max-width: 640px) {
+  .form-actions { flex-direction: column-reverse; align-items: stretch; }
+  .form-actions .btn { width: 100%; min-height: 44px; }
+}
+
+/* Empty and error states */
+.state__fix { font-size: 13px; font-weight: 600; color: var(--text); }
+.state--compact { padding: 16px 12px; gap: 4px; }
+.state--compact p { font-size: 13.5px; }
+.table th.num { text-align: right; }
+.table tr.is-clickable:focus-visible { outline-offset: -2px; }
