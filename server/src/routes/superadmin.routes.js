@@ -2,10 +2,12 @@ import { Router } from 'express';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import * as raw from '../controllers/superadmin.controller.js';
 import * as rawBilling from '../controllers/billing.controller.js';
+import * as rawDemo from '../controllers/demoRequests.controller.js';
 import { uuidParam, wrapAll } from './wrap.js';
 
 const sa = wrapAll(raw);
 const bill = wrapAll(rawBilling);
+const demo = wrapAll(rawDemo);
 const router = Router();
 router.use(requireAuth, requireRole('super_admin'));
 router.param('id', uuidParam);
@@ -21,6 +23,10 @@ router.put('/tenants/:id', sa.updateTenant);
 router.post('/tenants/:id/reset-admin-password', sa.resetAdminPassword);
 
 router.get('/diagnostics/network', sa.networkDiagnostics);
+
+// ---- "Book a demo" requests from the public landing page ----
+router.get('/demo-requests', demo.list);
+router.put('/demo-requests/:id', demo.setStatus);
 
 // ---- billing: PlanetU charging its institutes ----
 router.get('/billing/overview', bill.overview);

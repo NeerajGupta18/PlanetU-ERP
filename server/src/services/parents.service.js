@@ -13,6 +13,7 @@ import { studentOverview } from './attendance.service.js';
 import { studentFees } from './fees.service.js';
 import { studentResults } from './exams.service.js';
 import { loadEvents } from '../db/repo.js';
+import { consentTimes } from './consent.service.js';
 import { addDays, toISO } from '../utils/dates.js';
 
 /** The cookie that remembers which child a parent is looking at. */
@@ -37,7 +38,8 @@ export async function listForStudent(studentId) {
             (select count(*) from parent_links x where x.user_id = u.id)::int as children
      from parent_links l join users u on u.id = l.user_id where l.student_id = $1 order by l.created_at`, [studentId],
   );
-  return { parents: rows };
+  const agreed = await consentTimes(rows.map((r) => r.userId));
+  return { parents: rows.map((r) => ({ ...r, consentAt: agreed[r.userId] ?? null })) };
 }
 
 async function uniqueLogin(studentCode) {
