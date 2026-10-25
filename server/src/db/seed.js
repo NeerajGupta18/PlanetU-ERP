@@ -207,11 +207,14 @@ async function seedTenant(spec, hashes) {
   await switchTenant(tenantId);
 
   const i = spec.institute;
+  // The demo institutes are already through the setup wizard (contact details and academic year in place)
+  const now = new Date(); const y = now.getMonth() >= 5 ? now.getFullYear() : now.getFullYear() - 1;
+  const setup = { academicYear: { name: `${y}-${String(y + 1).slice(2)}`, start: `${y}-06-01`, end: `${y + 1}-04-30` } };
   await q(
     `update institute_profiles set tagline = $1, email = $2, website = $3, details = $4, stakeholders = $5,
-       authorized_persons = $6, documents = $7, beneficiaries = $8, stamp = $9`,
-    [i.tagline, i.email, i.website, i.details, JSON.stringify(i.stakeholders), JSON.stringify(i.authorizedPersons),
-      JSON.stringify(i.documents), JSON.stringify(i.beneficiaries), i.stamp],
+       authorized_persons = $6, documents = $7, beneficiaries = $8, stamp = $9, address = $10, city = $11, phone = $12`,
+    [i.tagline, i.email, i.website, { ...i.details, _setup: setup }, JSON.stringify(i.stakeholders), JSON.stringify(i.authorizedPersons),
+      JSON.stringify(i.documents), JSON.stringify(i.beneficiaries), i.stamp, i.address || '', i.city || '', i.phone || ''],
   );
 
   const dept = {};

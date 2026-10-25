@@ -16,6 +16,7 @@ const college = {
   code: 'demo-college', name: 'Horizon College of Technology', type: 'college', shortName: 'Horizon',
   institute: {
     tagline: 'Where curiosity meets craft', email: 'info@horizon.example', website: 'www.horizon.example',
+    address: 'Survey No. 12, Karve Road, Kothrud', city: 'Pune', phone: '+91 20 4000 1000',
     details: {
       'Organisation Type': 'Affiliated College', 'Organisation Code': 'HCT-001', 'Registration No.': 'SAMPLE/0001',
       'Working Model': 'Offline', 'Program Session': session,
@@ -86,6 +87,7 @@ const school = {
   code: 'demo-school', name: 'Greenfield Public School', type: 'school', shortName: 'Greenfield',
   institute: {
     tagline: 'Nurturing young minds', email: 'office@greenfield.example', website: 'www.greenfield.example',
+    address: '45 Park Street, Aundh', city: 'Pune', phone: '+91 20 4000 2000',
     details: {
       'Organisation Type': 'CBSE Affiliated School', 'Affiliation No.': 'CBSE/DEMO/2222', 'Registration No.': 'SAMPLE/0002',
       'Medium': 'English', 'Academic Session': session,
@@ -152,6 +154,7 @@ const university = {
   code: 'demo-university', name: 'MIT World Peace University, Pune', type: 'university', shortName: 'MIT-WPU',
   institute: {
     tagline: 'Knowledge is our fort', email: 'info@mitwpu.example', website: 'www.mitwpu.example',
+    address: 'Paud Road, Kothrud', city: 'Pune', phone: '+91 20 4000 3000',
     details: {
       'Organisation Type': 'State Private University', 'Registration No.': 'SAMPLE/0004', 'UGC Status': 'Recognized',
       'Working Model': 'Offline', 'Academic Session': session,

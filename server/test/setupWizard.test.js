@@ -251,6 +251,6 @@ describe('setup wizard', () => {
     assert.equal(mine.setup.done, 7);
     assert.equal(mine.setup.total, 7);
     const demo = body.tenants.find((t) => t.code === 'demo-college');
-    if (demo) assert.ok(demo.setup.done >= 4, 'the demo college is mostly set up');
+    assert.equal(demo.setup.done, 7, 'the demo college is fully set up, so a demo starts from a ready institute');
   });
 });
