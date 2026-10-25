@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { GraduationCap, Plus, RotateCcw, Save, Trash2 } from 'lucide-react';
 import { useFetch } from '../../hooks/useFetch.js';
 import { api } from '../../api/http.js';
-import { Badge, Card, PageBanner, Tabs } from '../../components/ui/Ui.jsx';
+import { Badge, Card, PageHeader, Tabs } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import Modal from '../../components/ui/Modal.jsx';
 import { useDialogs } from '../../components/ui/Dialogs.jsx';
@@ -15,23 +15,37 @@ export default function Exams() {
   const [tab, setTab] = useTabParam('exams');
   const [creating, setCreating] = useState(false);
   const navigate = useNavigate();
+  const all = useFetch('/admin/exams');
 
   return (
     <>
-      <PageBanner
-        icon={GraduationCap} title="Exams & Results" subtitle="Set up exams, collect marks from faculty, publish results and print report cards"
-        actions={<button type="button" className="btn btn--primary btn--sm" onClick={() => setCreating(true)}><Plus size={13} /> New exam</button>}
+      <PageHeader
+        icon={GraduationCap} title="Exams and results" subtitle="Set up exams, collect marks from faculty, publish results and print report cards"
+        next={nextLine(all.data?.exams)}
+        primary={{ label: 'New exam', icon: Plus, onClick: () => setCreating(true) }}
       />
       <Card>
         <Tabs tabs={[{ id: 'exams', label: 'Exams' }, { id: 'grading', label: 'Grading scale' }]} active={tab} onChange={setTab} />
-        {tab === 'exams' ? <ExamList /> : <GradingScale />}
+        {tab === 'exams' ? <ExamList onCreate={() => setCreating(true)} /> : <GradingScale />}
       </Card>
       {creating && <CreateExam onClose={() => setCreating(false)} onDone={(id) => navigate(`/admin/exams/${id}`)} />}
     </>
   );
 }
 
-function ExamList() {
+/** "What next" across every exam: one ready to publish first, then marks still to come in. */
+function nextLine(exams) {
+  if (!exams) return undefined;
+  const drafts = exams.filter((e) => e.status === 'draft');
+  const ready = drafts.find((e) => e.papers > 0 && e.submitted === e.papers);
+  if (ready) return { text: `check and publish ${ready.name} (${ready.course})`, to: `/admin/exams/${ready.id}` };
+  const open = drafts.filter((e) => e.papers > e.submitted);
+  if (open.length) return { text: `${open.length} exam${open.length === 1 ? ' is' : 's are'} waiting for marks`, to: `/admin/exams/${open[0].id}` };
+  if (!exams.length) return 'create your first exam';
+  return undefined;
+}
+
+function ExamList({ onCreate }) {
   const [status, setStatus] = useState('');
   const { data, loading, error, reload } = useFetch(`/admin/exams${status ? `?status=${status}` : ''}`);
   return (
@@ -45,7 +59,7 @@ function ExamList() {
       </div>
       <DataBoundary loading={loading} error={error} data={data} reload={reload}>
         {data && (data.exams.length === 0 ? (
-          <EmptyState title="No exams yet" hint="You can start an exam from the course timetable so each subject becomes a paper." action={{ label: 'Create an exam', onClick: () => setCreating(true) }} />
+          <EmptyState title="No exams yet" hint="You can start an exam from the course timetable so each subject becomes a paper." action={{ label: 'Create an exam', onClick: onCreate }} />
         ) : (
           <div className="table-wrap">
             <table className="table">
@@ -56,7 +70,12 @@ function ExamList() {
                     <td><strong>{e.name}</strong><br /><small className="muted">{KIND_LABEL[e.kind]} · semester {e.semester}</small></td>
                     <td>{e.course}<br /><small className="muted">{e.students} students</small></td>
                     <td className="muted">{e.startDate ? `${fmtDate(e.startDate)}${e.endDate && e.endDate !== e.startDate ? ` - ${fmtDate(e.endDate)}` : ''}` : '-'}</td>
-                    <td>{e.papers === 0 ? <span className="muted">No papers</span> : <Badge tone={e.submitted === e.papers ? 'green' : 'amber'}>{e.submitted} of {e.papers} papers</Badge>}</td>
+                    <td style={{ minWidth: 140 }}>{e.papers === 0 ? <span className="muted">No papers yet</span> : (
+                      <>
+                        <Badge tone={e.submitted === e.papers ? 'green' : 'amber'}>{e.submitted} of {e.papers} papers</Badge>
+                        <div className="progress progress--sm" aria-hidden="true"><div className="progress__fill" style={{ width: `${Math.round((e.submitted / e.papers) * 100)}%` }} /></div>
+                      </>
+                    )}</td>
                     <td>{e.status === 'published' ? <Badge tone="green">Published</Badge> : <Badge tone="gray">Draft</Badge>}</td>
                     <td><Link className="btn btn--outline btn--sm" to={`/admin/exams/${e.id}`}>Open</Link></td>
                   </tr>
