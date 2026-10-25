@@ -7,14 +7,29 @@ import { DataBoundary } from '../ui/Feedback.jsx';
 import Modal from '../ui/Modal.jsx';
 import { useDialogs } from '../ui/Dialogs.jsx';
 import DocumentViewer from '../ui/DocumentViewer.jsx';
+import StepBar from '../ui/StepBar.jsx';
 import { DOC_LABEL, DOC_TONE, FEE_STATUS, STATUS, inr } from './status.js';
 import { fmtDate } from '../../utils/dates.js';
 
 const OPEN = ['submitted', 'documents_pending'];
 const UPLOADABLE = ['photo', 'signature', 'id_proof', 'marksheet', 'other'];
 
-/** One application in full: details, documents, application fee, merit score and the decision buttons. */
-export default function AdminApplicationDetail({ id, onClose, onChanged, onSecret }) {
+const REQUIRED = ['photo', 'id_proof', 'marksheet'];
+
+/** Where this application stands in the admissions process, for the step bar at the top. */
+function stepOf(app) {
+  const verified = REQUIRED.every((t) => app.documents.some((d) => d.docType === t && d.status === 'verified'));
+  if (app.status === 'enrolled') return { current: 'enrolled', done: ['enquiry', 'application', 'documents', 'decision', 'offer', 'fee', 'enrolled'], waitingOn: null };
+  if (app.status === 'accepted') return { current: 'fee', waitingOn: 'Admissions office: take the enrolment fee and enrol' };
+  if (app.status === 'rejected') return { current: 'decision', blocked: ['offer', 'fee', 'enrolled'], waitingOn: 'Nobody: this application was not accepted' };
+  if (app.status === 'waitlisted') return { current: 'decision', waitingOn: 'Admissions office: decide when a seat is free' };
+  if (app.status === 'documents_pending') return { current: 'documents', waitingOn: 'The applicant: a document was sent back to replace' };
+  if (verified) return { current: 'decision', waitingOn: 'Admissions office: accept, waitlist or reject' };
+  return { current: 'documents', waitingOn: 'Admissions office: verify each required document below' };
+}
+
+/** One application in full: where it stands, details, documents, application fee, merit score and the decision buttons. */
+export default function AdminApplicationDetail({ id, onClose, onChanged, onSecret, onEnrol }) {
   const { confirm, prompt, toast } = useDialogs();
   const { data, loading, error, reload } = useFetch(`/admin/admissions/${id}`);
   const [err, setErr] = useState('');
@@ -39,6 +54,7 @@ export default function AdminApplicationDetail({ id, onClose, onChanged, onSecre
     run(() => api.post(`/admin/admissions/${id}/decision`, { decision, note }));
   };
   const enroll = async () => {
+    if (onEnrol) { onEnrol(app); return; }
     if (!(await confirm('Enrol this applicant? A PRN and a student login will be created.', { confirmLabel: 'Enrol student' }))) return;
     run(async () => { const r = await api.post(`/admin/admissions/${id}/enroll`); onSecret(r.student); });
   };
@@ -70,8 +86,9 @@ export default function AdminApplicationDetail({ id, onClose, onChanged, onSecre
       <DataBoundary loading={loading && !data} error={error} data={data} reload={reload}>
         {app && (
           <>
+            <StepBar process="admissions" {...stepOf(app)} />
             {err && <p className="form-error">{err}</p>}
-            <div className="fields fields--3">
+            <div className="fields fields--3" style={{ marginTop: 12 }}>
               <div><span className="muted">Status</span><br /><Badge tone={STATUS[app.status].tone}>{STATUS[app.status].label}</Badge>{app.source === 'walk_in' && <span className="tag">Walk-in</span>}</div>
               <div><span className="muted">Course</span><br />{app.course}</div>
               <div><span className="muted">Date of birth</span><br />{app.dob ? fmtDate(app.dob) : '-'}</div>
@@ -179,7 +196,7 @@ export default function AdminApplicationDetail({ id, onClose, onChanged, onSecre
                   <button type="button" className="btn btn--primary" onClick={() => decide('accept')}>Accept</button>
                 </>
               )}
-              {app.status === 'accepted' && <button type="button" className="btn btn--primary" onClick={enroll}>Enrol student (generate PRN)</button>}
+              {app.status === 'accepted' && <button type="button" className="btn btn--primary" onClick={enroll}>Take fee and enrol</button>}
               {app.status === 'enrolled' && <Badge tone="green">Enrolled</Badge>}
             </div>
           </>

@@ -11,6 +11,9 @@ import { queueEmail, tenantInfo } from './notifications.service.js';
 import { isISO, toISO } from '../utils/dates.js';
 import * as gateway from './razorpay.service.js';
 import { notifyAdmins } from './inbox.service.js';
+import * as fees from './fees.service.js';
+import { addParent } from './parents.service.js';
+import { divisionsOf } from './setup.service.js';
 
 export const DOC_TYPES = ['photo', 'signature', 'id_proof', 'marksheet', 'other'];
 export const REQUIRED_DOCS = ['photo', 'id_proof', 'marksheet'];
@@ -423,13 +426,44 @@ export async function decide(id, { decision, note }, admin) {
   return getApplication(id);
 }
 
-/** Turns an accepted application into a student: PRN, student record and a login. Atomic. */
-export async function enroll(id, admin) {
+const PAY_METHODS = ['cash', 'cheque', 'bank_transfer', 'upi', 'card'];
+
+/** What the Enrol screen shows before the office confirms: the class's divisions and its fee plan. */
+export async function enrolPlan(id) {
+  const { rows: [app] } = await q('select id, course_id, status from applications where id = $1', [id]);
+  if (!app || app.status === 'draft') throw new HttpError(404, 'Application not found.');
+  const { rows: [plan] } = await q(
+    `select s.id, s.name, s.academic_year as "academicYear", coalesce(sum(i.amount), 0)::float8 as total,
+            coalesce(json_agg(json_build_object('label', i.label, 'amount', i.amount, 'dueDate', i.due_date) order by i.due_date nulls last, i.label)
+                     filter (where i.id is not null), '[]') as items
+     from fee_structures s left join fee_structure_items i on i.structure_id = s.id
+     where s.course_id = $1 group by s.id order by s.academic_year desc, s.created_at desc limit 1`, [app.course_id],
+  );
+  return { divisions: await divisionsOf(app.course_id), feePlan: plan || null };
+}
+
+/**
+ * "Enrol": turns an accepted application into a student in one go, and all of it or none of it is saved:
+ * the PRN, student record and login; the class (and division); the class's fee plan charged to the student; the
+ * enrolment fee collected now (with a receipt); and a parent login sent to the guardian's email.
+ *
+ *   options.division      one of the class's divisions (step 3 of setup), if it has any
+ *   options.payment       { amount, method, reference } collected at the desk now, or nothing
+ *   options.inviteParent  false to skip the parent invite (default: invite when there is a guardian email)
+ */
+export async function enroll(id, admin, options = {}) {
   const { rows: [app] } = await q(
     `select a.*, c.years from applications a join courses c on c.id = a.course_id where a.id = $1 for update of a`, [id],
   );
   if (!app || app.status === 'draft') throw new HttpError(404, 'Application not found.');
   if (app.status !== 'accepted') throw new HttpError(409, app.status === 'enrolled' ? 'Already enrolled.' : 'Only accepted applications can be enrolled.');
+
+  const divisions = await divisionsOf(app.course_id);
+  const division = String(options.division || '').trim();
+  if (division && !divisions.includes(division)) throw new HttpError(400, `Choose a division from the list (${divisions.join(', ')}).`);
+  if (!division && divisions.length) throw new HttpError(400, `Choose the division the student joins (${divisions.join(', ')}).`);
+  const pay = options.payment && Number(options.payment.amount) > 0 ? options.payment : null;
+  if (pay && !PAY_METHODS.includes(pay.method)) throw new HttpError(400, 'Choose how the fee was paid: cash, cheque, bank transfer, UPI or card.');
 
   const prn = await nextNumber('prn', { prefix: 'PRN', padding: 7 });
   const year = new Date().getFullYear();
@@ -441,9 +475,9 @@ export async function enroll(id, admin) {
     );
     ({ rows: [student] } = await q(
       `insert into students (student_code, enrollment_no, name, email, phone, dob, gender, course_id, semester, batch,
-                             admission_date, status, address, guardian, photo_file_id)
-       values ($1, $1, $2, $3, $4, $5, $6, $7, 1, $8, current_date, 'Active', $9, $10, $11) returning id`,
-      [prn, app.name, app.email, app.phone, app.dob, app.gender, app.course_id, `${year} - ${year + app.years}`, app.address, app.guardian, photo?.file_id ?? null],
+                             admission_date, status, address, guardian, photo_file_id, section)
+       values ($1, $1, $2, $3, $4, $5, $6, $7, 1, $8, current_date, 'Active', $9, $10, $11, $12) returning id`,
+      [prn, app.name, app.email, app.phone, app.dob, app.gender, app.course_id, `${year} - ${year + app.years}`, app.address, app.guardian, photo?.file_id ?? null, division],
     ));
   } catch (err) {
     if (err.code === '23505') throw new HttpError(409, 'A student with this PRN already exists.');
@@ -462,8 +496,156 @@ export async function enroll(id, admin) {
     throw err;
   }
   await q("update applications set status = 'enrolled', student_id = $1 where id = $2", [student.id, id]);
-  await audit(admin, 'admission.enroll', 'application', id, { prn });
-  return { application: await getApplication(id), student: { prn, loginId: prn, email: app.email, temporaryPassword } };
+
+  // The class's fee plan becomes the student's dues
+  const { feePlan } = await enrolPlan(id);
+  let charged = 0;
+  if (feePlan) charged = await fees.assignStructure(feePlan.id, student.id, admin);
+
+  // The enrolment fee taken at the desk. With no fee plan it is charged as its own line, so it can still be paid.
+  let payment = null;
+  if (pay) {
+    const { summary } = await fees.studentFees(student.id);
+    if (summary.outstanding + 0.001 < Number(pay.amount)) {
+      if (feePlan) throw new HttpError(400, `The fee plan "${feePlan.name}" adds up to ₹${summary.outstanding.toLocaleString('en-IN')}. Collect that much or less now.`);
+      await fees.addManualItem(student.id, { label: 'Enrolment fee', amount: pay.amount, dueDate: toISO(new Date()) }, admin);
+    }
+    const p = await fees.recordPayment({
+      studentId: student.id, amount: pay.amount, method: pay.method, reference: pay.reference, note: `Enrolment fee, application ${app.application_no}`,
+    }, admin);
+    payment = { id: p.id, receiptNo: p.receiptNo, amount: Number(p.amount) };
+  }
+
+  // A parent login for the guardian, when the application has their email
+  const g = app.guardian || {};
+  let parent = { invited: false, reason: 'No guardian email on the application. Add a parent from the student\'s record.' };
+  if (options.inviteParent === false) parent = { invited: false, reason: 'Not invited now. Invite from the student\'s record later.' };
+  else if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(g.email || '').trim())) {
+    await q('savepoint enrol_parent');
+    try {
+      await addParent(student.id, { name: g.name || 'Parent', email: g.email, relation: g.relation || 'Guardian' }, admin, { showPassword: false });
+      await q('release savepoint enrol_parent');
+      parent = { invited: true, email: g.email.trim().toLowerCase() };
+    } catch (err) {
+      await q('rollback to savepoint enrol_parent');
+      if (!(err instanceof HttpError)) throw err;
+      parent = { invited: false, reason: err.message };
+    }
+  }
+
+  await audit(admin, 'admission.enroll', 'application', id, { prn, division, charged, receipt: payment?.receiptNo ?? null, parentInvited: parent.invited });
+  return {
+    application: await getApplication(id),
+    student: { id: student.id, prn, loginId: prn, email: app.email, temporaryPassword, division },
+    fees: { plan: feePlan?.name ?? null, charged },
+    payment, parent,
+  };
+}
+
+/* ---------------- the board: every application by the step it has reached ---------------- */
+
+export const BOARD_STAGES = ['enquiry', 'application', 'documents', 'decision', 'offer', 'fee', 'enrolled'];
+
+/**
+ * Cards for the admissions board, each in the column of the step it has reached (the names in config/processes.js):
+ * enquiry = started, not submitted; application = submitted, documents not all checked; documents = all checked,
+ * waiting for a decision; decision = waitlisted; offer = accepted, ready to enrol; fee = enrolled but no fee collected
+ * yet; enrolled = enrolled (in the last 60 days) and fee collected or none charged. Rejected ones are only counted.
+ */
+export async function board({ courseId, search } = {}) {
+  const params = [REQUIRED_DOCS];
+  const where = ["a.status <> 'rejected'", "(a.status <> 'enrolled' or a.decided_at > now() - interval '60 days')"];
+  if (isUuid(courseId)) { params.push(courseId); where.push(`a.course_id = $${params.length}`); }
+  if (search) { params.push(`%${String(search).toLowerCase()}%`); where.push(`(lower(a.name) like $${params.length} or lower(a.email) like $${params.length} or lower(a.application_no) like $${params.length} or a.phone like $${params.length})`); }
+  const { rows } = await q(
+    `select a.id, a.application_no as "applicationNo", a.name, a.email, a.phone, a.status, a.source, a.step,
+            a.fee_status as "feeStatus", a.fee_amount::float8 as "feeAmount", c.name as course, a.course_id as "courseId",
+            a.created_at as "createdAt", a.submitted_at as "submittedAt", a.decided_at as "decidedAt", a.student_id as "studentId",
+            (select count(distinct d.doc_type) from application_documents d where d.application_id = a.id and d.status = 'verified' and d.doc_type = any($1))::int as "docsVerified",
+            exists (select 1 from application_documents d where d.application_id = a.id and d.status = 'rejected') as "docRejected",
+            a.student_id is not null and not exists (select 1 from payments p where p.student_id = a.student_id)
+              and exists (select 1 from student_fee_items i where i.student_id = a.student_id and i.status in ('unpaid', 'partial')) as "feeToCollect"
+     from applications a join courses c on c.id = a.course_id
+     where ${where.join(' and ')}
+     order by coalesce(a.decided_at, a.submitted_at, a.created_at) desc limit 600`, params,
+  );
+  const stageOf = (a) => {
+    if (a.status === 'draft') return 'enquiry';
+    if (a.status === 'enrolled') return a.feeToCollect ? 'fee' : 'enrolled';
+    if (a.status === 'accepted') return 'offer';
+    if (a.status === 'waitlisted') return 'decision';
+    return a.docsVerified >= REQUIRED_DOCS.length && a.status === 'submitted' ? 'documents' : 'application';
+  };
+  const cards = rows.map((a) => ({ ...a, stage: stageOf(a), docsRequired: REQUIRED_DOCS.length }));
+  const counts = Object.fromEntries(BOARD_STAGES.map((k) => [k, cards.filter((c) => c.stage === k).length]));
+  const { rows: [{ n: rejected }] } = await q("select count(*)::int as n from applications where status = 'rejected'");
+  return { cards, counts: { ...counts, rejected } };
+}
+
+/* ---------------- enquiries ---------------- */
+
+const inviteMessage = (info, { name, applicationNo, accessCode }) => (
+  `Dear ${name}, thank you for your enquiry at ${info.name}. Please fill in your application here: ${env.APP_URL}/apply/${info.code}/status `
+  + `Application number: ${applicationNo}. Access code: ${accessCode}. You can stop and carry on later.`
+);
+
+/** Issues a fresh access code for a started application and emails the applicant the link to fill it in. */
+async function inviteToApply(app, course) {
+  const info = await tenantInfo();
+  const accessCode = crypto.randomBytes(12).toString('base64url');
+  await q('update applications set access_hash = $1 where id = $2', [sha(accessCode), app.id]);
+  await queueEmail(app.email, 'applicationInvite', {
+    institute: info.name, name: app.name, applicationNo: app.application_no, accessCode, course, statusUrl: `${env.APP_URL}/apply/${info.code}/status`,
+  });
+  const message = inviteMessage(info, { name: app.name, applicationNo: app.application_no, accessCode });
+  const wa = fees.whatsappNumber(app.phone);
+  return { accessCode, message, whatsapp: wa ? `https://wa.me/${wa}?text=${encodeURIComponent(message)}` : null };
+}
+
+/**
+ * Someone called or came to the desk asking about a course. A name, an email and the course are enough: it starts an
+ * application for them (step 1 of the applicant's form) and, by default, emails them the link to fill in the rest.
+ */
+export async function createEnquiry(body = {}, admin) {
+  const a = cleanAll({ courseId: body.courseId, name: body.name, email: body.email, phone: body.phone });
+  await ensureCourse(a.courseId);
+  const settings = await getSettings();
+  const applicationNo = await nextNumber('application', { prefix: `APP${new Date().getFullYear()}-`, padding: 5 });
+  const { rows: [r] } = await q(
+    `insert into applications (application_no, course_id, name, email, phone, access_hash, source, step, fee_amount, fee_status)
+     values ($1, $2, $3, $4, $5, $6, 'walk_in', 1, $7, $8) returning *`,
+    [applicationNo, a.courseId, a.name, a.email, a.phone, sha(crypto.randomBytes(12).toString('base64url')), settings.applicationFee, settings.applicationFee > 0 ? 'pending' : 'none'],
+  );
+  const { rows: [c] } = await q('select name from courses where id = $1', [a.courseId]);
+  const invite = body.sendLink === false ? null : await inviteToApply(r, c.name);
+  await audit(admin, 'admission.enquiry', 'application', r.id, { applicationNo, linkSent: Boolean(invite) });
+  return { id: r.id, applicationNo, name: a.name, invite };
+}
+
+/** "Send the form link" again from an enquiry card (a new access code; the old one stops working). */
+export async function sendFormLink(id, admin) {
+  const { rows: [app] } = await q('select a.*, c.name as course from applications a join courses c on c.id = a.course_id where a.id = $1', [id]);
+  if (!app) throw new HttpError(404, 'Enquiry not found.');
+  if (!EDITABLE.includes(app.status)) throw new HttpError(409, 'This application has already been submitted, so there is no form left to fill in.');
+  const invite = await inviteToApply(app, app.course);
+  await audit(admin, 'admission.form_link', 'application', id);
+  return { invite };
+}
+
+/** An enquiry the office has dropped (not interested, wrong number). Only a started, unsubmitted one can be removed. */
+export async function removeEnquiry(id, admin) {
+  const { rows: [app] } = await q('select id, status, application_no from applications where id = $1 for update', [id]);
+  if (!app) throw new HttpError(404, 'Enquiry not found.');
+  if (app.status !== 'draft') throw new HttpError(409, 'Only an enquiry that has not been submitted can be removed. Reject the application instead.');
+  await q('delete from applications where id = $1', [id]);
+  await audit(admin, 'admission.enquiry_removed', 'application', id, { applicationNo: app.application_no });
+}
+
+/** The enquiry's own details, to prefill the walk-in form when the office completes the application at the desk. */
+export async function getEnquiry(id) {
+  const { rows: [app] } = await q('select * from applications where id = $1', [id]);
+  if (!app || app.status !== 'draft') throw new HttpError(404, 'Enquiry not found, or it has already been submitted.');
+  return { id: app.id, applicationNo: app.application_no, ...asBody(app) };
 }
 
 /* ---------------- the office: fee, merit, walk-ins, bulk decisions, merit list ---------------- */
@@ -509,6 +691,8 @@ export async function createWalkIn(body = {}, admin) {
     feeReference ||= 'Paid at the office';
   }
   const accessCode = crypto.randomBytes(12).toString('base64url');
+  // Completing an enquiry at the desk fills in that started application rather than making a second one
+  if (body.enquiryId) return completeEnquiry(body.enquiryId, a, { accessCode, feeStatus, feeReference, settings }, admin);
   const applicationNo = await nextNumber('application', { prefix: `APP${new Date().getFullYear()}-`, padding: 5 });
   let row;
   try {
@@ -527,6 +711,31 @@ export async function createWalkIn(body = {}, admin) {
   await notifyApplicant({ email: a.email, name: a.name, application_no: applicationNo }, 'applicationReceived');
   await audit(admin, 'admission.walk_in', 'application', row.id, { applicationNo });
   return { application: await getApplication(row.id), accessCode };
+}
+
+async function completeEnquiry(enquiryId, a, { accessCode, feeStatus, feeReference, settings }, admin) {
+  if (!isUuid(enquiryId)) throw new HttpError(404, 'Enquiry not found.');
+  const { rows: [app] } = await q('select id, status, application_no, fee_status from applications where id = $1 for update', [enquiryId]);
+  if (!app || !EDITABLE.includes(app.status)) throw new HttpError(409, 'This enquiry has already been submitted. Open it from the board instead.');
+  // A fee the applicant already paid online stays paid
+  const fee = ['paid', 'waived'].includes(app.fee_status) ? null : { status: feeStatus, reference: feeReference };
+  try {
+    await q(
+      `update applications set course_id = $2, name = $3, email = $4, phone = $5, dob = $6, gender = $7, address = $8, guardian = $9,
+              previous_education = $10, personal = $11, entrance = $12, access_hash = $13, status = 'submitted', step = 6,
+              submitted_at = now(), source = 'walk_in'
+              ${fee ? ", fee_amount = $14, fee_status = $15, fee_paid_at = case when $15 in ('paid', 'waived') then now() end, fee_reference = $16" : ''}
+       where id = $1`,
+      [app.id, a.courseId, a.name, a.email, a.phone, a.dob, a.gender, a.address, a.guardian, a.previousEducation, a.personal, a.entrance, sha(accessCode),
+        ...(fee ? [settings.applicationFee, fee.status, fee.reference] : [])],
+    );
+  } catch (err) {
+    if (err.code === '23505') throw new HttpError(409, 'An application with this email already exists for this course.');
+    throw err;
+  }
+  await notifyApplicant({ email: a.email, name: a.name, application_no: app.application_no }, 'applicationReceived');
+  await audit(admin, 'admission.walk_in', 'application', app.id, { applicationNo: app.application_no, fromEnquiry: true });
+  return { application: await getApplication(app.id), accessCode };
 }
 
 /** The office scans the originals at the counter: documents it uploads are already verified. */

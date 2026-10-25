@@ -1,20 +1,42 @@
 import { useTabParam } from '../../hooks/useTabParam.js';
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { AlertTriangle, Banknote, CalendarClock, FileBarChart2, FileText, Plus, Receipt, Search, Trash2, Wallet } from 'lucide-react';
+import { AlertTriangle, Banknote, BellRing, CalendarClock, Download, FileBarChart2, FileText, Plus, Printer, Receipt, Search, Tag, Trash2, Wallet } from 'lucide-react';
 import { useFetch } from '../../hooks/useFetch.js';
 import { useTenantConfig } from '../../hooks/useTenantConfig.js';
 import { api } from '../../api/http.js';
-import { Badge, Card, PageBanner, StatCard, Tabs, pending } from '../../components/ui/Ui.jsx';
+import { Badge, Card, FormActions, FormError, FormField, PageBanner, StatCard, Tabs, pending } from '../../components/ui/Ui.jsx';
+import DataTable from '../../components/ui/DataTable.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import Modal from '../../components/ui/Modal.jsx';
+import StepBar from '../../components/ui/StepBar.jsx';
 import { useDialogs } from '../../components/ui/Dialogs.jsx';
+import ShareMessage from '../../components/ui/ShareMessage.jsx';
 import { feeItemBadge } from '../../utils/fees.js';
-import { fmtDate } from '../../utils/dates.js';
+import { fmtDate, todayISO } from '../../utils/dates.js';
 
 const inr0 = (n) => `₹${Math.round(Number(n)).toLocaleString('en-IN')}`;
 const inr = (n) => `₹${Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const METHODS = [['cash', 'Cash'], ['cheque', 'Cheque'], ['bank_transfer', 'Bank transfer'], ['upi', 'UPI'], ['card', 'Card'], ['online', 'Online']];
+const TABS = [
+  { id: 'overview', label: 'Overview' }, { id: 'students', label: 'Collect' }, { id: 'remind', label: 'Remind' }, { id: 'dayend', label: 'Day-end' },
+  { id: 'structures', label: 'Fee plans' }, { id: 'payments', label: 'All payments' }, { id: 'online', label: 'Online payments' },
+];
+const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+
+/**
+ * Where the fee cycle stands, for the step bar: the first step with work waiting. "Dues generated" and "Receipt"
+ * happen by themselves (assigning a plan makes the dues; collecting makes the receipt), so the office is never sent there.
+ */
+function cycleStep(s, go) {
+  if (!s.structures) return { current: 'setup', next: { hint: 'Make a fee plan for a class: fee heads, amounts and due dates', label: 'Create a fee plan', onClick: go.newPlan } };
+  if (s.itemsTotal === 0 || s.unassigned > 0) {
+    return { current: 'assign', next: { hint: s.unassigned ? `${plural(s.unassigned, 'student')} in a class with a fee plan ${s.unassigned === 1 ? 'has' : 'have'} no fees yet` : 'Assign the fee plan to its class to make the dues', label: 'Assign to class', onClick: go.plans } };
+  }
+  if (s.studentsOverdue > 0) return { current: 'remind', next: { hint: `${plural(s.studentsOverdue, 'student')} overdue, ${inr0(s.overdue)} in all`, label: 'Send reminders', onClick: go.remind } };
+  if (s.outstanding > 0) return { current: 'collect', next: { hint: `${inr0(s.outstanding)} still to collect from ${plural(s.studentsWithDues, 'student')}`, label: 'Collect fees', onClick: go.collect } };
+  return { current: 'dayend', next: { hint: 'Everything due is paid. Check today\'s collection.', label: 'Day-end summary', onClick: go.dayend } };
+}
 
 export default function Fees() {
   const { t } = useTenantConfig();
@@ -30,33 +52,42 @@ export default function Fees() {
     api.get(`/admin/students/${linked}`).then((r) => setLedgerStudent({ id: linked, name: r.student.name, studentCode: r.student.studentCode })).catch(() => {});
   }, [linked]);
   const structures = useFetch('/admin/fees/structures');
+  const summary = useFetch('/admin/fees/summary');
+  const go = {
+    newPlan: () => { setTab('structures'); setNewStructure(true); }, plans: () => setTab('structures'), remind: () => setTab('remind'),
+    collect: () => { setLedgerStudent(null); setTab('students'); }, dayend: () => setTab('dayend'),
+  };
+  const reloadAll = () => { summary.reload(); structures.reload(); };
 
   return (
     <>
       <PageBanner
-        icon={Wallet} title="Fees & Payments" subtitle={`Fee plans, charges and payments for ${t('students', 'students').toLowerCase()}`}
+        icon={Wallet} title="Fees" subtitle={`Fee plans, dues, reminders and collection for ${t('students', 'students').toLowerCase()}`}
+        steps={summary.data ? { process: 'fees', waitingOn: 'Fee office', ...cycleStep(summary.data, go) } : undefined}
+        primary={{ label: 'Collect a fee', icon: Receipt, onClick: go.collect }}
         actions={(
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button type="button" className="btn btn--primary btn--sm" onClick={() => { setLedgerStudent(null); setTab('students'); }}><Receipt size={14} /> Record a payment</button>
+          <>
             <Link to="/admin/reports?report=fee-collection" className="btn btn--outline btn--sm"><FileBarChart2 size={14} /> Collection report</Link>
             <Link to="/admin/reports?report=fee-dues" className="btn btn--outline btn--sm"><FileBarChart2 size={14} /> Outstanding fees</Link>
-          </div>
+          </>
         )}
       />
       <Card>
-        <Tabs tabs={[{ id: 'overview', label: 'Overview' }, { id: 'students', label: 'Student ledger' }, { id: 'structures', label: 'Fee structures' }, { id: 'payments', label: 'All payments' }, { id: 'online', label: 'Online payments' }]} active={tab} onChange={setTab} />
-        {tab === 'overview' && <Overview onOpen={openLedger} onSetup={() => { setTab('structures'); setNewStructure(true); }} />}
-        {tab === 'students' && <StudentLedger selected={ledgerStudent} setSelected={setLedgerStudent} />}
+        <Tabs tabs={TABS} active={tab} onChange={setTab} />
+        {tab === 'overview' && <Overview summary={summary} onOpen={openLedger} onSetup={go.newPlan} />}
+        {tab === 'students' && <StudentLedger selected={ledgerStudent} setSelected={setLedgerStudent} onChanged={summary.reload} />}
+        {tab === 'remind' && <Remind onChanged={summary.reload} />}
+        {tab === 'dayend' && <DayEnd />}
         {tab === 'structures' && (
           <>
-            <div className="toolbar"><span /><button type="button" className="btn btn--primary btn--sm" onClick={() => setNewStructure(true)}><Plus size={13} /> New structure</button></div>
+            <div className="toolbar"><span className="muted">A fee plan lists a class's fee heads with amounts and due dates. Assign it to the class to make each student's dues.</span><button type="button" className="btn btn--outline btn--sm" onClick={() => setNewStructure(true)}><Plus size={13} /> New fee plan</button></div>
             <DataBoundary loading={structures.loading} error={structures.error} data={structures.data} reload={structures.reload}>
-              {structures.data && (structures.data.structures.length === 0 ? <EmptyState title="No fee structures yet" hint="A fee structure lists the charges for a course, such as tuition and exam fee, with due dates." action={{ label: 'Create a fee structure', onClick: () => setNewStructure(true) }} /> : (
+              {structures.data && (structures.data.structures.length === 0 ? <EmptyState title="No fee plans yet" hint="A fee plan lists the charges for a class, such as tuition and exam fee, with due dates." action={{ label: 'Create a fee plan', onClick: () => setNewStructure(true) }} /> : (
                 <div className="table-wrap">
                   <table className="table">
                     <thead><tr><th>Name</th><th>{t('course', 'Course')}</th><th>Year</th><th>Total</th><th>Assigned</th><th /></tr></thead>
                     <tbody>
-                      {structures.data.structures.map((s) => <StructureRow key={s.id} s={s} onChanged={structures.reload} />)}
+                      {structures.data.structures.map((s) => <StructureRow key={s.id} s={s} onChanged={reloadAll} />)}
                     </tbody>
                   </table>
                 </div>
@@ -67,7 +98,7 @@ export default function Fees() {
         {tab === 'payments' && <AllPayments />}
         {tab === 'online' && <OnlinePayments />}
       </Card>
-      {newStructure && <NewStructureModal onClose={() => setNewStructure(false)} onCreated={() => { setNewStructure(false); structures.reload(); }} />}
+      {newStructure && <NewStructureModal onClose={() => setNewStructure(false)} onCreated={() => { setNewStructure(false); reloadAll(); }} />}
     </>
   );
 }
@@ -79,7 +110,7 @@ function StructureRow({ s, onChanged }) {
   const [err, setErr] = useState('');
 
   const bulkAssign = async () => {
-    if (!(await confirm(`Assign "${s.name}" to every active, unassigned student of ${s.course}?`, { confirmLabel: 'Assign' }))) return;
+    if (!(await confirm(`Charge "${s.name}" to every active student of ${s.course} who does not have it yet? Their dues are made straight away.`, { confirmLabel: 'Assign to class' }))) return;
     setBusy(true); setErr('');
     try { const r = await api.post(`/admin/fees/structures/${s.id}/bulk-assign`); toast.success(`Assigned to ${r.studentsAssigned} student(s).`); onChanged(); }
     catch (e) { setErr(e.message); } finally { setBusy(false); }
@@ -96,8 +127,8 @@ function StructureRow({ s, onChanged }) {
         <td>{s.course}</td><td>{s.academicYear}</td><td>{inr(s.total)}</td><td>{s.assignedCount}</td>
         <td>
           <div className="row-actions">
-            <button type="button" className="btn btn--outline btn--sm" onClick={() => setAssigning(true)}>Assign to student</button>
-            <button type="button" className="btn btn--outline btn--sm" disabled={busy} onClick={bulkAssign}>Bulk assign</button>
+            <button type="button" className="btn btn--primary btn--sm" disabled={busy} onClick={bulkAssign}>Assign to class</button>
+            <button type="button" className="btn btn--outline btn--sm" onClick={() => setAssigning(true)}>One student</button>
             {s.assignedCount === 0 && <button aria-label="Delete" title="Delete" type="button" className="btn btn--outline btn--sm" onClick={remove}><Trash2 size={13} /></button>}
           </div>
         </td>
@@ -150,7 +181,7 @@ function NewStructureModal({ onClose, onCreated }) {
   };
 
   return (
-    <Modal open title="New fee structure" onClose={onClose} width={620}>
+    <Modal open title="New fee plan" onClose={onClose} width={620}>
       <form onSubmit={submit}>
         {err && <p className="form-error">{err}</p>}
         <DataBoundary loading={filters.loading} error={filters.error} data={filters.data} reload={filters.reload}>
@@ -174,22 +205,22 @@ function NewStructureModal({ onClose, onCreated }) {
           </div>
         ))}
         <button type="button" className="btn btn--outline btn--sm" onClick={() => setItems((arr) => [...arr, { label: '', amount: '', dueDate: '' }])}><Plus size={12} /> Add item</button>
-        <div className="form-actions"><button type="button" className="btn btn--outline" onClick={onClose}>Cancel</button><button className="btn btn--primary" disabled={busy}>{busy ? 'Creating...' : 'Create structure'}</button></div>
+        <div className="form-actions"><button type="button" className="btn btn--outline" onClick={onClose}>Cancel</button><button className="btn btn--primary" disabled={busy}>{busy ? 'Creating...' : 'Create fee plan'}</button></div>
       </form>
     </Modal>
   );
 }
 
 /** What the office needs first: what came in, what is still to collect, what is overdue and who owes it. */
-function Overview({ onOpen, onSetup }) {
-  const { data, loading, error, reload } = useFetch('/admin/fees/summary');
+function Overview({ summary, onOpen, onSetup }) {
+  const { data, loading, error, reload } = summary;
   return (
     <DataBoundary loading={loading} error={error} data={data} reload={reload}>
       {data && (data.itemsTotal === 0 ? (
         <EmptyState
           title="No fees charged yet"
-          hint={data.structures ? 'Assign a fee structure to a course from the Fee structures tab.' : 'Start by creating a fee structure for a course. Then assign it to the students.'}
-          action={{ label: data.structures ? 'Go to fee structures' : 'Create a fee structure', onClick: onSetup }}
+          hint={data.structures ? 'Assign a fee plan to its class from the Fee plans tab.' : 'Start by creating a fee plan for a class. Then assign it to the class.'}
+          action={{ label: data.structures ? 'Go to fee plans' : 'Create a fee plan', onClick: onSetup }}
         />
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 16, marginTop: 14 }}>
@@ -222,7 +253,7 @@ function Overview({ onOpen, onSetup }) {
   );
 }
 
-function StudentLedger({ selected, setSelected }) {
+function StudentLedger({ selected, setSelected, onChanged }) {
   const [search, setSearch] = useState('');
   const [classId, setClassId] = useState('');
   const list = useFetch(search.length > 1 ? `/admin/students?search=${encodeURIComponent(search)}` : null);
@@ -284,21 +315,23 @@ function StudentLedger({ selected, setSelected }) {
           )}
         </DataBoundary>
       )}
-      {selected && <StudentLedgerDetail student={selected} onBack={() => setSelected(null)} />}
+      {selected && <StudentLedgerDetail student={selected} onBack={() => setSelected(null)} onChanged={onChanged} />}
     </div>
   );
 }
 
-function StudentLedgerDetail({ student, onBack }) {
-  const { confirm, prompt, toast } = useDialogs();
+function StudentLedgerDetail({ student, onBack, onChanged }) {
+  const { prompt, toast } = useDialogs();
   const fees = useFetch(`/admin/fees/students/${student.id}`);
   const [paying, setPaying] = useState(false);
   const [addingItem, setAddingItem] = useState(false);
+  const [conceding, setConceding] = useState(null);
+  const changed = () => { fees.reload(); onChanged?.(); };
 
   const waive = async (item) => {
     const reason = await prompt(`Reason for waiving "${item.label}" (${inr(item.amount)}):`, { required: true, title: 'Waive fee', confirmLabel: 'Waive' });
     if (!reason) return;
-    try { await api.put(`/admin/fees/items/${item.id}/waive`, { reason }); fees.reload(); } catch (e) { toast.error(e); }
+    try { await api.put(`/admin/fees/items/${item.id}/waive`, { reason }); changed(); } catch (e) { toast.error(e); }
   };
 
   return (
@@ -328,14 +361,20 @@ function StudentLedgerDetail({ student, onBack }) {
                     <td className="muted">{i.dueDate ? fmtDate(i.dueDate) : '-'}</td>
                     <td>{inr(i.amount)}</td><td>{inr(i.paid)}</td>
                     <td><Badge tone={feeItemBadge(i).tone}>{feeItemBadge(i).label}</Badge></td>
-                    <td>{['unpaid', 'partial'].includes(i.status) && <button type="button" className="btn btn--outline btn--sm" onClick={() => waive(i)}>Waive</button>}</td>
+                    <td>{['unpaid', 'partial'].includes(i.status) && (
+                      <div className="row-actions">
+                        <button type="button" className="btn btn--outline btn--sm" onClick={() => setConceding(i)}><Tag size={13} /> Concession</button>
+                        {Number(i.paid) === 0 && <button type="button" className="btn btn--outline btn--sm" onClick={() => waive(i)}>Waive</button>}
+                      </div>
+                    )}{i.status === 'waived' && i.waivedReason && <span className="muted">{i.waivedReason}</span>}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          {addingItem && <AddItemModal studentId={student.id} onClose={() => setAddingItem(false)} onDone={() => { setAddingItem(false); fees.reload(); }} />}
-          {paying && <PayModal student={student} items={fees.data.items} onClose={() => setPaying(false)} onDone={() => { setPaying(false); fees.reload(); }} />}
+          {addingItem && <AddItemModal studentId={student.id} onClose={() => setAddingItem(false)} onDone={() => { setAddingItem(false); changed(); }} />}
+          {paying && <PayModal student={student} items={fees.data.items} onClose={() => setPaying(false)} onDone={() => { setPaying(false); changed(); }} />}
+          {conceding && <ConcessionModal item={conceding} onClose={() => setConceding(null)} onDone={() => { setConceding(null); changed(); }} />}
         </div>
       )}
     </DataBoundary>
@@ -382,10 +421,10 @@ function PayModal({ student, items, onClose, onDone }) {
     <Modal open title="Record a payment" onClose={onClose} width={420}>
       {receipt ? (
         <>
-          <p className="secret-box">Payment recorded: receipt <strong>{receipt.receiptNo}</strong>.</p>
+          <StepBar process="fees" current="receipt" next={{ hint: `Receipt ${receipt.receiptNo} is ready, with your logo`, label: 'Open the receipt', onClick: () => window.open(`/api/admin/fees/payments/${receipt.id}/receipt.pdf`, '_blank', 'noopener') }} />
+          <p className="secret-box" style={{ marginTop: 12 }}>{inr(receipt.amount)} received from <strong>{student.name}</strong> by {receipt.method.replace('_', ' ')}. Receipt <strong>{receipt.receiptNo}</strong>.</p>
           <div className="form-actions">
-            <a className="btn btn--outline" href={`/api/admin/fees/payments/${receipt.id}/receipt.pdf`} target="_blank" rel="noreferrer"><Receipt size={14} /> View receipt</a>
-            <button type="button" className="btn btn--primary" onClick={onDone}>Done</button>
+            <button type="button" className="btn btn--outline" onClick={onDone}>Done</button>
           </div>
         </>
       ) : (
@@ -476,6 +515,193 @@ function OnlinePayments() {
               </tbody>
             </table>
           </div>
+        ))}
+      </DataBoundary>
+    </div>
+  );
+}
+
+/** A concession on one charge: an amount or a share of what is still due, with the reason kept on the ledger. */
+function ConcessionModal({ item, onClose, onDone }) {
+  const due = Math.round((Number(item.amount) - Number(item.paid)) * 100) / 100;
+  const [mode, setMode] = useState('amount');
+  const [value, setValue] = useState('');
+  const [reason, setReason] = useState('');
+  const [err, setErr] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const amount = mode === 'percent' ? Math.round(due * Number(value || 0)) / 100 : Number(value || 0);
+  const submit = async (e) => {
+    e.preventDefault(); setErr(null); setBusy(true);
+    try { await api.put(`/admin/fees/items/${item.id}/concession`, { amount, reason }); onDone(); } catch (x) { setErr(x); } finally { setBusy(false); }
+  };
+  return (
+    <Modal open title={`Concession on ${item.label}`} onClose={onClose} width={440}>
+      <form onSubmit={submit}>
+        <FormError error={err} />
+        <p className="muted" style={{ marginTop: 0 }}>Still due on this charge: <strong>{inr(due)}</strong>.</p>
+        <div className="segmented" role="group" aria-label="Concession as">
+          <button type="button" className={`segmented__item ${mode === 'amount' ? 'is-active' : ''}`} aria-pressed={mode === 'amount'} onClick={() => setMode('amount')}>Amount (₹)</button>
+          <button type="button" className={`segmented__item ${mode === 'percent' ? 'is-active' : ''}`} aria-pressed={mode === 'percent'} onClick={() => setMode('percent')}>Percent (%)</button>
+        </div>
+        <div className="fields" style={{ marginTop: 10 }}>
+          <FormField label={mode === 'percent' ? 'Percent off' : 'Amount off'} required hint={mode === 'percent' && value ? `That is ${inr(amount)}` : undefined}>
+            <input className="input" type="number" inputMode="decimal" min="0" max={mode === 'percent' ? 100 : due} step="0.01" value={value} onChange={(e) => setValue(e.target.value)} autoFocus />
+          </FormField>
+          <FormField label="Reason" required hint="Kept on the ledger, for example: merit scholarship"><input className="input" value={reason} onChange={(e) => setReason(e.target.value)} /></FormField>
+        </div>
+        <FormActions submit={amount > 0 ? `Give ${inr(amount)} off` : 'Give concession'} busyLabel="Saving..." busy={busy} disabled={!(amount > 0)} onCancel={onClose} />
+      </form>
+    </Modal>
+  );
+}
+
+/** Remind: who owes, with a ready message for each (Copy or WhatsApp), and a send to the student and parent app. */
+function Remind({ onChanged }) {
+  const { toast } = useDialogs();
+  const classes = useFetch('/admin/courses');
+  const [courseId, setCourseId] = useState('');
+  const [overdueOnly, setOverdueOnly] = useState(true);
+  const qs = new URLSearchParams(); if (courseId) qs.set('courseId', courseId); if (overdueOnly) qs.set('overdue', '1');
+  const list = useFetch(`/admin/fees/reminders?${qs}`);
+  const [picked, setPicked] = useState(() => new Set());
+  const [busy, setBusy] = useState(false);
+  const [late, setLate] = useState(false);
+  const rows = list.data?.students || [];
+  useEffect(() => { setPicked(new Set(rows.map((r) => r.id))); }, [list.data]); // eslint-disable-line react-hooks/exhaustive-deps
+  const toggle = (id) => setPicked((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+
+  const send = async () => {
+    setBusy(true);
+    try {
+      const r = await api.post('/admin/fees/reminders', { studentIds: [...picked], courseId: courseId || undefined, overdueOnly });
+      toast.success(`Reminder sent to ${plural(r.sent, 'student')} and their parents in the app.`);
+    } catch (e) { toast.error(e); } finally { setBusy(false); }
+  };
+
+  return (
+    <div>
+      <div className="toolbar" style={{ margin: '12px 0' }}>
+        <div className="toolbar__filters">
+          <select className="input" style={{ width: 'auto' }} value={courseId} onChange={(e) => setCourseId(e.target.value)} aria-label="Class">
+            <option value="">All classes</option>
+            {(classes.data?.courses || []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+          <label className="check-row"><input type="checkbox" checked={overdueOnly} onChange={(e) => setOverdueOnly(e.target.checked)} /> Only overdue</label>
+          {rows.length > 0 && <label className="check-row"><input type="checkbox" checked={rows.every((r) => picked.has(r.id))} onChange={(e) => setPicked(e.target.checked ? new Set(rows.map((r) => r.id)) : new Set())} /> Select all</label>}
+        </div>
+        <div className="row-actions">
+          <button type="button" className="btn btn--outline btn--sm" onClick={() => setLate(true)}><CalendarClock size={14} /> Add late fee</button>
+          <button type="button" className="btn btn--primary btn--sm" disabled={busy || picked.size === 0} onClick={send}><BellRing size={14} /> {busy ? 'Sending...' : `Send in app (${picked.size})`}</button>
+        </div>
+      </div>
+      <p className="muted" style={{ marginTop: 0 }}>Each message is ready to send. WhatsApp opens on your phone or WhatsApp Web with the text filled in. "Send in app" puts it in the student's and parent's notifications.</p>
+      <DataBoundary loading={list.loading} error={list.error} data={list.data} reload={list.reload}>
+        {list.data && (
+          <DataTable
+            caption="Students to remind" rows={rows}
+            empty={{ title: overdueOnly ? 'Nobody is overdue' : 'Nobody owes anything', hint: overdueOnly ? 'Untick "Only overdue" to remind everyone with fees due.' : 'Every charge is paid. Check the day-end summary.' }}
+            columns={[
+              { key: 'pick', label: 'Send', render: (r) => <input type="checkbox" aria-label={`Send to ${r.name}`} checked={picked.has(r.id)} onChange={() => toggle(r.id)} /> },
+              { key: 'name', label: 'Student', render: (r) => <><strong>{r.name}</strong> <span className="muted">({r.studentCode})</span><div className="muted">{r.course}</div></> },
+              { key: 'guardian', label: 'Parent', render: (r) => <>{r.guardianName || '-'}<div className="muted">{r.guardianPhone || r.phone || 'No mobile'}{r.parentLinked ? ' · in app' : ''}</div></> },
+              { key: 'outstanding', label: 'Due', num: true, render: (r) => inr0(r.outstanding) },
+              { key: 'overdue', label: 'Overdue', num: true, render: (r) => (r.overdue > 0 ? <><Badge tone="red">{inr0(r.overdue)}</Badge><div className="muted">since {fmtDate(String(r.oldestDue).slice(0, 10))}</div></> : <span className="muted">-</span>) },
+              { key: 'send', label: '', actions: true, render: (r) => <ShareMessage compact message={r.message} whatsapp={r.whatsapp} /> },
+            ]}
+          />
+        )}
+      </DataBoundary>
+      {late && <LateFeeModal courseId={courseId} courses={classes.data?.courses || []} onClose={() => setLate(false)} onDone={() => { setLate(false); list.reload(); onChanged(); }} />}
+    </div>
+  );
+}
+
+/** Late fee: one charge on each overdue fee that has none yet. Shows how many and how much before anything is saved. */
+function LateFeeModal({ courseId: initialCourse, courses, onClose, onDone }) {
+  const { toast } = useDialogs();
+  const [courseId, setCourseId] = useState(initialCourse);
+  const [amount, setAmount] = useState('');
+  const [preview, setPreview] = useState(null);
+  const [err, setErr] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const run = async (e) => {
+    e.preventDefault(); setErr(null); setBusy(true);
+    try {
+      const r = await api.post('/admin/fees/late-fees', { courseId: courseId || undefined, amount: Number(amount), preview: !preview });
+      if (!preview) setPreview(r);
+      else { toast.success(`Late fee added to ${plural(r.charges, 'overdue charge')} (${plural(r.students, 'student')}).`); onDone(); }
+    } catch (x) { setErr(x); } finally { setBusy(false); }
+  };
+  return (
+    <Modal open title="Add a late fee" onClose={onClose} width={460}>
+      <form onSubmit={run}>
+        <FormError error={err} />
+        <div className="fields">
+          <FormField label="Class">
+            <select className="input" value={courseId} onChange={(e) => { setCourseId(e.target.value); setPreview(null); }}>
+              <option value="">All classes</option>
+              {courses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </FormField>
+          <FormField label="Late fee per overdue charge" required hint="Added once to each charge past its due date">
+            <input className="input" type="number" inputMode="decimal" min="1" step="0.01" value={amount} onChange={(e) => { setAmount(e.target.value); setPreview(null); }} />
+          </FormField>
+        </div>
+        {preview && (preview.charges === 0
+          ? <p className="note">No overdue charge is without a late fee. Nothing to add.</p>
+          : <p className="note">This adds <strong>{inr(preview.amount)}</strong> to <strong>{plural(preview.charges, 'overdue charge')}</strong> of <strong>{plural(preview.students, 'student')}</strong>: {inr(preview.total)} in all.</p>)}
+        <FormActions submit={preview ? 'Add late fees' : 'Check first'} busy={busy} disabled={!(Number(amount) > 0) || (preview && preview.charges === 0)} onCancel={onClose} />
+      </form>
+    </Modal>
+  );
+}
+
+/** Day-end: what came in today (or any day), by method and by who took it, to match the cash drawer and the bank. */
+function DayEnd() {
+  const [date, setDate] = useState(() => todayISO());
+  const d = useFetch(`/admin/fees/day-end?date=${date}`);
+  const data = d.data;
+  return (
+    <div>
+      <div className="toolbar" style={{ margin: '12px 0' }}>
+        <FormField label="Day"><input className="input" type="date" value={date} max={todayISO()} onChange={(e) => setDate(e.target.value || todayISO())} /></FormField>
+        <div className="row-actions">
+          <button type="button" className="btn btn--outline btn--sm" onClick={() => window.print()}><Printer size={14} /> Print</button>
+          <a className="btn btn--primary btn--sm" href={`/api/admin/fees/day-end?date=${date}&format=pdf`}><Download size={14} /> Download PDF</a>
+        </div>
+      </div>
+      <DataBoundary loading={d.loading} error={d.error} data={data} reload={d.reload}>
+        {data && (data.count === 0 ? (
+          <EmptyState title={`Nothing collected on ${fmtDate(data.date)}`} hint="Fees recorded at the desk and paid online show here, with a receipt for each." />
+        ) : (
+          <>
+            <div className="stats stats--3">
+              <StatCard value={inr0(data.total)} label={`Collected on ${fmtDate(data.date)}`} icon={Banknote} status="good" hint={plural(data.count, 'receipt')} />
+              {data.byMethod.slice(0, 2).map((m) => <StatCard key={m.key} value={inr0(m.amount)} label={m.label} icon={Wallet} hint={plural(m.count, 'receipt')} />)}
+            </div>
+            <div className="dayend-grid">
+              <div>
+                <h3 className="section-title">By method</h3>
+                <DataTable caption="By method" rowKey="key" rows={data.byMethod} columns={[{ key: 'label', label: 'Method' }, { key: 'count', label: 'Receipts', num: true }, { key: 'amount', label: 'Amount', num: true, render: (m) => inr(m.amount) }]} />
+              </div>
+              <div>
+                <h3 className="section-title">By who took it</h3>
+                <DataTable caption="By staff" rowKey="key" rows={data.byStaff} columns={[{ key: 'label', label: 'Taken by' }, { key: 'count', label: 'Receipts', num: true }, { key: 'amount', label: 'Amount', num: true, render: (m) => inr(m.amount) }]} />
+              </div>
+            </div>
+            <h3 className="section-title" style={{ marginTop: 16 }}>Receipts</h3>
+            <DataTable
+              caption="Receipts" rows={data.receipts}
+              columns={[
+                { key: 'receiptNo', label: 'Receipt' },
+                { key: 'studentName', label: 'Student', render: (r) => <>{r.studentName} <span className="muted">({r.studentCode})</span></> },
+                { key: 'methodLabel', label: 'Method', muted: true },
+                { key: 'receivedBy', label: 'Taken by', muted: true },
+                { key: 'amount', label: 'Amount', num: true, render: (r) => inr(r.amount) },
+                { key: 'open', label: '', actions: true, render: (r) => <a className="btn btn--outline btn--sm" href={`/api/admin/fees/payments/${r.id}/receipt.pdf`} target="_blank" rel="noreferrer"><FileText size={13} /> Receipt</a> },
+              ]}
+            />
+          </>
         ))}
       </DataBoundary>
     </div>

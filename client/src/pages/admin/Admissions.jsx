@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { BarChart3, ClipboardCheck, Plus, Search, Settings2 } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { BarChart3, ClipboardCheck, Columns3, List, Plus, Search, Settings2, UserPlus } from 'lucide-react';
 import { useFetch } from '../../hooks/useFetch.js';
 import { useTabParam } from '../../hooks/useTabParam.js';
 import { useTenantConfig } from '../../hooks/useTenantConfig.js';
@@ -12,6 +13,10 @@ import AdminApplicationDetail from '../../components/admissions/AdminApplication
 import WalkInModal from '../../components/admissions/WalkInModal.jsx';
 import AdmissionSettings from '../../components/admissions/AdmissionSettings.jsx';
 import MeritListModal from '../../components/admissions/MeritListModal.jsx';
+import Board from '../../components/admissions/Board.jsx';
+import EnquiryModal from '../../components/admissions/EnquiryModal.jsx';
+import EnrolModal from '../../components/admissions/EnrolModal.jsx';
+import ShareMessage from '../../components/ui/ShareMessage.jsx';
 import { FEE_STATUS, STATUS } from '../../components/admissions/status.js';
 import { fmtDate } from '../../utils/dates.js';
 
@@ -27,10 +32,28 @@ const PIPE = [
 ];
 const PIPE_IDS = PIPE.map((p) => p.id);
 
+/** The header's "Next:" line: the step with work waiting that is closest to a seat being filled. */
+function nextStep(counts) {
+  const n = (k) => counts[k] || 0;
+  const s = (k) => (n(k) === 1 ? '' : 's');
+  if (n('offer')) return `${n('offer')} accepted applicant${s('offer')} to enrol`;
+  if (n('fee')) return `${n('fee')} enrolled student${s('fee')} still to pay the enrolment fee`;
+  if (n('documents')) return `${n('documents')} application${s('documents')} checked and waiting for a decision`;
+  if (n('application')) return `${n('application')} application${s('application')} with documents to check`;
+  if (n('enquiry')) return `${n('enquiry')} enquir${n('enquiry') === 1 ? 'y' : 'ies'} to turn into applications`;
+  return 'Add an enquiry, or share the application link below';
+}
+
 export default function Admissions() {
   const { t, tenant } = useTenantConfig();
   const { confirm, prompt, toast } = useDialogs();
   const [tab, setTab] = useTabParam('submitted', PIPE_IDS);
+  const [params, setParams] = useSearchParams();
+  const view = params.get('view') === 'list' ? 'list' : 'board';
+  const setView = (v) => setParams((p) => { const x = new URLSearchParams(p); if (v === 'board') x.delete('view'); else x.set('view', v); return x; }, { replace: true });
+  const [enquiry, setEnquiry] = useState(null); // an enquiry being filled in at the desk
+  const [enrolling, setEnrolling] = useState(null); // the full application being enrolled
+  const [shared, setShared] = useState(null); // { name, invite } after "Send form link"
   const [search, setSearch] = useState('');
   const [courseId, setCourseId] = useState('');
   // ?open=<id> (from Approvals or a notification) opens that item straight away
@@ -44,7 +67,12 @@ export default function Admissions() {
   if (tab === 'fee') qs.set('fee', 'pending'); else if (tab !== 'all') qs.set('status', tab);
   if (courseId) qs.set('courseId', courseId);
   if (search) qs.set('search', search);
-  const list = useFetch(`/admin/admissions?${qs}`);
+  const list = useFetch(view === 'list' ? `/admin/admissions?${qs}` : null);
+  const bq = new URLSearchParams();
+  if (courseId) bq.set('courseId', courseId);
+  if (search) bq.set('search', search);
+  const boardData = useFetch(`/admin/admissions/board?${bq}`);
+  const reloadAll = () => { boardData.reload(); if (view === 'list') list.reload(); };
   const courses = useFetch('/admin/courses');
   const settings = useFetch('/admin/admissions/settings');
   const applyLink = `${window.location.origin}/apply/${tenant?.code}`;
@@ -54,6 +82,21 @@ export default function Admissions() {
   const one = t('course', 'Course');
 
   useEffect(() => { setPicked(new Set()); }, [tab, courseId, search]);
+
+  const fill = async (card) => {
+    try { setEnquiry((await api.get(`/admin/admissions/enquiries/${card.id}`)).enquiry); } catch (err) { toast.error(err); }
+  };
+  const sendLink = async (card) => {
+    try { const r = await api.post(`/admin/admissions/enquiries/${card.id}/form-link`); setShared({ name: card.name, invite: r.invite }); } catch (err) { toast.error(err); }
+  };
+  const removeEnquiry = async (card) => {
+    if (!(await confirm(`Remove the enquiry from ${card.name}? Their started application is deleted.`, { danger: true, confirmLabel: 'Remove' }))) return;
+    try { await api.del(`/admin/admissions/enquiries/${card.id}`); toast.success('Enquiry removed.'); boardData.reload(); } catch (err) { toast.error(err); }
+  };
+  const enrol = async (cardOrApp) => {
+    try { setEnrolling(cardOrApp.guardian ? cardOrApp : (await api.get(`/admin/admissions/${cardOrApp.id}`)).application); } catch (err) { toast.error(err); }
+  };
+  const bc = boardData.data?.counts || {};
 
   const countOf = (id) => (id === 'fee' ? counts.feePending : id === 'all' ? undefined : counts[id]) ?? 0;
   const allPicked = rows.length > 0 && rows.every((a) => picked.has(a.id));
@@ -67,7 +110,7 @@ export default function Admissions() {
     try {
       const r = await api.post('/admin/admissions/bulk-decision', { ids: [...picked], decision, note });
       setPicked(new Set());
-      list.reload();
+      reloadAll();
       if (r.failed.length) setOutcome(r); else toast.success(`${r.done.length} application${r.done.length === 1 ? '' : 's'} updated.`);
     } catch (err) { toast.error(err); }
   };
@@ -75,13 +118,15 @@ export default function Admissions() {
   return (
     <>
       <PageBanner
-        icon={ClipboardCheck} title={t('admission', 'Admissions')} subtitle="Review applications, verify documents, decide and enrol"
+        icon={ClipboardCheck} title={t('admission', 'Admissions')} subtitle="From the first enquiry to an enrolled student"
+        next={boardData.data ? nextStep(bc) : undefined}
+        primary={{ label: 'Add enquiry', icon: UserPlus, onClick: () => setPanel('enquiry') }}
         actions={(
-          <div className="row-actions">
-            <button type="button" className="btn btn--outline btn--sm" onClick={() => setPanel("walkin")}><Plus size={14} /> Walk-in application</button>
+          <>
+            <button type="button" className="btn btn--outline btn--sm" onClick={() => setPanel('walkin')}><Plus size={14} /> Walk-in application</button>
             <button type="button" className="btn btn--outline btn--sm" onClick={() => setPanel('merit')}><BarChart3 size={14} /> Merit list</button>
             <button type="button" className="btn btn--outline btn--sm" onClick={() => setPanel('settings')}><Settings2 size={14} /> Settings</button>
-          </div>
+          </>
         )}
       />
       <Card>
@@ -91,9 +136,35 @@ export default function Admissions() {
             <> {settings.data.settings.accepting ? <Badge tone="green">Open</Badge> : <Badge tone="red">Closed</Badge>}
               {settings.data.settings.applicationFee > 0 && <> <Badge tone="blue">Fee ₹{settings.data.settings.applicationFee}</Badge></>}</>
           )}
-          {counts.drafts > 0 && <span className="muted"> - {counts.drafts} started but not submitted.</span>}
+          {bc.rejected > 0 && <span className="muted"> - {bc.rejected} not accepted (see the list view).</span>}
         </p>
       </Card>
+
+      <div className="toolbar board-toolbar">
+        <div className="toolbar__filters">
+          <select className="input" aria-label={one} value={courseId} onChange={(e) => setCourseId(e.target.value)}>
+            <option value="">All {t('courses', 'Courses').toLowerCase()}</option>
+            {courseList.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+          <div className="input-wrap" style={{ minWidth: 220 }}>
+            <Search size={14} /><input className="input input--icon" placeholder="Name, email, phone or number" aria-label="Search applications" value={search} onChange={(e) => setSearch(e.target.value)} />
+          </div>
+        </div>
+        <div className="segmented" role="group" aria-label="View">
+          <button type="button" className={`segmented__item ${view === 'board' ? 'is-active' : ''}`} aria-pressed={view === 'board'} onClick={() => setView('board')}><Columns3 size={15} aria-hidden="true" /> Board</button>
+          <button type="button" className={`segmented__item ${view === 'list' ? 'is-active' : ''}`} aria-pressed={view === 'list'} onClick={() => setView('list')}><List size={15} aria-hidden="true" /> List</button>
+        </div>
+      </div>
+
+      {view === 'board' && (
+        <DataBoundary loading={boardData.loading} error={boardData.error} data={boardData.data} reload={boardData.reload}>
+          {boardData.data && (
+            <Board cards={boardData.data.cards} counts={bc} onOpen={setOpenId} onFill={fill} onSendLink={sendLink} onRemove={removeEnquiry} onEnrol={enrol} />
+          )}
+        </DataBoundary>
+      )}
+
+      {view === 'list' && (<>
 
       <div className="pipeline" role="tablist" aria-label="Application stages">
         {PIPE.map((p) => (
@@ -105,17 +176,6 @@ export default function Admissions() {
       </div>
 
       <Card>
-        <div className="toolbar">
-          <div className="toolbar__filters">
-            <select aria-label={one} value={courseId} onChange={(e) => setCourseId(e.target.value)}>
-              <option value="">All {t('courses', 'Courses').toLowerCase()}</option>
-              {courseList.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-            <div className="input-wrap" style={{ minWidth: 220 }}>
-              <Search size={14} /><input className="input input--icon" placeholder="Name, email or number" value={search} onChange={(e) => setSearch(e.target.value)} />
-            </div>
-          </div>
-        </div>
         {picked.size > 0 && (
           <div className="bulkbar" role="region" aria-label="Actions for selected applications">
             <strong>{picked.size} selected</strong>
@@ -155,14 +215,32 @@ export default function Admissions() {
           ))}
         </DataBoundary>
       </Card>
+      </>)}
 
-      {openId && <AdminApplicationDetail id={openId} onClose={() => setOpenId(null)} onChanged={list.reload} onSecret={setSecret} />}
+      {openId && <AdminApplicationDetail id={openId} onClose={() => setOpenId(null)} onChanged={reloadAll} onSecret={setSecret} onEnrol={(a) => { setOpenId(null); enrol(a); }} />}
       {panel === 'walkin' && (
         <WalkInModal
           courses={courseList} courseLabel={one} fee={settings.data?.settings.applicationFee || 0} onClose={() => setPanel(null)}
-          onCreated={(id, open) => { list.reload(); if (open) { setPanel(null); setOpenId(id); } }}
+          onCreated={(id, open) => { reloadAll(); if (open) { setPanel(null); setOpenId(id); } }}
         />
       )}
+      {enquiry && (
+        <WalkInModal
+          enquiry={enquiry} courses={courseList} courseLabel={one} fee={settings.data?.settings.applicationFee || 0} onClose={() => setEnquiry(null)}
+          onCreated={(id, open) => { reloadAll(); if (open) { setEnquiry(null); setOpenId(id); } }}
+        />
+      )}
+      {panel === 'enquiry' && <EnquiryModal courses={courseList} courseLabel={one} onClose={() => setPanel(null)} onCreated={reloadAll} />}
+      {enrolling && <EnrolModal app={enrolling} onClose={() => setEnrolling(null)} onDone={reloadAll} />}
+      <Modal open={!!shared} title={shared ? `Form link sent to ${shared.name}` : ''} onClose={() => setShared(null)} width={520}>
+        {shared && (
+          <>
+            <p className="muted" style={{ marginTop: 0 }}>A new access code was emailed (the old one no longer works). To send it on WhatsApp too:</p>
+            <ShareMessage message={shared.invite.message} whatsapp={shared.invite.whatsapp} />
+            <div className="form-actions"><button type="button" className="btn btn--primary" onClick={() => setShared(null)}>Done</button></div>
+          </>
+        )}
+      </Modal>
       {panel === 'settings' && <AdmissionSettings onClose={() => { setPanel(null); settings.reload(); }} />}
       {panel === 'merit' && <MeritListModal courseLabel={one} onClose={() => setPanel(null)} />}
 

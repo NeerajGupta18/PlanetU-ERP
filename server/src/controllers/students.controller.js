@@ -3,6 +3,7 @@ import { HttpError } from '../middleware/error.js';
 import { getInstitute } from '../db/repo.js';
 import * as svc from '../services/students.service.js';
 import { streamIdCard } from '../services/idcard.service.js';
+import { loadBrand } from '../services/pdfBrand.js';
 import * as importer from '../services/studentImport.service.js';
 import { studentOverview } from '../services/attendance.service.js';
 import { studentFees } from '../services/fees.service.js';
@@ -51,8 +52,9 @@ export async function issueIdCard(res, tenant, studentId, req) {
     const { rows: [f] } = await q('select storage_key from files where id = $1', [student.photoFileId]);
     photoStorageKey = f?.storage_key ?? null;
   }
+  const brand = await loadBrand(institute);
   await req.tx.commit(); // release the database transaction before streaming the PDF
-  await streamIdCard(res, { institute, student, term: tenant.terminology, photoStorageKey });
+  await streamIdCard(res, { institute, student, term: tenant.terminology, photoStorageKey, brand });
 }
 
 export const idCard = (req, res) => issueIdCard(res, req.tenant, req.params.id, req);

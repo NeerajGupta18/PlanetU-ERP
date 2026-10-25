@@ -114,6 +114,12 @@ export async function removeLogo(admin) {
   return { logoVersion: null };
 }
 
+/** The divisions (A, B, C...) saved for one class in step 3, or [] when it has none. */
+export async function divisionsOf(courseId) {
+  const { divisions = {} } = await readSetup();
+  return divisions[courseId] || [];
+}
+
 /** { type, bytes } of the institute's logo, or null. */
 export async function logoOf() {
   const { logo } = await readSetup();
