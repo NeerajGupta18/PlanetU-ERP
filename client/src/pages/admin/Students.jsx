@@ -5,7 +5,8 @@ import { Award, CreditCard, Download, GraduationCap, Mail, Percent, Search, Tras
 import { useFetch } from '../../hooks/useFetch.js';
 import { useTenantConfig } from '../../hooks/useTenantConfig.js';
 import { api } from '../../api/http.js';
-import { Badge, Card, Field, PageBanner, StatCard } from '../../components/ui/Ui.jsx';
+import { Badge, Card, Field, FormActions, FormError, FormField, PageHeader, StatCard } from '../../components/ui/Ui.jsx';
+import DataTable from '../../components/ui/DataTable.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import Modal from '../../components/ui/Modal.jsx';
 import { fmtDate } from '../../utils/dates.js';
@@ -38,14 +39,14 @@ export default function Students() {
 
   return (
     <>
-      <PageBanner
+      <PageHeader
         icon={Users2} title={t('students', 'Students')} subtitle="Records are created when an applicant is enrolled, or in bulk from a CSV file"
+        primary={{ label: 'Import from CSV', to: '/admin/students/import', icon: Upload }}
         actions={(
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <>
             <Link to={`/admin/reports?report=students${status ? `&status=${status}` : ''}`} className="btn btn--outline btn--sm"><Download size={14} /> Export list</Link>
             {hasModule('parent_portal') && <button type="button" className="btn btn--outline btn--sm" onClick={inviteAll}><Mail size={14} /> Invite all parents</button>}
-            <Link to="/admin/students/import" className="btn btn--primary btn--sm" style={{ background: '#fff', color: 'var(--brand-700)', boxShadow: 'none' }}><Upload size={14} /> Import from CSV</Link>
-          </div>
+          </>
         )}
       />
       <Card>
@@ -65,27 +66,28 @@ export default function Students() {
           </div>
         </div>
         <DataBoundary loading={list.loading} error={list.error} data={list.data} reload={list.reload}>
-          {list.data && (list.data.students.length === 0 ? <EmptyState title={`No ${t('students', 'students').toLowerCase()} yet`} hint="Enrol accepted applicants from Admissions, or import existing students from a spreadsheet." action={<><Link className="btn btn--primary btn--sm" to="/admin/students/import">Import students</Link><Link className="btn btn--outline btn--sm" to="/admin/admissions">Go to Admissions</Link></>} /> : (
-            <div className="table-wrap">
-              <table className="table">
-                <thead><tr><th>ID</th><th>Roll no.</th><th>Name</th><th>{t('course', 'Course')}</th><th>Sem / Sec</th><th>Batch</th><th>Status</th><th /></tr></thead>
-                <tbody>
-                  {list.data.students.map((s) => (
-                    <tr key={s.id}>
-                      <td>{s.studentCode}</td>
-                      <td className="muted">{s.rollNo || '-'}</td>
-                      <td><strong>{s.name}</strong><div className="muted">{s.email}</div></td>
-                      <td>{s.course}</td>
-                      <td>{s.semester} / {s.section || '-'}</td>
-                      <td className="muted">{s.batch}</td>
-                      <td><Badge tone={STATUS_TONE[s.status]}>{s.status}</Badge></td>
-                      <td><button type="button" className="btn btn--outline btn--sm" onClick={() => setOpenId(s.id)}>View</button></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ))}
+          {list.data && (
+            <DataTable
+              caption={t('students', 'Students')} rows={list.data.students} onRowClick={(r) => setOpenId(r.id)}
+              empty={search || status || courseId
+                ? { title: 'No match', hint: 'No record matches these filters. Clear the search or pick "All statuses".', icon: Search }
+                : {
+                  title: `No ${t('students', 'students').toLowerCase()} yet`,
+                  hint: 'Enrol accepted applicants from Admissions, or import existing students from a spreadsheet.',
+                  action: <><Link className="btn btn--primary btn--sm" to="/admin/students/import">Import students</Link><Link className="btn btn--outline btn--sm" to="/admin/admissions">Go to Admissions</Link></>,
+                }}
+              columns={[
+                { key: 'studentCode', label: 'ID' },
+                { key: 'rollNo', label: 'Roll no.', muted: true },
+                { key: 'name', label: 'Name', render: (r) => <><strong>{r.name}</strong><div className="muted">{r.email}</div></> },
+                { key: 'course', label: t('course', 'Course') },
+                { key: 'sem', label: 'Sem / Sec', render: (r) => `${r.semester} / ${r.section || '-'}` },
+                { key: 'batch', label: 'Batch', muted: true },
+                { key: 'status', label: 'Status', render: (r) => <Badge tone={STATUS_TONE[r.status]}>{r.status}</Badge> },
+                { key: 'view', label: '', actions: true, render: (r) => <button type="button" className="btn btn--outline btn--sm" onClick={() => setOpenId(r.id)}>View</button> },
+              ]}
+            />
+          )}
         </DataBoundary>
       </Card>
       {openId && <Detail id={openId} idCards={hasModule('id_cards')} parentPortal={hasModule('parent_portal')} onClose={() => setOpenId(null)} onChanged={list.reload} />}
@@ -96,21 +98,21 @@ export default function Students() {
 function Detail({ id, idCards, parentPortal, onClose, onChanged }) {
   const { data, loading, error, reload } = useFetch(`/admin/students/${id}`);
   const [form, setForm] = useState(null);
-  const [err, setErr] = useState('');
+  const [err, setErr] = useState(null);
   const [busy, setBusy] = useState(false);
   const s = data?.student;
   if (s && !form) setForm({ section: s.section, semester: s.semester, phone: s.phone, bloodGroup: s.bloodGroup, status: s.status });
 
   const save = async (e) => {
     e.preventDefault();
-    setErr(''); setBusy(true);
+    setErr(null); setBusy(true);
     try { await api.put(`/admin/students/${id}`, { ...form, semester: Number(form.semester) }); reload(); onChanged(); }
-    catch (e2) { setErr(e2.message); } finally { setBusy(false); }
+    catch (e2) { setErr(e2); } finally { setBusy(false); }
   };
 
   const uploadPhoto = async (file) => {
     if (!file) return;
-    setErr('');
+    setErr(null);
     try {
       const fd = new FormData(); fd.set('purpose', 'profile'); fd.set('file', file);
       const res = await fetch('/api/files', { method: 'POST', body: fd });
@@ -118,7 +120,7 @@ function Detail({ id, idCards, parentPortal, onClose, onChanged }) {
       if (!res.ok) throw new Error(body.message || 'Upload failed.');
       await api.put(`/admin/students/${id}/photo`, { fileId: body.file.id });
       reload(); onChanged();
-    } catch (e2) { setErr(e2.message); }
+    } catch (e2) { setErr(e2); }
   };
 
   return (
@@ -126,7 +128,7 @@ function Detail({ id, idCards, parentPortal, onClose, onChanged }) {
       <DataBoundary loading={loading && !data} error={error} data={data} reload={reload}>
         {s && form && (
           <>
-            {err && <p className="form-error">{err}</p>}
+            <FormError error={err} />
             <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
               <div style={{ width: 84, height: 100, border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden', flexShrink: 0, background: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {s.photoFileId ? <img src={`/api/files/${s.photoFileId}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span className="muted" style={{ fontSize: 11 }}>No photo</span>}
@@ -157,21 +159,17 @@ function Detail({ id, idCards, parentPortal, onClose, onChanged }) {
 
             <form onSubmit={save}>
               <div className="fields">
-                <div className="form-field"><label className="label" htmlFor="st-section">Section</label><input id="st-section" className="input" value={form.section} onChange={(e) => setForm((f) => ({ ...f, section: e.target.value }))} /></div>
-                <div className="form-field"><label className="label" htmlFor="st-semester">Semester</label><input id="st-semester" className="input" type="number" min="1" max="20" value={form.semester} onChange={(e) => setForm((f) => ({ ...f, semester: e.target.value }))} /></div>
-                <div className="form-field"><label className="label" htmlFor="st-phone">Phone</label><input id="st-phone" className="input" value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} /></div>
-                <div className="form-field"><label className="label" htmlFor="st-blood">Blood group</label><input id="st-blood" className="input" value={form.bloodGroup} onChange={(e) => setForm((f) => ({ ...f, bloodGroup: e.target.value }))} /></div>
-                <div className="form-field"><label className="label" htmlFor="st-status">Status</label>
-                  <select id="st-status" className="input" value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}>
+                <FormField label="Section"><input className="input" value={form.section} onChange={(e) => setForm((f) => ({ ...f, section: e.target.value }))} /></FormField>
+                <FormField label="Semester"><input className="input" type="number" min="1" max="20" value={form.semester} onChange={(e) => setForm((f) => ({ ...f, semester: e.target.value }))} /></FormField>
+                <FormField label="Phone"><input className="input" type="tel" value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} /></FormField>
+                <FormField label="Blood group"><input className="input" value={form.bloodGroup} onChange={(e) => setForm((f) => ({ ...f, bloodGroup: e.target.value }))} /></FormField>
+                <FormField label="Status" hint={form.status === 'Inactive' ? 'Inactive students cannot sign in.' : undefined}>
+                  <select className="input" value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}>
                     <option>Active</option><option>Inactive</option><option>Alumni</option>
                   </select>
-                  {form.status === 'Inactive' && <p className="muted" style={{ margin: '4px 0 0', fontSize: 12 }}>Inactive students cannot sign in.</p>}
-                </div>
+                </FormField>
               </div>
-              <div className="form-actions">
-                <button type="button" className="btn btn--outline" onClick={onClose}>Close</button>
-                <button type="submit" className="btn btn--primary" disabled={busy}>{busy ? 'Saving...' : 'Save changes'}</button>
-              </div>
+              <FormActions submit="Save changes" busy={busy} onCancel={onClose} cancel="Close" />
             </form>
             {parentPortal && <Parents studentId={id} guardian={s.guardian} />}
           </>
