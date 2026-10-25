@@ -1,5 +1,6 @@
 import { Award, FileText, GraduationCap } from 'lucide-react';
 import { useFetch } from '../../hooks/useFetch.js';
+import { useWhose } from '../../hooks/useWhose.js';
 import { Badge, Card, PageBanner, StatCard } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import { fmtDate } from '../../utils/dates.js';
@@ -7,9 +8,10 @@ import { KIND_LABEL, RESULT_LABEL, RESULT_TONE, gradeTone, num } from '../../uti
 
 export default function Results() {
   const { data, loading, error, reload } = useFetch('/student/results');
+  const whose = useWhose();
   return (
     <>
-      <PageBanner icon={GraduationCap} title="My results" subtitle="Marks, grades and GPA for every published exam" />
+      <PageBanner icon={GraduationCap} title={whose('results')} subtitle="Marks, grades and GPA for every published exam" />
       <DataBoundary loading={loading} error={error} data={data} reload={reload}>
         {data && (data.exams.length === 0 ? (
           <Card><EmptyState title="No results published yet" hint="Your marks appear here as soon as your institute publishes an exam." /></Card>
@@ -41,7 +43,7 @@ function ExamCard({ e }) {
         {e.publishedAt && <Badge tone="gray">Published {fmtDate(String(e.publishedAt).slice(0, 10))}</Badge>}
       </div>
       <div className="table-wrap">
-        <table className="table">
+        <table className="table table--stack">
           <thead><tr><th>Subject</th><th>Credits</th><th>Marks</th><th>%</th><th>Grade</th><th>Result</th></tr></thead>
           <tbody>
             {e.subjects.map((s) => (

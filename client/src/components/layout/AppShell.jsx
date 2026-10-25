@@ -154,7 +154,8 @@ export default function AppShell() {
           </div>
 
           <div className="topbar__right">
-            {user.role === 'parent' && <ChildSwitcher />}
+            {/* The parent home has its own large child chips */}
+            {user.role === 'parent' && location.pathname !== '/parent/home' && <ChildSwitcher />}
             <button type="button" className="searchbtn" onClick={() => setSearchOpen(true)} aria-label="Search (Ctrl+K)">
               <Search size={16} /><span>Search</span><kbd>Ctrl K</kbd>
             </button>

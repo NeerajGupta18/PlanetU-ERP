@@ -65,7 +65,7 @@ describe('Parent consent at first sign-in', () => {
   it('refuses without the required purpose, and says what to tick', async () => {
     const r = await json('POST', '/api/me/consent', { cookie: parent, body: { answers: { records: false, messages: true } } });
     assert.equal(r.status, 400);
-    assert.match(r.body.message, /Tick "Keep my child's school records"/);
+    assert.match(r.body.message, /Tick "Keep my child's study records"/);
     assert.equal((await withTx({ tenantId }, () => q('select count(*)::int as n from user_consents where user_id = $1', [parentId]))).rows[0].n, 0);
   });
 
