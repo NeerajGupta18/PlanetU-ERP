@@ -215,6 +215,7 @@ export default function Login() {
           )}
         </form>
         <GetTheAppCard />
+        <p className="login__legal"><Link to="/privacy">Privacy notice</Link></p>
       </main>
     </div>
   );
