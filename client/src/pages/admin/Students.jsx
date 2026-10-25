@@ -20,7 +20,8 @@ export default function Students() {
   const [search, setSearch] = useState(params.get('search') || '');
   const [status, setStatus] = useState('');
   const [courseId, setCourseId] = useState(params.get('courseId') || '');
-  const [openId, setOpenId] = useState(null);
+  // ?open=<id> (from the admissions board) opens that student straight away
+  const [openId, setOpenId] = useState(() => params.get('open'));
   const qs = new URLSearchParams();
   if (search) qs.set('search', search);
   if (status) qs.set('status', status);

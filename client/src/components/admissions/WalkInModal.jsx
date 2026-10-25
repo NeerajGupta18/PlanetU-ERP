@@ -14,9 +14,18 @@ const blank = {
 };
 const today = new Date().toISOString().slice(0, 10);
 
-/** The office types in the form for someone standing at the counter. After saving it hands over the application number and access code. */
-export default function WalkInModal({ courses, fee, courseLabel = 'Course', onClose, onCreated }) {
-  const [f, setF] = useState(blank);
+/**
+ * The office types in the form for someone standing at the counter. After saving it hands over the application number and access code.
+ * `enquiry` (from the board's Enquiry column) prefills what is known and completes that same application instead of starting a new one.
+ */
+export default function WalkInModal({ courses, fee, courseLabel = 'Course', onClose, onCreated, enquiry }) {
+  const [f, setF] = useState(() => (enquiry ? {
+    ...blank, courseId: enquiry.courseId || '', name: enquiry.name || '', email: enquiry.email || '', phone: enquiry.phone || '',
+    dob: enquiry.dob ? String(enquiry.dob).slice(0, 10) : '', gender: enquiry.gender || '', address: enquiry.address || '',
+    personal: { ...blank.personal, ...enquiry.personal }, guardian: { ...blank.guardian, ...enquiry.guardian },
+    previousEducation: { ...blank.previousEducation, ...enquiry.previousEducation, tenth: { ...blank.previousEducation.tenth, ...enquiry.previousEducation?.tenth } },
+    entrance: { ...blank.entrance, ...enquiry.entrance }, enquiryId: enquiry.id,
+  } : blank));
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(null);
@@ -51,7 +60,7 @@ export default function WalkInModal({ courses, fee, courseLabel = 'Course', onCl
   }
 
   return (
-    <Modal open title="Add a walk-in application" onClose={onClose} width={760}>
+    <Modal open title={enquiry ? `Fill in the application for ${enquiry.name}` : "Add a walk-in application"} onClose={onClose} width={760}>
       <form onSubmit={save}>
         {err && <p className="form-error">{err}</p>}
         <div className="fields">

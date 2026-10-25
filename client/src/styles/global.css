@@ -1120,3 +1120,43 @@ a.banner__next:hover { text-decoration: underline; }
 .setup-cell { display: grid; gap: 2px; min-width: 150px; }
 .setup-cell .progress { margin: 0 0 4px; height: 6px; }
 .logo-pick label.btn:focus-within, .swatch-custom:focus-within input { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* ---------------------------------------------------------------- Day 3: admissions board, ready messages, fee cycle */
+.board-toolbar { margin: 4px 0 12px; }
+/* One column per step. Wide screens show all seven; narrower ones scroll sideways inside the board (never the page), one column at a time on a phone. */
+.board { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(232px, 1fr); gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 8px; overscroll-behavior-x: contain; }
+.board__col { scroll-snap-align: start; background: var(--head-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px; display: flex; flex-direction: column; gap: 8px; min-height: 180px; max-height: 70vh; }
+.board__head { display: flex; align-items: center; gap: 8px; }
+.board__num { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border-strong); font: 600 12px var(--font-head); color: var(--head-text); flex: none; }
+.board__title { margin: 0; font-size: 14px; color: var(--text); flex: 1; }
+.board__count { font: 600 13px var(--font-head); color: var(--brand); background: var(--surface); border-radius: 999px; padding: 1px 9px; border: 1px solid var(--border); }
+.board__empty { margin: 0; font-size: 13px; color: var(--muted); padding: 10px; border: 1px dashed var(--border-strong); border-radius: 10px; background: var(--surface); }
+.board__cards { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
+.bcard { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px; box-shadow: var(--shadow); display: grid; gap: 6px; transition: border-color 150ms ease; }
+.bcard:hover { border-color: var(--brand-500); }
+.bcard__open { all: unset; cursor: pointer; display: grid; gap: 2px; border-radius: 6px; }
+.bcard__open:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.bcard__name { font-size: 14.5px; color: var(--text); }
+.bcard__meta { font-size: 12.5px; color: var(--muted); }
+.bcard__tags { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; font-size: 12px; }
+.bcard__when { margin-left: auto; }
+.bcard__actions { display: flex; align-items: center; gap: 4px; }
+.bcard__actions .btn { flex: 1; justify-content: center; }
+@media (max-width: 640px) {
+  .board { grid-auto-columns: 86%; }
+  .bcard__actions .btn { min-height: 44px; }
+  .bcard__actions .icon-btn { width: 44px; height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) { .bcard { transition: none; } }
+
+.share-msg { border: 1px solid var(--border); background: var(--head-bg); border-radius: 10px; padding: 12px; display: grid; gap: 10px; }
+.share-msg--compact { padding: 0; border: 0; background: none; }
+.share-msg__text { margin: 0; white-space: pre-wrap; font-size: 14px; }
+.share-msg__actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.share-msg__none { font-size: 12.5px; }
+
+.plan-box { margin-top: 12px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--head-bg); font-size: 14px; }
+.plan-box ul { margin: 6px 0; padding-left: 18px; }
+.done-list { margin: 12px 0 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14px; }
+
+.dayend-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 12px; }
