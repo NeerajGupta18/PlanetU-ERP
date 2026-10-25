@@ -1064,3 +1064,59 @@ a.banner__next:hover { text-decoration: underline; }
 .state--compact p { font-size: 13.5px; }
 .table th.num { text-align: right; }
 .table tr.is-clickable:focus-visible { outline-offset: -2px; }
+
+/* Institute setup wizard (pages/admin/Setup.jsx) */
+.setup-progress { margin: 16px 0 4px; }
+.setup-progress__text { display: flex; justify-content: space-between; align-items: baseline; font-size: 14px; margin-bottom: 6px; }
+.setup-progress__text strong { font-family: var(--font-head); font-weight: 600; }
+.setup-progress .progress { margin-bottom: 14px; }
+.setup-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 18px; align-items: start; }
+.setup-main { display: grid; gap: 18px; min-width: 0; }
+.setup-main > .card, .setup-side > .card { margin: 0; }
+@media (max-width: 1000px) { .setup-grid { grid-template-columns: 1fr; } }
+.setup-skip { margin: 0; text-align: center; font-size: 14px; }
+.setup-why { margin-right: auto; align-self: center; }
+.setup-fieldset { border: 0; padding: 0; margin: 22px 0 0; min-width: 0; }
+.setup-fieldset legend { padding: 0; margin-bottom: 6px; }
+.setup-add { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border); }
+.setup-add__title { font-size: 14.5px; margin: 0 0 12px; font-family: var(--font-head); font-weight: 600; }
+.setup-add .form-actions { margin-top: 12px; }
+.setup-result { margin: 12px 0 0; padding: 12px 14px; border-radius: 10px; background: var(--success-bg); }
+.setup-result p { margin: 0 0 4px; display: flex; gap: 6px; align-items: center; }
+.swatches { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 10px; }
+.swatch { width: 40px; height: 40px; border-radius: 10px; border: 2px solid transparent; cursor: pointer; box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.5); transition: transform 0.15s ease; }
+.swatch:hover { transform: translateY(-1px); }
+.swatch.is-active { border-color: var(--text); box-shadow: inset 0 0 0 3px #fff; }
+.swatch-custom { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; color: var(--muted); cursor: pointer; min-height: 44px; }
+.swatch-custom input { width: 44px; height: 40px; border: 1px solid var(--border-strong); border-radius: 10px; padding: 2px; background: var(--surface); cursor: pointer; }
+.brand-preview { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 12px; padding: 12px; border: 1px dashed var(--border-strong); border-radius: 10px; }
+.brand-preview .btn { pointer-events: none; }
+.brand-preview__chip { padding: 6px 12px; border-radius: 8px; background: var(--brand-50); color: var(--brand); font-weight: 600; font-size: 13px; }
+.logo-pick { display: flex; gap: 14px; align-items: center; }
+.logo-pick__frame { flex: none; width: 72px; height: 72px; border-radius: 14px; border: 1px solid var(--border); background: #fff; display: grid; place-items: center; color: var(--muted); overflow: hidden; }
+.logo-pick__frame img { width: 100%; height: 100%; object-fit: contain; padding: 6px; }
+.logo-pick label.btn { cursor: pointer; }
+.divisions { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.input--sm { width: 120px; padding: 6px 10px; font-size: 14px; }
+.fee-heads { display: grid; gap: 8px; margin-top: 14px; }
+.fee-heads__row { display: grid; grid-template-columns: minmax(0, 1fr) 160px auto; gap: 8px; align-items: center; }
+.fee-heads__foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 14px; }
+.import-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.import-tile { border: 1px solid var(--border); border-radius: 10px; padding: 14px; display: grid; gap: 10px; align-content: start; }
+.import-tile__head { display: flex; align-items: center; gap: 8px; }
+.import-tile__head svg { color: var(--brand); }
+.import-tile__head .badge { margin-left: auto; }
+.switch-row { display: flex; gap: 10px; align-items: center; font-size: 14px; min-height: 44px; cursor: pointer; }
+.switch-row input { width: 18px; height: 18px; accent-color: var(--brand); flex: none; }
+.row-problem { color: var(--danger); font-size: 13px; margin-top: 3px; }
+.row-warning { color: #92400e; font-size: 13px; margin-top: 3px; }
+.checklist button.checklist__item { width: 100%; font: inherit; text-align: left; cursor: pointer; }
+.checklist__item small { margin-left: auto; text-decoration: none; }
+@media (max-width: 640px) {
+  .import-tiles { grid-template-columns: 1fr; }
+  .fee-heads__row { grid-template-columns: minmax(0, 1fr) 110px auto; }
+  .logo-pick { align-items: flex-start; }
+}
+.setup-cell { display: grid; gap: 2px; min-width: 150px; }
+.setup-cell .progress { margin: 0 0 4px; height: 6px; }
+.logo-pick label.btn:focus-within, .swatch-custom:focus-within input { outline: 2px solid var(--focus); outline-offset: 2px; }
