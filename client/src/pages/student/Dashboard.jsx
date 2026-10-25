@@ -51,6 +51,10 @@ function DashboardView({ d }) {
         icon={LayoutDashboard}
         title={`${greeting()}, ${first}`}
         subtitle={`${d.student.course}, Semester ${d.student.semester}, Section ${d.student.section}  |  Roll no. ${d.student.rollNo}`}
+        next={showFees && d.fees.outstanding > 0
+          ? { text: `${feeOverdue ? 'Overdue: pay' : 'Pay'} ${inr0(d.fees.outstanding)} in fees`, to: '/student/fees' }
+          : !attOk && g.needToReach ? { text: `Attend the next ${plural(g.needToReach, 'class', 'classes')} to reach ${threshold}%`, to: '/student/attendance' }
+          : d.stats.notices > 0 ? { text: `Read ${plural(d.stats.notices, 'new notice')}`, to: '/student/notices' } : undefined}
         actions={hasModule('qr_checkin') && hasModule('attendance') ? <Link to="/student/checkin" className="btn btn--primary btn--sm"><ScanLine size={15} /> Scan attendance</Link> : null}
       />
 

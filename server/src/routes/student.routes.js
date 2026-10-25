@@ -1,5 +1,6 @@
 import { asyncHandler } from '../utils/asyncHandler.js';
 import * as todo from '../services/todo.service.js';
+import { myDay } from '../services/myDay.service.js';
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { requireAuth, requireModule, requireRole } from '../middleware/auth.js';
@@ -46,6 +47,7 @@ router.use(requireAuth, requireRole('student', 'parent'), asChild);
 router.param('id', uuidParam);
 
 router.get('/dashboard', student.dashboard);
+router.get('/my-day', asyncHandler(async (req, res) => res.json(await myDay(req.user, req.tenant.modules))));
 router.get('/todo', asyncHandler(async (req, res) => res.json(await todo.forStudent(req.user.studentId, req.tenant.modules))));
 router.get('/assignments', requireModule('assignments'), assignments.mine);
 router.get('/assignments/:id', requireModule('assignments'), assignments.mineOne);

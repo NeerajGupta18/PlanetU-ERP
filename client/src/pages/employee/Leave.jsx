@@ -83,7 +83,7 @@ export default function Leave() {
               </div>
             )}
             <Card title="My requests">
-              {data.requests.length === 0 ? <EmptyState title="No leave requests yet" hint="Your requests and the office's decisions appear here." action={data.types.length ? { label: 'Apply for leave', onClick: () => setApplying(true) } : undefined} /> : (
+              {data.requests.length === 0 ? <EmptyState title="No leave requests yet" hint={data.types.length ? "Tap Apply for leave above to send your first request. The office's decisions appear here." : "Your requests and the office's decisions appear here."} /> : (
                 <div className="table-wrap">
                   <table className="table">
                     <thead><tr><th>Leave</th><th>Dates</th><th>Days</th><th>Reason</th><th>Status</th><th /></tr></thead>
