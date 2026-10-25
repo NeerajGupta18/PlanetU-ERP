@@ -186,6 +186,13 @@ Or simply upgrade the Render database to a paid plan before it expires; nothing 
 ### G2. Backups
 The free database has no backups. Every week or two, run the `pg_dump` command from G1 and keep the file somewhere safe. It is the only backup you have.
 
+Or use the scripts (they need either the PostgreSQL client tools or Docker on your laptop):
+```bash
+scripts/backup.sh "PASTE_EXTERNAL_URL"          # writes backups/planetu-<time>.dump and checks it
+scripts/restore.sh backups/planetu-<time>.dump   # restores into your LOCAL database to try it out
+```
+`restore.sh` asks you to type the database name first, and refuses a database that is not on your laptop unless `ALLOW_REMOTE_RESTORE=yes` is set.
+
 ### G3. Sleeping
 * For a **presentation**: open the site 2 minutes before. That is enough.
 * To keep it awake **for free**: a monitoring service such as UptimeRobot can request `https://YOUR-SERVICE.onrender.com/api/health` every 5 minutes. That uses almost all of the 750 free hours in a month (24 x 31 = 744), leaving no margin, so only do it for one service.

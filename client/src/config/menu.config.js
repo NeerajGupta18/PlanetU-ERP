@@ -159,6 +159,7 @@ export const MENU_TREE = {
     { label: 'Dashboard', to: '/super-admin/dashboard', icon: LayoutDashboard },
     { label: 'Institutes', to: '/super-admin/institutes', icon: Server },
     { label: 'Billing', to: '/super-admin/billing', icon: CircleDollarSign },
+    { label: 'Demo requests', to: '/super-admin/demo-requests', icon: Inbox },
     { label: 'How to use', to: '/super-admin/help', icon: BookOpenCheck },
   ],
   employee: [

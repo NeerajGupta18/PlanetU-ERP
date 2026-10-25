@@ -245,7 +245,7 @@ function Parents({ studentId, guardian }) {
                 <tr key={p.userId}>
                   <td><strong>{p.name}</strong><div className="muted">{p.email}</div></td>
                   <td>{p.loginId}</td>
-                  <td>{p.relation} {p.invited && <Badge tone="amber">Not signed in yet</Badge>}</td>
+                  <td>{p.relation} {p.invited ? <Badge tone="amber">Not signed in yet</Badge> : p.consentAt ? <Badge tone="green">Consent given</Badge> : <Badge tone="gray">Consent not given yet</Badge>}</td>
                   <td><button type="button" className="icon-btn" aria-label={`Remove ${p.name}`} onClick={() => remove(p)}><Trash2 size={15} /></button></td>
                 </tr>
               ))}

@@ -9,6 +9,7 @@ import { checkPassword, sendResetLink, sha } from '../services/accounts.service.
 import { queueEmail, tenantInfo } from '../services/notifications.service.js';
 import { instituteBrief, loadNotices } from '../db/repo.js';
 import { audit } from '../db/audit.js';
+import { asksConsent, consentStatus } from '../services/consent.service.js';
 import { DEMO_PASSWORDS, DEMO_TENANTS } from '../db/demo-data.js';
 import {
   answerChallenge, consumeCaptchaToken, createChallenge, issueCaptchaToken, looksHuman, verifyRecaptcha,
@@ -47,7 +48,9 @@ async function sessionExtras(user, tenant) {
   const billing = user.role === 'admin' ? await billingNotice().catch(() => null) : null;
   // An employee's staff roles decide which office pages their menu shows (the server checks every call too)
   const office = user.role === 'employee' ? await officeOf({ role: 'employee', employeeId: user.employeeId ?? user.employee_id }) : null;
-  return { institute: await instituteBrief(), notifications, billing, office };
+  // A parent who has not yet agreed to the consent screen is sent there first (see ProtectedRoute)
+  const consentNeeded = asksConsent(user) ? (await consentStatus(user.id)).needed : false;
+  return { institute: await instituteBrief(), notifications, billing, office, consentNeeded };
 }
 
 /* ---------- captcha ---------- */

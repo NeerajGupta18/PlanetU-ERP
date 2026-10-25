@@ -15,6 +15,7 @@ import employeeRoutes from './routes/employee.routes.js';
 import superAdminRoutes from './routes/superadmin.routes.js';
 import filesRoutes from './routes/files.routes.js';
 import publicRoutes from './routes/public.routes.js';
+import siteRoutes from './routes/site.routes.js';
 import { razorpayWebhook } from './controllers/onlinePayments.controller.js';
 import { asyncHandler } from './utils/asyncHandler.js';
 import { apkAvailable, apkUrl } from './services/appDownload.service.js';
@@ -58,6 +59,7 @@ export function createApp() {
   app.use('/api/super-admin', superAdminRoutes);
   app.use('/api/files', filesRoutes);
   app.use('/api/public/:code/admissions', publicRoutes);
+  app.use('/api/site', siteRoutes);
 
   // The Android app: the login page asks whether it exists, and the button goes through this address so the link never changes
   app.get('/api/app/info', asyncHandler(async (req, res) => res.json({ android: await apkAvailable() })));

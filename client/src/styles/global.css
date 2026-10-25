@@ -1236,3 +1236,74 @@ a.banner__next:hover { text-decoration: underline; }
   #main .card__chevron { width: 44px; height: 44px; }
   #main .btn, #main button, #main a { touch-action: manipulation; }
 }
+
+/* =========================================================
+   Day 6A: public landing page, privacy notice, parent consent
+   PlanetU purple only in the landing hero (a vendor screen); everything else uses the shared tokens.
+   ========================================================= */
+.consent__box { flex: none; width: 20px; height: 20px; margin-top: 2px; accent-color: var(--brand); }
+.checks li label { cursor: pointer; }
+.consent__note { margin: 14px 0 0; font-size: 13px; color: var(--muted); }
+.site-draft { display: flex; gap: 8px; align-items: center; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--warning-line); background: var(--warning-bg); color: var(--warning); font-weight: 600; font-size: 14px; }
+.site-prose { display: grid; gap: 18px; }
+.site-prose h2 { font-size: 17px; margin-bottom: 6px; }
+.site-prose ul { list-style: disc; padding-left: 20px; display: grid; gap: 4px; }
+.site-prose p, .site-prose li { color: var(--text); }
+
+.site { min-height: 100%; background: var(--bg); }
+.site-nav { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 16px; padding: 12px max(16px, calc((100% - 1120px) / 2)); background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); }
+.site-nav__brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-head); font-weight: 600; color: var(--text); text-decoration: none; }
+.site-nav__links { display: flex; gap: 22px; margin-left: auto; }
+.site-nav__links a { color: var(--muted); text-decoration: none; font-weight: 600; font-size: 14px; }
+.site-nav__links a:hover { color: var(--brand); }
+.site-hero { background: var(--planetu); color: #fff; padding: 72px 16px 80px; }
+.site-hero__inner { max-width: 1120px; margin: 0 auto; }
+.site-eyebrow { display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px; border-radius: 999px; background: rgba(255, 255, 255, 0.12); font-size: 13px; font-weight: 600; }
+.site-hero h1 { margin-top: 18px; max-width: 720px; font-size: clamp(30px, 5vw, 46px); line-height: 1.15; letter-spacing: -0.02em; }
+.site-hero__lead { margin-top: 16px; max-width: 640px; font-size: 18px; color: rgba(255, 255, 255, 0.86); }
+.site-hero__cta { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; margin-top: 28px; }
+.site-hero__cta .btn--primary { background: #fff; color: var(--brand); }
+.site-hero__cta .btn--primary:hover { background: var(--brand-50); }
+.site-hero__more { color: #fff; font-weight: 600; }
+.site-hero__points { display: flex; flex-wrap: wrap; gap: 10px 22px; margin-top: 30px; font-size: 14px; color: rgba(255, 255, 255, 0.9); }
+.site-hero__points li { display: flex; gap: 8px; align-items: center; }
+.site-hero__points--dark { color: var(--text); margin-top: 18px; display: grid; }
+.site-hero__points--dark svg { color: var(--success); }
+.site-section { max-width: 1120px; margin: 0 auto; padding: 64px 16px 0; }
+.site-section > h2, .site-demo h2 { font-size: clamp(24px, 3.4vw, 30px); letter-spacing: -0.01em; }
+.site-section__lead { margin-top: 8px; max-width: 640px; color: var(--muted); font-size: 16px; }
+.site-grid { display: grid; gap: 16px; margin-top: 28px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.site-grid--3 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.site-card { display: grid; align-content: start; gap: 8px; padding: 22px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+.site-card h3 { font-size: 17px; }
+.site-card p { color: var(--muted); }
+.site-card__icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 10px; background: var(--brand-50); color: var(--brand); }
+.site-plan { position: relative; gap: 10px; }
+.site-plan ul { display: grid; gap: 6px; margin: 4px 0 10px; }
+.site-plan li { display: flex; gap: 8px; align-items: center; font-size: 14px; }
+.site-plan li svg { flex: none; color: var(--success); }
+.site-plan__price { font-family: var(--font-head); font-size: 24px; font-weight: 600; color: var(--brand); }
+.site-plan--featured { border: 2px solid var(--brand); }
+.site-plan__tag { position: absolute; top: -12px; left: 20px; padding: 2px 10px; border-radius: 999px; background: var(--brand); color: #fff; font-size: 12px; font-weight: 600; }
+.site-note { display: flex; gap: 8px; align-items: center; margin-top: 18px; color: var(--muted); }
+.site-demo { display: grid; grid-template-columns: 2fr 3fr; gap: 32px; padding: 32px; background: var(--surface); border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow); }
+.site-demo__intro p { margin-top: 10px; color: var(--muted); font-size: 16px; }
+.site-form .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+.site-form .form-hint { margin-top: 14px; }
+.site-hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.site-sent { display: flex; gap: 14px; align-items: flex-start; padding: 22px; border-radius: 12px; background: var(--success-bg); color: var(--success); }
+.site-sent h3 { color: var(--text); font-size: 18px; }
+.site-sent p { color: var(--text); margin-top: 4px; }
+.site-foot { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; max-width: 1120px; margin: 64px auto 0; padding: 24px 16px 40px; border-top: 1px solid var(--border); color: var(--muted); font-size: 14px; }
+.site-foot nav { display: flex; gap: 20px; }
+@media (max-width: 760px) {
+  .site-nav__links { display: none; }
+  .site-nav .btn { margin-left: auto; min-height: 44px; }
+  .site-hero { padding: 48px 16px 56px; }
+  .site-demo { grid-template-columns: 1fr; padding: 20px; gap: 20px; }
+  .site-form .form-grid { grid-template-columns: 1fr; }
+  .site-form .input { font-size: 16px; }
+  .site-form .btn--lg { width: 100%; }
+  .site-hero__cta .btn--lg { min-height: 48px; }
+}
+.login__legal { margin: 0; font-size: 13px; }

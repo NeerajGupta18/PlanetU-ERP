@@ -90,14 +90,23 @@ const ForgotPassword = lazy(() => import('./pages/ForgotPassword.jsx'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword.jsx'));
 const ChangePassword = lazy(() => import('./pages/ChangePassword.jsx'));
 const ApplyStatus = lazy(() => import('./pages/public/ApplyStatus.jsx'));
+const Landing = lazy(() => import('./pages/public/Landing.jsx'));
+const Privacy = lazy(() => import('./pages/public/Privacy.jsx'));
+const Consent = lazy(() => import('./pages/Consent.jsx'));
+const SuperAdminDemoRequests = lazy(() => import('./pages/superadmin/DemoRequests.jsx'));
 const SuperAdminDashboard = lazy(() => import('./pages/superadmin/Dashboard.jsx'));
 const SuperAdminBilling = lazy(() => import('./pages/superadmin/Billing.jsx'));
 const SuperAdminInstitutes = lazy(() => import('./pages/superadmin/Institutes.jsx'));
 
+// Inside the Android app or an installed home-screen app, people come to sign in, not to read the front page
+const inApp = () => /PlanetUApp/.test(navigator.userAgent) || window.navigator.standalone === true
+  || window.matchMedia?.('(display-mode: standalone)').matches;
+
 function Home() {
   const { user, loading } = useAuth();
   if (loading) return <FullPageLoader />;
-  return <Navigate to={user ? ROLE_HOME[user.role] : '/login'} replace />;
+  if (user) return <Navigate to={ROLE_HOME[user.role]} replace />;
+  return inApp() ? <Navigate to="/login" replace /> : <Landing />;
 }
 
 export default function App() {
@@ -111,6 +120,8 @@ export default function App() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route element={<ProtectedRoute />}><Route path="/change-password" element={<ChangePassword />} /></Route>
+      <Route element={<ProtectedRoute />}><Route path="/consent" element={<Consent />} /></Route>
+      <Route path="/privacy" element={<Privacy />} />
 
       {/* Public admissions (no sign-in) */}
       <Route path="/apply/:code" element={<Apply />} />
@@ -236,6 +247,7 @@ export default function App() {
           <Route path="help" element={<Help />} />
           <Route path="institutes" element={<SuperAdminInstitutes />} />
           <Route path="billing" element={<SuperAdminBilling />} />
+          <Route path="demo-requests" element={<SuperAdminDemoRequests />} />
         </Route>
       </Route>
 
