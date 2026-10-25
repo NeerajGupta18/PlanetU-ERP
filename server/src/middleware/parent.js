@@ -2,11 +2,11 @@ import { HttpError } from './error.js';
 import { CHILD_COOKIE, resolveChild } from '../services/parents.service.js';
 
 /**
- * What a parent may open in the student area: reading their child's attendance, timetable, results, fees (and paying
+ * What a parent may open in the student area: reading their child's day, attendance, timetable, results, fees (and paying
  * them), hostel and transport, notices and calendar, and raising tickets. Everything else there (quizzes, learning, library, ID card,
  * certificates, feedback) is for the student.
  */
-const PARENT_ALLOWED = /^\/(dashboard|profile|institute|calendar|timetable|attendance|results|fees|notices|grievances|hostel|transport)(\/|$)/;
+const PARENT_ALLOWED = /^\/(dashboard|my-day|profile|institute|calendar|timetable|attendance|results|fees|notices|grievances|hostel|transport)(\/|$)/;
 
 /**
  * Lets the student routes serve a parent: it points the request at the child the parent has chosen (checked against
