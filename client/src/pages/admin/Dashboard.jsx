@@ -5,7 +5,8 @@ import {
 import { useFetch } from '../../hooks/useFetch.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useTenantConfig } from '../../hooks/useTenantConfig.js';
-import { Badge, Card, PageBanner, StatCard, pending, CollapsibleCards } from '../../components/ui/Ui.jsx';
+import { Badge, Card, PageHeader, StatCard, pending, CollapsibleCards } from '../../components/ui/Ui.jsx';
+import DataTable from '../../components/ui/DataTable.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import { BarChart, LineChart } from '../../components/ui/Charts.jsx';
 import AttentionList from '../../components/campus/AttentionList.jsx';
@@ -58,6 +59,8 @@ function DashboardView({ d }) {
   const fees = hasModule('fees') && k.fees;
   const attK = hasModule('attendance') && k.attendance;
   const items = attentionItems(d, hasModule, t);
+  // The header's "Next:" line is the most urgent thing waiting (an overdue problem first), so the answer to "what next?" is always on top
+  const top = items.find((i) => i.tone === 'bad') || items[0];
 
   // Attendance: today's figure once lectures are marked, otherwise this week so far; both against the same day/week before
   const weeks = attK ? k.attendance.weeks : [];
@@ -68,7 +71,10 @@ function DashboardView({ d }) {
 
   return (
     <CollapsibleCards>
-      <PageBanner icon={LayoutDashboard} title={office ? 'Institute overview' : 'Dashboard'} subtitle={`${d.institute.name}  |  ${fmtLong(todayISO())}`} />
+      <PageHeader
+        icon={LayoutDashboard} title={office ? 'Institute overview' : 'Dashboard'} subtitle={`${d.institute.name}  |  ${fmtLong(todayISO())}`}
+        next={top ? { text: top.title, to: top.link } : 'nothing is waiting, all clear for today'}
+      />
 
       <SetupChecklist />
 
@@ -134,7 +140,7 @@ function DashboardView({ d }) {
           {attK && (
             <Card title="Student attendance by week" icon={Percent} action={<Link to="/admin/reports" className="btn btn--outline btn--sm">Reports</Link>}>
               {weeks.every((x) => x.pct === null) ? (
-                <EmptyState title="No attendance marked yet" hint="The trend appears here once faculty start marking lectures." />
+                <EmptyState compact title="No attendance marked yet" hint="The trend appears here once faculty start marking lectures." action={{ label: 'Open attendance', to: '/admin/attendance' }} />
               ) : (
                 <>
                   <LineChart
@@ -170,27 +176,15 @@ const monthName = (ym) => `${MONTHS[Number(ym.slice(5, 7)) - 1]} ${ym.slice(0, 4
 function UpcomingEvents({ events }) {
   return (
     <Card title="Upcoming events" icon={CalendarDays} action={<Link to="/admin/calendar" className="btn btn--outline btn--sm">Calendar</Link>}>
-      {events.length === 0 ? (
-        <EmptyState title="Nothing scheduled" hint="New exams, events and deadlines will show up here." />
-      ) : (
-        <div className="table-wrap">
-          <table className="table">
-            <thead><tr><th>Event</th><th>Type</th><th>Dates</th></tr></thead>
-            <tbody>
-              {events.map((e) => {
-                const type = EVENT_TYPES[e.type] || { label: e.type, tone: 'gray' };
-                return (
-                  <tr key={e.id}>
-                    <td><strong>{e.title}</strong></td>
-                    <td><Badge tone={type.tone}>{type.label}</Badge></td>
-                    <td>{fmtEventDates(e.start, e.end)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <DataTable
+        caption="Upcoming events" rows={events}
+        empty={{ title: 'Nothing scheduled', hint: 'Exams, events and deadlines you add to the calendar show up here.', action: { label: 'Add an event', to: '/admin/calendar' } }}
+        columns={[
+          { key: 'title', label: 'Event', render: (e) => <strong>{e.title}</strong> },
+          { key: 'type', label: 'Type', render: (e) => { const type = EVENT_TYPES[e.type] || { label: e.type, tone: 'gray' }; return <Badge tone={type.tone}>{type.label}</Badge>; } },
+          { key: 'dates', label: 'Dates', render: (e) => fmtEventDates(e.start, e.end) },
+        ]}
+      />
     </Card>
   );
 }

@@ -22,7 +22,7 @@ async function request(path, { method = 'GET', body, signal } = {}) {
     });
   } catch (err) {
     if (err.name === 'AbortError') throw err;
-    throw new ApiError('Cannot reach the server. Check that the API is running.', 0);
+    throw new ApiError('Cannot reach the server.', 0);
   }
 
   let data = null;
