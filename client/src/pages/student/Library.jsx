@@ -19,7 +19,7 @@ export default function Library() {
         <Tabs tabs={[{ id: 'mine', label: 'My books' }, { id: 'catalogue', label: 'Catalogue' }]} active={tab} onChange={setTab} />
         {tab === 'mine' && (
           <DataBoundary loading={mine.loading} error={mine.error} data={mine.data} reload={mine.reload}>
-            {mine.data && (mine.data.issues.length === 0 ? <EmptyState title="No books on loan" /> : (
+            {mine.data && (mine.data.issues.length === 0 ? <EmptyState title="No books on loan" hint="Books you borrow from the library show here with their return date." /> : (
               <div className="table-wrap">
                 <table className="table">
                   <thead><tr><th>Book</th><th>Issued</th><th>Due</th><th>Status</th></tr></thead>
@@ -42,7 +42,7 @@ export default function Library() {
           <div>
             <div className="input-wrap" style={{ maxWidth: 340, margin: '12px 0' }}><Search size={14} /><input className="input input--icon" placeholder="Search by title, author or ISBN" value={search} onChange={(e) => setSearch(e.target.value)} /></div>
             <DataBoundary loading={catalogue.loading} error={catalogue.error} data={catalogue.data} reload={catalogue.reload}>
-              {catalogue.data && (catalogue.data.books.length === 0 ? <EmptyState title="No books found" /> : (
+              {catalogue.data && (catalogue.data.books.length === 0 ? <EmptyState title="No books found" hint="Try a shorter search, or search by author." /> : (
                 <div className="table-wrap">
                   <table className="table">
                     <thead><tr><th>Title</th><th>Author</th><th>Category</th><th>Available</th></tr></thead>

@@ -57,7 +57,7 @@ function View({ d }) {
         </Card>
 
         <Card title="Recent classes" icon={Clock}>
-          {d.recent.length === 0 ? <EmptyState title="Nothing marked yet" /> : (
+          {d.recent.length === 0 ? <EmptyState title="Nothing marked yet" hint="Each class shows here once the teacher submits the register." /> : (
             <div className="table-wrap">
               <table className="table">
                 <tbody>

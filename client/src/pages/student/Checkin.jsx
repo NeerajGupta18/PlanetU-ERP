@@ -74,7 +74,7 @@ export default function Checkin() {
               </Card>
             )}
             <Card title="Today's lectures">
-              {data.lectures.length === 0 ? <EmptyState title="No lectures today" /> : (
+              {data.lectures.length === 0 ? <EmptyState title="No lectures today" hint="Come back when a lecture starts. Scanning opens during the lecture." /> : (
                 <ul className="lecture-rows">{data.lectures.map((l) => (
                   <li key={l.slotId}>
                     <div><strong>{l.subject}</strong><small className="muted">{fmtRange(l.start, l.end)} · {l.facultyName}</small></div>

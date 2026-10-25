@@ -1227,3 +1227,12 @@ a.banner__next:hover { text-decoration: underline; }
 .checks .is-bad { border-color: var(--warning-line); background: var(--warning-bg); }
 .checks .is-bad svg { color: var(--warning); flex: none; margin-top: 1px; }
 .progress--sm { height: 6px; margin: 6px 0 2px; }
+
+/* Phones: every control in the page is at least 44 px tall, for thumbs (Day 5 phone pass) */
+@media (max-width: 640px) {
+  #main .btn, #main .segmented__item, #main .tabs__item { min-height: 44px; }
+  #main button.chip { display: inline-flex; align-items: center; min-height: 44px; padding: 8px 14px; font-size: 13px; }
+  #main .card__toggle { min-height: 44px; }
+  #main .card__chevron { width: 44px; height: 44px; }
+  #main .btn, #main button, #main a { touch-action: manipulation; }
+}

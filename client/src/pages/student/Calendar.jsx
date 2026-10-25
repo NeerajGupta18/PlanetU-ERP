@@ -118,7 +118,7 @@ export default function Calendar() {
 
         <Card title={`All events in ${MONTHS[cursor.getMonth()]}`} className="month-list">
           {events.length === 0 ? (
-            <EmptyState title="No events this month" />
+            <EmptyState title="No events this month" hint="Use the arrows to see other months. Exams, holidays and events show here." />
           ) : (
             <div className="table-wrap">
               <table className="table">

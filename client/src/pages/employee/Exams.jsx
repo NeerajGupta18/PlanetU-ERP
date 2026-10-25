@@ -18,7 +18,7 @@ export default function Exams() {
       <table className="table">
         <thead><tr><th>Exam</th><th>Subject</th><th>Class</th><th>Out of</th><th>Progress</th><th /></tr></thead>
         <tbody>
-          {rows.map((p) => (
+          {rows.map((p, i) => (
             <tr key={p.id}>
               <td><strong>{p.examName}</strong><br /><small className="muted">{KIND_LABEL[p.kind]}</small></td>
               <td>{p.subject}</td>
@@ -29,7 +29,7 @@ export default function Exams() {
                 <div className="progress progress--sm" aria-hidden="true"><div className="progress__fill" style={{ width: `${p.roster ? Math.min(100, Math.round((p.entered / p.roster) * 100)) : 0}%` }} /></div>
                 <small className="muted">{p.entered} of {p.roster} entered</small>
               </td>
-              <td><Link className={`btn btn--sm ${action === 'Enter marks' && p.marksStatus !== 'submitted' ? 'btn--primary' : 'btn--outline'}`} to={`/employee/exams/${p.id}`}><PenLine size={13} /> {p.marksStatus === 'submitted' && action === 'Enter marks' ? 'Review / edit' : action}</Link></td>
+              <td><Link className={`btn btn--sm ${action === 'Enter marks' && p.marksStatus !== 'submitted' && i === rows.findIndex((r) => r.marksStatus !== 'submitted') ? 'btn--primary' : 'btn--outline'}`} to={`/employee/exams/${p.id}`}><PenLine size={13} /> {p.marksStatus === 'submitted' && action === 'Enter marks' ? 'Review / edit' : action}</Link></td>
             </tr>
           ))}
         </tbody>
