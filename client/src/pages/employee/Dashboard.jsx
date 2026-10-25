@@ -6,6 +6,7 @@ import { useTenantConfig } from '../../hooks/useTenantConfig.js';
 import { Badge, Card, PageBanner, StatCard, pending, CollapsibleCards } from '../../components/ui/Ui.jsx';
 import { DataBoundary } from '../../components/ui/Feedback.jsx';
 import LectureList from '../../components/attendance/LectureList.jsx';
+import TodayStepBar from '../../components/attendance/TodayStepBar.jsx';
 import TodoCard from '../../components/campus/TodoCard.jsx';
 import OfficeWorkCard from '../../components/campus/OfficeWorkCard.jsx';
 import { firstName, fmtDate, fmtLong, greeting, todayISO } from '../../utils/dates.js';
@@ -29,6 +30,21 @@ export default function EmployeeDashboard() {
   return (
     <CollapsibleCards>
       <PageBanner icon={LayoutDashboard} title={`${greeting()}, ${firstName(user.name)}`} subtitle={fmtLong(todayISO())} />
+
+      {/* A teacher's home is today's lectures: the next one to mark comes first */}
+      {canMark && (
+        <DataBoundary loading={loading} error={error} data={data} reload={reload}>
+          {data && <TodayStepBar data={data} />}
+          {data && (
+            <Card
+              title={`Today's lectures${data.lectures.length ? ` (${plural(data.lectures.length, 'lecture')})` : ''}`} icon={ClipboardCheck}
+              action={<Link to="/employee/attendance" className="btn btn--outline btn--sm">Open attendance</Link>}
+            >
+              <LectureList lectures={data.lectures} holiday={data.holiday} daily={data.daily} markTo={(l) => `/employee/attendance/${l.slotId}`} />
+            </Card>
+          )}
+        </DataBoundary>
+      )}
 
       {teaching && c && (
         <div className="stats stats--3">
@@ -58,19 +74,6 @@ export default function EmployeeDashboard() {
       <OfficeWorkCard />
 
       {teaching && todo.data && <TodoCard data={todo.data} />}
-
-      {canMark && (
-        <DataBoundary loading={loading} error={error} data={data} reload={reload}>
-          {data && (
-            <Card
-              title={`Today's lectures${data.lectures.length ? ` (${plural(data.lectures.length, 'lecture')})` : ''}`} icon={ClipboardCheck}
-              action={<Link to="/employee/attendance" className="btn btn--outline btn--sm">Open attendance</Link>}
-            >
-              <LectureList lectures={data.lectures} holiday={data.holiday} markTo={(l) => `/employee/attendance/${l.slotId}`} />
-            </Card>
-          )}
-        </DataBoundary>
-      )}
 
       {!teaching && !office?.roles?.length && (
         <Card title="Your workspace"><p className="muted">Your institute has not switched on any employee modules yet.</p></Card>
