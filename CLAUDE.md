@@ -67,8 +67,10 @@ School Year Journey home; Setup in 30 minutes (wizard, templates, check-before-i
 - Day 3: admissions board (enquiry to enrolled) and the fee cycle (class-wise dues, concessions, late fees, reminders with a ready message, collection, receipt with the institute logo, day-end summary). Done when: a student is admitted, pays a fee, and the receipt shows the institute's logo.
 - Day 4: daily attendance (fewest taps, teacher home = today's lectures) and exams, results, report cards (progress per paper, publish only when complete). Done when: a teacher marks a class in under a minute, and a result is published and printed.
 - Day 5: parent and student home ("My child today", fees due with Pay button, attendance, results, notices) and a full phone pass for every role. Done when: a parent finds and pays a fee from a phone in three screens or fewer.
-- Day 6 (DO STEP BY STEP WITH NEERAJ, NOT AUTOPILOT): paid hosting, own web address, email sender, backup and restore test, parent consent, privacy page, public pricing and demo page, pilot data.
-- Day 7: buffer, walk every role on phone and laptop, all tests, user guide, hand-over note.
+- Day 6A (autopilot OK): parent consent recorded with time and purpose (shown at first sign-in), a privacy page marked “to be reviewed by the institute’s adviser”, and a public landing page with features, pricing (“Contact us” placeholders) and a demo request form. Also write scripts/backup and scripts/restore for PostgreSQL and prove them by backing up and restoring the local database. Stop for any migration.
+- Day 7 (autopilot OK): a short user guide per role, a hand-over note, and a demo script (admission to result to parent), all as plain text or PDF. Walk every role at phone width and fix what is broken.
+Later, with Neeraj on Saturday: paid hosting, own domain, company email, pilot data.
+
 
 ## Not this week
 Board-format report cards, NAAC/NBA/NIRF, official WhatsApp/SMS, redesign of payroll/hostel/transport/placement/library/asset screens, multi-campus, offline mode, custom report builder, check-in anti-fraud changes.
