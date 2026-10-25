@@ -61,6 +61,10 @@ function DashboardView({ d }) {
   const items = attentionItems(d, hasModule, t);
   // The header's "Next:" line is the most urgent thing waiting (an overdue problem first), so the answer to "what next?" is always on top
   const top = items.find((i) => i.tone === 'bad') || items[0];
+  // Until the institute is set up, "what next" is the next setup step (the admin only: staff cannot open Setup)
+  const setup = useFetch(office ? null : '/admin/setup').data;
+  const setupNext = setup && !setup.complete
+    ? { text: `finish setting up your institute (${setup.done} of ${setup.total} steps done)`, to: `/admin/setup?tab=${setup.current}` } : null;
 
   // Attendance: today's figure once lectures are marked, otherwise this week so far; both against the same day/week before
   const weeks = attK ? k.attendance.weeks : [];
@@ -73,10 +77,10 @@ function DashboardView({ d }) {
     <CollapsibleCards>
       <PageHeader
         icon={LayoutDashboard} title={office ? 'Institute overview' : 'Dashboard'} subtitle={`${d.institute.name}  |  ${fmtLong(todayISO())}`}
-        next={top ? { text: top.title, to: top.link } : 'nothing is waiting, all clear for today'}
+        next={top ? { text: top.title, to: top.link } : setupNext || 'nothing is waiting, all clear for today'}
       />
 
-      <SetupChecklist />
+      {setup && <SetupChecklist wizard={setup} />}
 
       <div className="stats stats--3">
         {attK && (

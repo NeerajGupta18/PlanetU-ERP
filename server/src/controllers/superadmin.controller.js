@@ -11,6 +11,7 @@ import { switchTenant } from '../db/pool.js';
 import { startSubscription, updateSubscription } from '../services/billing.service.js';
 import { overview as billingOverview } from '../services/billingConsole.service.js';
 import { quietInstitutes } from '../services/kpi.service.js';
+import { setupProgress } from '../services/setup.service.js';
 
 /**
  * The vendor console. These handlers run in PLATFORM context: they may read the
@@ -29,7 +30,9 @@ async function withCounts(tenants) {
   for (const t of tenants) {
     const counts = await inTenant(t.id, async () => {
       const { rows: [r] } = await q('select (select count(*) from students)::int as students, (select count(*) from employees)::int as employees');
-      return r;
+      // How far the client has got with the seven-step setup wizard (the vendor's "watch setup progress" step)
+      const setup = (await q('select 1 from institute_profiles')).rowCount ? await setupProgress(t.modules) : null;
+      return { ...r, setup };
     });
     out.push({ ...t, ...counts, users: userCount.get(t.id) || 0 });
   }

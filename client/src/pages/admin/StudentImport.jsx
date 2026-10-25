@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { AlertTriangle, ArrowLeft, CheckCircle2, Download, FileSpreadsheet, ListChecks, Upload, Users2 } from 'lucide-react';
 import { api } from '../../api/http.js';
 import { useTenantConfig } from '../../hooks/useTenantConfig.js';
@@ -13,6 +13,8 @@ export default function StudentImport() {
   const { t } = useTenantConfig();
   const students = t('students', 'Students').toLowerCase();
   const input = useRef(null);
+  const fromSetup = useSearchParams()[0].get('from') === 'setup';
+  const back = fromSetup ? { to: '/admin/setup?tab=import', label: 'Back to setup' } : { to: '/admin/students', label: `Back to ${students}` };
   const [file, setFile] = useState(null);
   const [opts, setOpts] = useState({ createLogins: true, sendEmails: true });
   const [stage, setStage] = useState('choose'); // choose | preview | done
@@ -54,7 +56,7 @@ export default function StudentImport() {
     <>
       <PageBanner
         icon={Upload} title={`Import ${students} from CSV`} subtitle="Bring in existing records in one go. You see every problem before anything is saved."
-        actions={<Link to="/admin/students" className="btn btn--outline btn--sm"><ArrowLeft size={14} /> Back to {students}</Link>}
+        actions={<Link to={back.to} className="btn btn--outline btn--sm"><ArrowLeft size={14} /> {back.label}</Link>}
       />
       {error && <p className="form-error" role="alert">{error}</p>}
 
@@ -96,7 +98,7 @@ export default function StudentImport() {
         />
       )}
 
-      {stage === 'done' && result && <Done r={result} students={students} onAgain={reset} />}
+      {stage === 'done' && result && <Done r={result} students={students} onAgain={reset} fromSetup={fromSetup} />}
     </>
   );
 }
@@ -188,7 +190,7 @@ function Preview({ p, file, show, setShow, skip, setSkip, busy, students, onBack
   );
 }
 
-function Done({ r, students, onAgain }) {
+function Done({ r, students, onAgain, fromSetup }) {
   const report = () => downloadCsv('student-import-report.csv', [
     ['Line', 'Name', 'Email', 'Student ID', 'Result', 'Reason'],
     ...r.rows.map((x) => [x.line, x.name, x.email, x.studentCode || '', x.status === 'created' ? 'Imported' : 'Skipped', x.reason]),
@@ -207,7 +209,9 @@ function Done({ r, students, onAgain }) {
       </p>
       <div className="form-actions" style={{ justifyContent: 'flex-start' }}>
         <button type="button" className="btn btn--outline" onClick={report}><Download size={14} /> Download the import report</button>
-        <Link to="/admin/students" className="btn btn--primary"><Users2 size={15} /> View {students}</Link>
+        {fromSetup
+          ? <Link to="/admin/setup?tab=import" className="btn btn--primary"><ArrowLeft size={15} /> Back to setup</Link>
+          : <Link to="/admin/students" className="btn btn--primary"><Users2 size={15} /> View {students}</Link>}
         <button type="button" className="btn btn--outline" onClick={onAgain}>Import another file</button>
       </div>
     </Card>

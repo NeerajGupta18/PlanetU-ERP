@@ -9,17 +9,26 @@ import { q } from './pool.js';
 export async function getInstitute() {
   const { rows: [r] } = await q('select * from institute_profiles');
   if (!r) return null;
+  // `details` is the free-form "label: value" list shown on the Institute page. The setup wizard keeps its own
+  // settings (brand colour, logo, academic year...) under the hidden key `_setup`, returned separately as `setup`.
+  const { _setup: setup = {}, ...details } = r.details || {};
+  const { logo, ...rest } = setup;
   return {
     id: r.tenant_id, name: r.name, shortName: r.short_name, tagline: r.tagline, address: r.address, city: r.city,
-    state: r.state, pincode: r.pincode, phone: r.phone, email: r.email, website: r.website, details: r.details,
+    state: r.state, pincode: r.pincode, phone: r.phone, email: r.email, website: r.website, details,
     stakeholders: r.stakeholders, authorizedPersons: r.authorized_persons, documents: r.documents,
     beneficiaries: r.beneficiaries, stamp: r.stamp,
+    // the logo itself is served by GET /api/me/logo; here only a version so browsers refetch it after a change
+    setup: { ...rest, logoVersion: logo ? logo.version : null },
   };
 }
 
 export const instituteBrief = async () => {
   const i = await getInstitute();
-  return i && { name: i.name, shortName: i.shortName, tagline: i.tagline, address: i.address, phone: i.phone };
+  return i && {
+    name: i.name, shortName: i.shortName, tagline: i.tagline, address: i.address, phone: i.phone,
+    brandColor: i.setup.brandColor || null, logoVersion: i.setup.logoVersion, academicYear: i.setup.academicYear?.name || null,
+  };
 };
 
 export async function loadEmployees() {

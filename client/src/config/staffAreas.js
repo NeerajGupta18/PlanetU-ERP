@@ -9,7 +9,7 @@ const AREA_OF = {
   employees: 'staff', departments: 'staff', leave: 'leave', library: 'library', assets: 'assets', hostel: 'hostel',
   transport: 'transport', visitors: 'visitors', placement: 'placement', notices: 'notices', grievances: 'helpdesk', feedback: 'helpdesk',
 };
-const ADMIN_ONLY = ['institute', 'billing', 'staff-roles'];
+const ADMIN_ONLY = ['institute', 'billing', 'staff-roles', 'setup'];
 
 /** The area grant (or null) for an /admin/... path. */
 export function officeGrant(office, path) {

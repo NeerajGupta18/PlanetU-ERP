@@ -32,6 +32,8 @@ import * as rawTransport from '../controllers/transport.controller.js';
 import * as rawPayroll from '../controllers/payroll.controller.js';
 import * as rawGrievance from '../controllers/grievance.controller.js';
 import * as rawParents from '../controllers/parents.controller.js';
+import * as rawSetup from '../controllers/setup.controller.js';
+import { LOGO_MAX_BYTES } from '../services/setup.service.js';
 import { uuidParam, wrapAll } from './wrap.js';
 
 const admin = wrapAll(raw);
@@ -61,6 +63,7 @@ const transport = wrapAll(rawTransport);
 const payroll = wrapAll(rawPayroll);
 const grievance = wrapAll(rawGrievance);
 const parents = wrapAll(rawParents);
+const setup = wrapAll(rawSetup);
 const router = Router();
 
 // CSV uploads for the student import: memory only, one file, hard size cap, with a message that fits
@@ -76,6 +79,13 @@ const docUpload = (req, res, next) => docParser(req, res, (err) => {
   if (!err) return rebindTx(req, res, next);
   if (err.code === 'LIMIT_FILE_SIZE') return next(new HttpError(413, 'That file is too large (5 MB at most).'));
   return next(new HttpError(400, 'Could not read the upload. Send one file in the "file" field.'));
+});
+// The institute's logo: one PNG or JPG picture, checked again by its bytes in setup.service.js
+const logoParser = multer({ storage: multer.memoryStorage(), limits: { fileSize: LOGO_MAX_BYTES, files: 1 } }).single('file');
+const logoUpload = (req, res, next) => logoParser(req, res, (err) => {
+  if (!err) return rebindTx(req, res, next);
+  if (err.code === 'LIMIT_FILE_SIZE') return next(new HttpError(413, `That picture is too large. Use one under ${LOGO_MAX_BYTES / 1024} KB (a 512 x 512 PNG is plenty).`));
+  return next(new HttpError(400, 'Could not read the upload. Choose one PNG or JPG picture.'));
 });
 // The institute admin uses all of this; employees with staff roles use the parts their roles grant (middleware/office.js)
 router.use(requireAuth, officeAccess);
@@ -152,6 +162,7 @@ router.get('/students/:id/overview', students.overview);
 router.put('/students/:id', students.update);
 router.put('/students/:id/photo', students.setPhoto);
 router.param('userId', uuidParam);
+router.param('subjectId', uuidParam);
 router.get('/students/:id/parents', requireModule('parent_portal'), parents.list);
 router.post('/students/:id/parents', requireModule('parent_portal'), parents.add);
 router.delete('/students/:id/parents/:userId', requireModule('parent_portal'), parents.remove);
@@ -318,6 +329,22 @@ router.delete('/staff-roles/:employeeId/:role', staff.revoke);
 
 router.get('/approvals', inbox.approvalsList);
 router.get('/setup-status', inbox.setup);
+
+// The seven-step setup wizard (institute admin only: no staff role grants "setup")
+router.get('/setup', setup.wizard);
+router.put('/setup/brand', setup.saveBrand);
+router.post('/setup/logo', logoUpload, setup.saveLogo);
+router.delete('/setup/logo', setup.removeLogo);
+router.put('/setup/year', setup.saveYear);
+router.put('/setup/divisions/:id', setup.saveDivisions);
+router.post('/setup/subjects', setup.addSubject);
+router.delete('/setup/subjects/:subjectId', setup.removeSubject);
+router.post('/setup/teachers', setup.addTeacher);
+router.post('/setup/invite', setup.invite);
+router.put('/setup/sample-data', setup.sampleData);
+router.get('/setup/staff-import/template.csv', setup.staffTemplate);
+router.post('/setup/staff-import/preview', csvUpload, setup.staffPreview);
+router.post('/setup/staff-import', csvUpload, setup.staffCommit);
 
 router.use('/visitors', requireModule('visitors'));
 router.get('/visitors/meta', visitors.meta);

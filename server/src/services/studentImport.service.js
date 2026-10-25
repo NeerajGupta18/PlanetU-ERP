@@ -60,7 +60,7 @@ const HEADER_LOOKUP = (() => {
 const STATUSES = ['Active', 'Inactive', 'Alumni'];
 const BLOOD = new Set(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']);
 const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const CODE_RE = /^[A-Za-z0-9][A-Za-z0-9._/-]*$/;
 
 /* ------------------------------------------------------------------ date parsing */
@@ -91,7 +91,7 @@ export function parseDate(text) {
 
 /* ------------------------------------------------------------------ reading the file */
 
-function decode(buffer) {
+export function decode(buffer) {
   if (buffer.length >= 2 && buffer[0] === 0x50 && buffer[1] === 0x4b) {
     throw new HttpError(400, 'That looks like an Excel workbook, not a CSV. In Excel choose File > Save As > "CSV UTF-8 (Comma delimited)" and upload that file.');
   }
@@ -120,7 +120,7 @@ function mapHeader(cells) {
 
 /* ------------------------------------------------------------------ row validation */
 
-const clean = (v) => String(v ?? '').replace(/\s+/g, ' ').trim();
+export const clean = (v) => String(v ?? '').replace(/\s+/g, ' ').trim();
 const tooLong = (v, max, label, errors) => { if (v.length > max) errors.push(`${label} is too long (${max} characters at most).`); };
 
 function cleanPhone(v, label, errors) {

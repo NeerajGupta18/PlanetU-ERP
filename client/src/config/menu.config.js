@@ -1,5 +1,5 @@
 import {
-  ScanLine,
+  ScanLine, Rocket,
   Inbox, BedDouble, Banknote, DoorOpen, Briefcase, NotebookPen, QrCode, BookOpen, BookOpenCheck, Boxes, Bus, Building2, CalendarCheck, CalendarOff, CalendarDays, CircleDollarSign, ClipboardCheck, CreditCard, FileBarChart2, FileText, LifeBuoy, Star, GraduationCap, LayoutDashboard, ListChecks, Megaphone, School, Network, Server, Settings2, Table2, UserRound, Users, Users2, Wallet,
 } from 'lucide-react';
 
@@ -148,6 +148,7 @@ export const MENU_TREE = {
           { label: 'Feedback', to: '/admin/feedback', module: 'grievance' },
         ] },
         { label: 'Reports & Exports', to: '/admin/reports', icon: FileBarChart2 },
+        { label: 'Set up your institute', to: '/admin/setup', icon: Rocket },
         { label: 'Institute settings', to: '/admin/institute', icon: Building2 },
         { label: 'Subscription', to: '/admin/billing', icon: CreditCard },
         { label: 'How to use', to: '/admin/help', icon: BookOpenCheck },

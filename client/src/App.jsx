@@ -47,6 +47,7 @@ const QuizEditor = lazy(() => import('./pages/shared/QuizEditor.jsx'));
 const QuizResults = lazy(() => import('./pages/shared/QuizResults.jsx'));
 const AdminDashboard = lazy(() => import('./pages/admin/Dashboard.jsx'));
 const AdminInstitute = lazy(() => import('./pages/admin/Institute.jsx'));
+const AdminSetup = lazy(() => import('./pages/admin/Setup.jsx'));
 const AdminDepartments = lazy(() => import('./pages/admin/Departments.jsx'));
 const AdminCourses = lazy(() => import('./pages/admin/Courses.jsx'));
 const AdminEmployees = lazy(() => import('./pages/admin/Employees.jsx'));
@@ -167,6 +168,7 @@ export default function App() {
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="help" element={<Help />} />
+          <Route path="setup" element={<AdminSetup />} />
           <Route path="institute" element={<AdminInstitute />} />
           <Route path="departments" element={<AdminDepartments />} />
           <Route path="courses" element={<AdminCourses />} />

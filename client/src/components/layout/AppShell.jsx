@@ -22,6 +22,7 @@ import SidebarNav from './SidebarNav.jsx';
 import Breadcrumbs from './Breadcrumbs.jsx';
 import SearchPalette from './SearchPalette.jsx';
 import { startAutoScroll } from '../../lib/autoScroll.js';
+import { applyBrandColor, logoUrl } from '../../lib/brandTheme.js';
 
 function Dropdown({ button, children, align = 'right' }) {
   const [open, setOpen] = useState(false);
@@ -86,6 +87,9 @@ export default function AppShell() {
   const [searchOpen, setSearchOpen] = useState(false);
   const mainRef = useRef(null);
   useEffect(() => startAutoScroll(mainRef.current), []);
+  // The institute's own colour on every screen (back to the PlanetU navy when it has none, or on sign-out)
+  const brandColor = user.role === 'super_admin' ? null : institute?.brandColor;
+  useEffect(() => { applyBrandColor(brandColor); return () => applyBrandColor(null); }, [brandColor]);
 
   useEffect(() => { setDrawer(false); }, [location.pathname]);
 
@@ -122,7 +126,7 @@ export default function AppShell() {
       <a href="#main" className="skip-link" onClick={(e) => { e.preventDefault(); document.getElementById('main')?.focus(); }}>Skip to main content</a>
       <aside className="sidebar" aria-label="Main navigation">
         <div className="sidebar__brand">
-          <span className="sidebar__logo"><BrandMark size={26} /></span>
+          <span className="sidebar__logo"><BrandMark size={26} src={logoUrl(institute)} /></span>
           <span className="sidebar__brand-text">
             <strong>{institute?.shortName || BRAND.short}</strong>
             <small>{user.role === 'student' ? `${t('student', 'Student')} Portal` : `${ROLE_LABEL[user.role]} Portal`}</small>

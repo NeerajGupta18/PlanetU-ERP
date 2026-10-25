@@ -6,6 +6,27 @@ import { Badge, Card, PageBanner } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import { useDialogs } from '../../components/ui/Dialogs.jsx';
 import Modal from '../../components/ui/Modal.jsx';
+import { PROCESSES } from '../../config/processes.js';
+
+const stepLabel = (key) => PROCESSES.setup.steps.find((s) => s.key === key)?.label;
+const daysSince = (iso) => Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+/** The 30/60/90-day check-in that is due this week, if any. */
+const checkDue = (days) => [30, 60, 90].find((d) => days >= d && days < d + 7);
+
+/** How far a client has got with its seven-step setup, and the step it is on. */
+function SetupCell({ t }) {
+  if (!t.setup) return <span className="muted">-</span>;
+  const { done, total, current } = t.setup;
+  const days = daysSince(t.createdAt);
+  const due = checkDue(days);
+  return (
+    <div className="setup-cell">
+      <div className="progress" role="progressbar" aria-label={`${t.name} setup`} aria-valuemin={0} aria-valuemax={total} aria-valuenow={done}><div className="progress__fill" style={{ width: `${(done / total) * 100}%` }} /></div>
+      <small>{done === total ? <strong>Ready</strong> : <>{done} of {total} · next: {stepLabel(current)}</>}</small>
+      <small className="muted">Day {days}{due ? <> · <Badge tone="amber">{due}-day check due</Badge></> : ''}</small>
+    </div>
+  );
+}
 
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
 
@@ -17,6 +38,7 @@ export default function Institutes() {
   const [edit, setEdit] = useState(null);
   const [secret, setSecret] = useState(null); // one-time admin password to show
 
+  const settingUp = (list.data?.tenants || []).filter((t) => !t.settings?.demo && t.setup && t.setup.done < t.setup.total).length;
   const typeLabel = (key) => presets.data?.types.find((t) => t.key === key)?.label || key;
 
   const toggleStatus = async (t) => {
@@ -31,6 +53,7 @@ export default function Institutes() {
     <>
       <PageBanner
         icon={Server} title="Institutes" subtitle="Onboard clients, choose their modules and manage their access"
+        next={settingUp ? `${settingUp} institute${settingUp === 1 ? ' is' : 's are'} still setting up: help the one furthest behind` : undefined}
         actions={<button type="button" className="btn btn--primary" onClick={() => setCreate(true)} disabled={!presets.data}><Plus size={15} /> Add Institute</button>}
       />
 
@@ -39,7 +62,7 @@ export default function Institutes() {
           {list.data && (list.data.tenants.length === 0 ? <EmptyState title="No institutes yet" hint="Add your first client to get started." /> : (
             <div className="table-wrap">
               <table className="table">
-                <thead><tr><th>Institute</th><th>Type</th><th>Plan</th><th>Status</th><th>Employees</th><th>Students</th><th>Modules</th><th>Actions</th></tr></thead>
+                <thead><tr><th>Institute</th><th>Type</th><th>Plan</th><th>Status</th><th>Setup</th><th>Employees</th><th>Students</th><th>Modules</th><th>Actions</th></tr></thead>
                 <tbody>
                   {list.data.tenants.map((t) => (
                     <tr key={t.id}>
@@ -47,6 +70,7 @@ export default function Institutes() {
                       <td><Badge tone="purple">{typeLabel(t.type)}</Badge></td>
                       <td><Badge tone={t.settings?.demo ? 'amber' : 'blue'}>{t.plan}</Badge></td>
                       <td><Badge tone={t.status === 'active' ? 'green' : 'red'}>{t.status}</Badge></td>
+                      <td><SetupCell t={t} /></td>
                       <td>{t.employees}</td>
                       <td>{t.students}</td>
                       <td className="muted">{t.modules.length}</td>
