@@ -438,6 +438,16 @@ describe('Admin results sheet and CSV', () => {
     assert.equal((await json('GET', '/api/admin/exams?status=bogus', { cookie: admin })).status, 400);
   });
 
+  it("counts a past semester's exam by who sat it, the same as its results", async () => {
+    // The demo's End-Semester exam is for semester 2; its students have moved on to semester 3 since
+    const list = (await json('GET', '/api/admin/exams?status=published', { cookie: admin })).body.exams;
+    const past = list.find((x) => x.name === 'End-Semester Examination');
+    assert.ok(past, 'demo has a published end-semester exam');
+    const results = await json('GET', `/api/admin/exams/${past.id}/results`, { cookie: admin });
+    assert.ok(past.students > 0);
+    assert.equal(past.students, results.body.stats.students);
+  });
+
   it('exports CSV with AB for absent and neutralised spreadsheet formulas', async () => {
     const r = await json('GET', `/api/admin/exams/${examId}/results.csv`, { cookie: admin });
     assert.equal(r.status, 200);
