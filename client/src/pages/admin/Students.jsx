@@ -238,7 +238,7 @@ function Parents({ studentId, guardian }) {
       {err && <p className="form-error">{err}</p>}
       <DataBoundary loading={loading && !data} error={error} data={data} reload={reload}>
         {data && (data.parents.length === 0 ? <p className="muted" style={{ margin: '0 0 8px' }}>No parent account yet.</p> : (
-          <table className="table">
+          <table className="table table--stack">
             <thead><tr><th>Name</th><th>Login ID</th><th>Relation</th><th /></tr></thead>
             <tbody>
               {data.parents.map((p) => (

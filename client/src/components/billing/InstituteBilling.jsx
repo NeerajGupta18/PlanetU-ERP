@@ -60,7 +60,7 @@ function Body({ d, tenantId, reload }) {
       </div>
       {d.invoices.length === 0 ? <p className="muted">No invoices yet.</p> : (
         <div className="table-wrap">
-          <table className="table">
+          <table className="table table--stack">
             <thead><tr><th>Invoice</th><th>Period</th><th style={{ textAlign: 'right' }}>Total</th><th>Status</th><th /></tr></thead>
             <tbody>
               {d.invoices.map((i) => (

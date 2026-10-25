@@ -12,7 +12,7 @@ export const CONSENT_VERSION = 'v1';
 
 /** The purposes, in the order the screen shows them. `required` ones must be agreed to use the app. */
 export const PURPOSES = [
-  { key: 'records', required: true, label: "Keep my child's school records", detail: "Attendance, marks, fees, timetable and notices, so the institute can run your child's studies and you can see them here." },
+  { key: 'records', required: true, label: "Keep my child's study records", detail: "Attendance, marks, fees, timetable and notices, so the institute can run your child's studies and you can see them here." },
   { key: 'messages', required: false, label: 'Send me reminders by email', detail: 'Fee reminders, results and important notices. You can still see everything in the app if you say no.' },
 ];
 

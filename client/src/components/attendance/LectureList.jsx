@@ -16,12 +16,17 @@ export function SessionBadge({ l }) {
  *   showFaculty  admin view: show who is teaching it
  *   markTo(l)    link target for the marking sheet
  */
-export default function LectureList({ lectures, holiday, markTo, showFaculty = false, daily = false }) {
+export default function LectureList({ lectures, holiday, markTo, date, showFaculty = false, daily = false }) {
   if (holiday) return <EmptyState title="Holiday" hint="No lectures run on this date, so there is nothing to mark." />;
   if (!lectures.length) {
+    // Sunday: say so, instead of a message that reads as if something is wrong
+    if (date && new Date(`${date}T00:00:00`).getDay() === 0) {
+      return <EmptyState title="No classes on Sunday" hint="Nothing to mark today. The next working day's classes show here that morning." />;
+    }
+    if (showFaculty) return <EmptyState title="No lectures" hint="Nothing is on the timetable for this date. Pick another date, or build the timetable under Timetable." />;
     return daily
-      ? <EmptyState title="No class register for you today" hint="In a school the class teacher takes the attendance once a day. You are not the class teacher of a class that meets today." />
-      : <EmptyState title="No lectures" hint="Nothing assigned to you on the timetable for this date." />;
+      ? <EmptyState title="No class register for you today" hint="In a school the class teacher takes the register once a day. If you are a class teacher, ask the office to check your class has a timetable for today." />
+      : <EmptyState title="No lectures" hint="Nothing assigned to you on the timetable for this date. If that looks wrong, ask the office to check the timetable." />;
   }
   return (
     <ul className="schedule">

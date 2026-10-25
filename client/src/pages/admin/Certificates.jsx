@@ -130,7 +130,7 @@ export default function Certificates() {
         <DataBoundary loading={list.loading} error={list.error} data={list.data} reload={list.reload}>
           {list.data && (list.data.requests.length === 0 ? <EmptyState title="Nothing here" hint="Requests from students appear under Waiting." /> : (
             <div className="table-wrap">
-              <table className="table">
+              <table className="table table--stack">
                 <thead><tr><th>Student</th><th>Certificate</th><th>Purpose</th><th>Asked on</th><th>Status</th><th /></tr></thead>
                 <tbody>
                   {list.data.requests.map((r) => (

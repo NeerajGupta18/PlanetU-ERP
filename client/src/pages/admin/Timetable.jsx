@@ -98,7 +98,7 @@ export default function Timetable() {
 
                 {schedule.data.items.length === 0 ? <EmptyState title="No lectures or duties found" hint="Try a different date range or clear the filters." /> : (
                   <div className="table-wrap tt-table" data-noscroll>
-                    <table className="table">
+                    <table className="table table--stack">
                       <thead><tr><th>Type</th><th>Date</th><th>Time</th><th>Subject</th><th>Faculty/Employee</th><th>Department</th><th>Mode</th><th>Actions</th></tr></thead>
                       <tbody>
                         {schedule.data.items.map((i) => (
@@ -151,7 +151,7 @@ export default function Timetable() {
           <DataBoundary loading={slots.loading} error={slots.error} data={slots.data} reload={slots.reload}>
             {slots.data && (
               <div className="table-wrap">
-                <table className="table">
+                <table className="table table--stack">
                   <thead><tr><th>Weekday</th><th>Time</th><th>Subject</th><th>Faculty</th><th>Course</th><th>Mode</th><th>Location</th><th>Actions</th></tr></thead>
                   <tbody>
                     {slots.data.slots.map((s) => (

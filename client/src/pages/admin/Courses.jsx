@@ -36,7 +36,7 @@ export default function Courses() {
             ? <EmptyState title={`No ${many.toLowerCase()} yet`} hint={`Applicants choose from this list when they apply, and students, fees and the timetable are set up per ${one.toLowerCase()}.`} action={{ label: `Add your first ${one.toLowerCase()}`, onClick: () => setModal({}) }} />
             : (
               <div className="table-wrap">
-                <table className="table">
+                <table className="table table--stack">
                   <thead><tr><th>Code</th><th>Name</th><th>Department</th><th>Class teacher</th><th className="num">Years</th><th className="num">{t('students', 'Students')}</th><th>Actions</th></tr></thead>
                   <tbody>
                     {list.data.courses.map((c) => (

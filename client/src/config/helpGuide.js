@@ -43,12 +43,23 @@ export const HELP = [
     ],
   },
   {
-    id: 'admissions', who: ['admin', 'area:admissions'], title: 'Review and enrol applicants', module: 'admissions', to: '/admin/admissions',
+    id: 'setup', who: ['admin'], title: 'Set up your institute (first day)', to: '/admin/setup',
     steps: [
-      'Open Admissions. New applications show as "Submitted".',
-      'Open one to check the details and documents, then choose Accept, Waitlist or Reject.',
-      'For an accepted applicant, choose "Enrol student". This creates the student record, their ID and their login.',
-      'Use Walk-in to enter an application for someone who comes to the office.',
+      'Open "Set up your institute" (under Office). The bar at the top shows how far you are. Your work is saved at every step.',
+      'Go through the seven steps: profile and logo, academic year, classes and divisions, subjects and teachers, fee heads and plans, import students and staff, invite people.',
+      'To import, download the Template, fill it in Excel or Google Sheets, save it as CSV and upload it. "Check before import" shows each bad row and how to fix it. Nothing is saved until you confirm.',
+      'Want to try things first? Turn on Sample data: it adds one made-up class you can remove later with one click.',
+      'When every step is done, choose "Build the timetable". Teachers then see their lectures each day.',
+    ],
+  },
+  {
+    id: 'admissions', who: ['admin', 'area:admissions'], title: 'Take a student from enquiry to enrolled', module: 'admissions', to: '/admin/admissions',
+    steps: [
+      'Open Admissions. The board has one column per step, from Enquiry to Enrolled.',
+      'Choose "Add enquiry" when someone calls or visits. Then "Send form link" so they apply from their phone, or "Fill in at desk".',
+      'Open the application, choose "Check documents", then Accept, Waitlist or Reject.',
+      'For an accepted applicant choose "Take fee and enrol". Pick the fee plan and the enrolment fee. This creates the student, their login and ID card, and invites the parent.',
+      'The public application link at the top can go on your website or posters.',
     ],
   },
   {
@@ -96,11 +107,18 @@ export const HELP = [
     ],
   },
   {
-    id: 'fee-dues', who: ['admin', 'area:fees'], title: 'Follow up on overdue fees', module: 'fees', to: '/admin/fees',
+    id: 'fee-dues', who: ['admin', 'area:fees'], title: 'Remind parents about overdue fees', module: 'fees', to: '/admin/fees?tab=remind',
     steps: [
-      'The Overview tab shows who is overdue, oldest first.',
-      'Choose "Open ledger" on a student to see each charge and payment.',
-      'Students and parents also get reminders in the app before and after the due date.',
+      'Open Fees & Payments, then the Remind tab. Overdue students are listed, with a message ready for each.',
+      'Tap WhatsApp to open it with the message filled in, or "Send in app" to put it in the student\'s and parent\'s notifications.',
+      'To charge a late fee, choose "Add a late fee", check the amount and confirm. It is added once to each overdue charge.',
+    ],
+  },
+  {
+    id: 'day-end', who: ['admin', 'area:fees'], title: 'Close the day (day-end summary)', module: 'fees', to: '/admin/fees?tab=dayend',
+    steps: [
+      'Open the Day-end tab. It shows today\'s money by method (cash, UPI, card, cheque) and by who took it, with every receipt.',
+      'Count the cash against the cash total, then Print or Download PDF and file it.',
     ],
   },
   {
@@ -298,15 +316,15 @@ export const HELP = [
     id: 'platform', who: ['super_admin'], title: 'Look after the institutes', to: '/super-admin/dashboard',
     steps: [
       'The dashboard shows money received, overdue invoices, trials ending and institutes nobody has signed in to.',
-      'Open Institutes to add one, change its modules or suspend it.',
-      'Open Billing for plans, invoices and payments.',
+      'Open Institutes. The Setup column shows how far each new client is in its seven setup steps, and when its 30, 60 or 90-day check-in is due.',
+      'Help the one furthest behind first. Open Billing for plans, invoices and payments, and Demo requests for people who asked for a demo.',
     ],
   },
   {
     id: 'add-institute', who: ['super_admin'], title: 'Add a new institute', to: '/super-admin/institutes',
     steps: [
       'Open Institutes and choose "Add institute". Pick the type (school, college, university) to preset the modules.',
-      'Enter the admin\'s name and email. They get a link to set their password.',
+      'Enter the admin\'s name and email. They get a link to set their password. Their dashboard then shows the setup steps to do.',
     ],
   },
 ];

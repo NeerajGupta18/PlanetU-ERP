@@ -58,7 +58,7 @@ export default function Employees() {
           {emps.data && (
             emps.data.employees.length === 0 ? <EmptyState title="No employees match these filters" /> : (
               <div className="table-wrap">
-                <table className="table">
+                <table className="table table--stack">
                   <thead><tr><th>#</th><th>Name</th><th>Department</th><th>Designation</th><th>Email</th><th>Shift</th><th>Actions</th></tr></thead>
                   <tbody>
                     {emps.data.employees.map((e, i) => (

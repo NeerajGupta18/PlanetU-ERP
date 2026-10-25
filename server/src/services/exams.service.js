@@ -140,7 +140,8 @@ export async function listExams({ courseId, status } = {}) {
     `${EXAM_SQL.replace('c.name as course,', `c.name as course,
          (select count(*)::int from exam_papers p where p.exam_id = e.id) as papers,
          (select count(*)::int from exam_papers p where p.exam_id = e.id and p.marks_status = 'submitted') as submitted,
-         (select count(*)::int from students s where s.course_id = e.course_id and s.semester = e.semester and s.status = 'Active') as students,`)}
+         (select count(*)::int from students s where (s.course_id = e.course_id and s.semester = e.semester and s.status = 'Active')
+            or exists (select 1 from exam_marks m join exam_papers p on p.id = m.paper_id where p.exam_id = e.id and m.student_id = s.id)) as students,`)}
      ${where.length ? `where ${where.join(' and ')}` : ''}
      order by (e.status = 'draft') desc, coalesce(e.start_date, e.created_at::date) desc, e.name`,
     params,

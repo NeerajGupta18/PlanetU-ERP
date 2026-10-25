@@ -1,0 +1,46 @@
+PlanetU Campus ERP
+Hand-over note
+
+What it is
+One web app for schools, colleges and universities. Each institute has its own data, logo, colours and words.
+It runs in any browser, as an Android app, and can be added to the home screen on an iPhone.
+Roles: PlanetU team (vendor), institute admin, office staff, teacher, student, parent.
+
+Where things are
+- Code: github.com/NeerajGupta18/planetu-erp. The main branch is what is live.
+- Live site: https://planetu-erp.onrender.com. It updates by itself a few minutes after a change reaches main.
+- Setup and running locally: README.md. Deploying: RENDER.md (free hosting) and DEPLOY.md (own server).
+- User guides, this note and the demo script: docs/guides. Each has a PDF copy in docs/guides/pdf.
+- Inside the app, every role has "How to use" in its menu with short steps.
+
+What is ready
+- Institute setup in seven steps, with templates for students and staff and a check before import.
+- Vendor view of each client's setup progress and 30, 60 and 90-day check-ins.
+- Admissions board from enquiry to enrolled. Enrolling creates the student, login, ID card and parent invite.
+- Fee cycle: plans, dues, late fees, reminders with a ready WhatsApp message, collection, receipt with the logo, day-end summary.
+- Attendance: a few taps per lecture, or a QR check-in in colleges and universities.
+- Exams: marks per paper, checks before publishing, report cards with the logo.
+- Parent home ("My child today") with fees, attendance, results and notices, and recorded consent.
+- Public landing page with a demo request form, and a privacy page.
+- Every process shows a step bar with one clear next button. The main pages of every role were checked at phone and laptop width.
+
+Checks
+- Automated tests: about 700, all passing. Run them with: node --test --test-concurrency=1
+- Backup and restore: scripts/backup.sh and scripts/restore.sh. A backup was taken and restored on a local copy.
+
+Still to do together
+- Paid hosting, so the site does not sleep and the database is kept.
+- Own web address and company email, so emails reach a real inbox.
+- Regular backups of the live database (the free database has none).
+- The privacy page is marked "to be reviewed by the institute's adviser". It needs that review before real use.
+- Pilot data for the first real institute.
+- Online fee payment needs the institute's own payment gateway keys.
+
+Not included yet
+Board-format report cards, NAAC, NBA and NIRF reports, official WhatsApp or SMS sending, multi-campus,
+offline mode and a custom report builder.
+
+Good to know
+- Demo logins are in README.md. They are public and must never be used on a real institute.
+- On free hosting, open the site a minute before a demo, because it sleeps when idle.
+- No classes are shown on Sundays and holidays, so hold attendance demos on a weekday.

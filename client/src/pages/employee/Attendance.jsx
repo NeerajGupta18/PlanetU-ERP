@@ -18,7 +18,7 @@ export default function Attendance() {
       <TodayStepBar data={data} />
       <Card title={data?.daily ? 'Class register for today' : 'Your lectures today'}>
         <DataBoundary loading={loading} error={error} data={data} reload={reload}>
-          {data && <LectureList lectures={data.lectures} holiday={data.holiday} daily={data.daily} markTo={(l) => `/employee/attendance/${l.slotId}`} />}
+          {data && <LectureList lectures={data.lectures} holiday={data.holiday} daily={data.daily} date={data.date} markTo={(l) => `/employee/attendance/${l.slotId}`} />}
         </DataBoundary>
       </Card>
     </>

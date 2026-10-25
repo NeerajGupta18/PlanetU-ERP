@@ -1,0 +1,59 @@
+PlanetU Campus ERP
+User guide: Institute admin
+
+Who this is for
+The person who runs the institute's office in the app: sets it up, admits students, looks after fees and exams.
+
+Signing in
+1. Open the app and choose Sign in.
+2. Type your institute code, choose Admin, then your login ID and password.
+3. Tick "I'm not a robot" and sign in.
+On a phone, the bar at the bottom has your most used pages. "Menu" opens everything else.
+
+Your home page
+- The cards at the top are today's key numbers. Green is fine, amber needs doing, red is urgent.
+- "Needs your attention" lists what is waiting, most urgent first. Tap a line to deal with it.
+- Every process page has a step bar that shows where you are and one button for what to do next.
+
+First day: set up the institute
+1. Open Office, then "Set up your institute".
+2. Go through the seven steps: profile and logo, academic year, classes and divisions, subjects and teachers, fee heads and plans, import students and staff, invite people.
+3. To import, download the Template, fill it in Excel or Google Sheets, save it as CSV and upload it.
+4. "Check before import" lists each bad row and says how to fix it. Nothing is saved until you confirm.
+5. To try things first, turn on Sample data. It adds one made-up class, which you can remove later with one click.
+6. When all steps are done, choose "Build the timetable". Teachers then see their lectures each day.
+
+Admissions: enquiry to enrolled
+1. Open Students, then Admissions. The board has one column per step.
+2. "Add enquiry" when someone calls or visits.
+3. "Send form link" so they apply from their phone, or "Fill in at desk".
+4. Open the application and choose "Check documents", then Accept, Waitlist or Reject.
+5. For an accepted applicant choose "Take fee and enrol". Pick the fee plan and the enrolment fee.
+   This creates the student, their login and ID card, and invites the parent.
+The public application link at the top of the page can go on your website or posters.
+
+Fees
+- Set up: Fees & Payments, Fee plans tab, "New structure". Pick the class and year, add each charge, then assign it to the class.
+- Collect: Collect tab. Type the student's name or ID, choose "Record payment", pick the method and save. A receipt with your logo is made at once.
+- Remind: Remind tab. Each overdue student has a ready message. Tap WhatsApp, or "Send in app".
+- Late fee: on the Remind tab choose "Add a late fee", check, confirm.
+- End of day: Day-end tab. Totals by method and by who took the money, with every receipt. Print or Download PDF.
+
+Attendance
+- Teachers mark their own lectures. You can open Academics, Attendance to see any day and correct a register.
+- Reports & Exports has the list of students below 75%.
+
+Exams and results
+1. Open Exams & Results and choose "New exam". Add the papers and dates.
+2. Each paper shows how many marks are entered. Remind any teacher who is still pending.
+3. "Before you publish" lists what is missing. Publish is possible only when every student has a mark or Absent in every paper.
+4. Choose "Publish results". Students and parents see them at once.
+5. Choose "Print report cards". They carry your logo.
+
+Notices
+Open Notices, "New notice". Choose who sees it. Tick Important or "Pin to the top" if needed.
+
+When something goes wrong
+- Every error message says how to fix it. Read it first.
+- Forgot password: use "Forgot password" on the sign-in page.
+- Still stuck: contact PlanetU support.

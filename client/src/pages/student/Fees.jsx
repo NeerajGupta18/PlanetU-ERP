@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Banknote, CreditCard, FileText, Receipt, Wallet } from 'lucide-react';
 import { useFetch } from '../../hooks/useFetch.js';
+import { useWhose } from '../../hooks/useWhose.js';
 import { Badge, Card, PageBanner, StatCard } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import PayOnlineModal from '../../components/fees/PayOnlineModal.jsx';
@@ -24,6 +25,7 @@ function dueStatus(items, outstanding) {
 
 export default function Fees() {
   const { data, loading, error, reload } = useFetch('/student/fees');
+  const whose = useWhose();
   const history = useFetch('/student/fees/payments');
   const online = useFetch('/student/fees/online/config');
   const [paying, setPaying] = useState(null); // scope for PayOnlineModal
@@ -34,7 +36,7 @@ export default function Fees() {
   return (
     <>
       <PageBanner
-        icon={Wallet} title="My Fees" subtitle="Charges, payments and receipts"
+        icon={Wallet} title={whose('fees')} subtitle="Charges, payments and receipts"
         next={data && (data.summary.outstanding > 0
           ? (canPayOnline ? `Pay ${inr0(data.summary.outstanding)} online, all at once or one charge at a time` : `Pay ${inr0(data.summary.outstanding)} at the institute's fee counter`)
           : 'Nothing to pay. Receipts are below.')}

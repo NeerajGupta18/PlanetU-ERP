@@ -14,7 +14,7 @@ export default function Payslips() {
         {data && (data.payslips.length === 0 ? <EmptyState title="No payslips yet" hint="Your payslip appears here after the office finalises the month." /> : (
           <Card>
             <div className="table-wrap">
-              <table className="table">
+              <table className="table table--stack">
                 <thead><tr><th>Month</th><th>Gross</th><th>Deductions</th><th>Net pay</th><th /></tr></thead>
                 <tbody>
                   {data.payslips.map((p) => (

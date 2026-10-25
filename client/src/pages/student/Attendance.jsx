@@ -1,5 +1,6 @@
 import { CalendarCheck, Clock, Percent } from 'lucide-react';
 import { useFetch } from '../../hooks/useFetch.js';
+import { useWhose } from '../../hooks/useWhose.js';
 import { Badge, Card, PageBanner, StatCard, pending } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
 import { fmtDay, fmtRange } from '../../utils/dates.js';
@@ -9,9 +10,10 @@ const STATUS = { present: ['green', 'Present'], late: ['amber', 'Late'], absent:
 
 export default function Attendance() {
   const { data, loading, error, reload } = useFetch('/student/attendance');
+  const whose = useWhose();
   return (
     <>
-      <PageBanner icon={CalendarCheck} title="My attendance" subtitle="Subject by subject, from your faculty's submitted registers" />
+      <PageBanner icon={CalendarCheck} title={whose('attendance')} subtitle="Subject by subject, from your faculty's submitted registers" />
       <DataBoundary loading={loading} error={error} data={data} reload={reload}>
         {data && <View d={data} />}
       </DataBoundary>

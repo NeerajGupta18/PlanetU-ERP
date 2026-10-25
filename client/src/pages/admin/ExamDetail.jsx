@@ -152,7 +152,7 @@ function Papers({ examId, papers, progress, roster, published, onChanged, onEdit
       </div>
       {papers.length === 0 ? <EmptyState title="No papers yet" hint="Add a paper for each subject, with its maximum and pass marks." action={{ label: 'Add paper', onClick: () => setEditing('new') }} /> : (
         <div className="table-wrap">
-          <table className="table">
+          <table className="table table--stack">
             <thead><tr><th>Subject</th><th>Max</th><th>Pass</th><th>Credits</th><th>Marks entered by</th><th>Progress</th><th /></tr></thead>
             <tbody>
               {papers.map((p) => (

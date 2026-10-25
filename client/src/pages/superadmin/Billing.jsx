@@ -150,7 +150,7 @@ function Institutes({ onManage }) {
     <DataBoundary loading={loading} error={error} data={data} reload={reload}>
       {data && (data.subscriptions.length === 0 ? <EmptyState title="No billable institutes yet" hint="Institutes created with a plan appear here. Demo institutes are never billed." /> : (
         <div className="table-wrap">
-          <table className="table">
+          <table className="table table--stack">
             <thead><tr><th>Institute</th><th>Plan</th><th>Status</th><th>Paid until</th><th style={{ textAlign: 'right' }}>Students</th><th style={{ textAlign: 'right' }}>MRR</th><th style={{ textAlign: 'right' }}>Unpaid</th><th /></tr></thead>
             <tbody>
               {data.subscriptions.map((s) => {

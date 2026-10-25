@@ -35,8 +35,23 @@ function fit(el, rowSel) {
   }
 }
 
+/**
+ * On a phone a .table--stack table shows each row as a small card, each value with its column name (data-label).
+ * Hand-written tables need not set data-label on every cell: it is copied here from the column heading.
+ */
+function label(table) {
+  const heads = [...table.querySelectorAll(':scope > thead > tr:first-child > th')].map((th) => th.textContent.trim());
+  if (!heads.some(Boolean)) return;
+  table.querySelectorAll(':scope > tbody > tr').forEach((tr) => {
+    const cells = tr.querySelectorAll(':scope > td');
+    if (cells.length !== heads.length) return; // a full-width row (colSpan): leave it alone
+    cells.forEach((td, i) => { if (heads[i] && !td.hasAttribute('data-label')) td.setAttribute('data-label', heads[i]); });
+  });
+}
+
 function run(root) {
   for (const { sel, rows } of BOX) root.querySelectorAll(sel).forEach((el) => fit(el, rows));
+  root.querySelectorAll('table.table--stack').forEach(label);
 }
 
 /** Starts watching `root`; returns a function that stops. */

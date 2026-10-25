@@ -1,0 +1,25 @@
+PlanetU Campus ERP
+User guide: PlanetU team (vendor console)
+
+Signing in
+Choose Super Admin. No institute code is needed. Use your own owner login (made with npm run create-vendor), never the demo one on a real server.
+
+Onboard a new client
+1. Institutes, "Add institute".
+2. Pick the type: school, college or university. This presets the modules and the words (Class or Course, Teacher or Faculty).
+3. Enter the admin's name and email. They get a link to set their password.
+4. Their dashboard shows the seven setup steps. Most institutes finish in under 30 minutes.
+
+Watch setup progress
+- Institutes shows a Setup bar for each client: how many of the seven steps are done and what is next.
+- It also shows the day count and when the 30, 60 or 90-day check-in is due.
+- Help the one furthest behind first.
+
+Billing
+Billing has plans, invoices and payments. Demo institutes are never billed.
+
+Demo requests
+People who fill in the form on the public page show under Demo requests. Call them back and choose "Mark contacted".
+
+Configure or pause a client
+Institutes, Configure: change modules or plan, reset the admin's password. Suspend stops sign-ins without deleting anything.

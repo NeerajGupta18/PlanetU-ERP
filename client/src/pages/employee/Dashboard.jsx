@@ -40,7 +40,7 @@ export default function EmployeeDashboard() {
               title={`Today's lectures${data.lectures.length ? ` (${plural(data.lectures.length, 'lecture')})` : ''}`} icon={ClipboardCheck}
               action={<Link to="/employee/attendance" className="btn btn--outline btn--sm">Open attendance</Link>}
             >
-              <LectureList lectures={data.lectures} holiday={data.holiday} daily={data.daily} markTo={(l) => `/employee/attendance/${l.slotId}`} />
+              <LectureList lectures={data.lectures} holiday={data.holiday} daily={data.daily} date={data.date} markTo={(l) => `/employee/attendance/${l.slotId}`} />
             </Card>
           )}
         </DataBoundary>

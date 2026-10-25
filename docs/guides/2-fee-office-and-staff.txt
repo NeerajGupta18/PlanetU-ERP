@@ -1,0 +1,34 @@
+PlanetU Campus ERP
+User guide: Fee office and other office staff
+
+Who this is for
+Accountant, principal, librarian, gate security and head of department. You sign in as Employee.
+You see only the pages of your role. The admin gives roles under Staff, then Staff roles.
+
+Signing in
+Institute code, choose Employee, your employee ID and password, tick "I'm not a robot".
+
+Accountant: a normal day
+1. Open Fees & Payments. The step bar says what is next.
+2. Collect: type the student's name or ID, choose "Record payment", check the amount, pick cash, UPI, card or cheque, save.
+   The money goes to the oldest dues first. The receipt is ready to print or download.
+3. Online payments tab: check any payment marked "needs checking" against the bank statement and settle it.
+4. Remind tab: send the ready messages by WhatsApp or "Send in app".
+5. Day-end tab, before you leave: count the cash against the cash total, then Print or Download PDF.
+
+Principal
+- Your home page shows the institute overview and what needs a decision.
+- Approvals has leave, certificates and applications waiting. Approve or reject with a remark.
+
+Head of department
+- Department leave: approve or reject requests from your department.
+- Department attendance: each class and lecture, and students below 75%.
+
+Librarian
+Library, "Issue a book": search the book, then the borrower, save. To take it back, "On loan" tab, Return.
+
+Gate security
+Visitors, "Add visitor", fill in and Check in. The pass prints. "Check out" when they leave.
+
+Help
+Each page has "How to use" in the menu with short steps. Use Help and feedback to ask the office.
