@@ -53,7 +53,7 @@ function DaySheet({ courses }) {
         {data && !data.holiday && <span className="muted">{fmtLong(date)} · {pending} of {data.lectures.length} {data.daily ? 'class registers' : 'lectures'} not yet submitted</span>}
       </div>
       <DataBoundary loading={loading} error={error} data={data} reload={reload}>
-        {data && <LectureList lectures={data.lectures} holiday={data.holiday} daily={data.daily} showFaculty markTo={(l) => `/admin/attendance/${l.slotId}?date=${date}`} />}
+        {data && <LectureList lectures={data.lectures} holiday={data.holiday} daily={data.daily} date={data.date} showFaculty markTo={(l) => `/admin/attendance/${l.slotId}?date=${date}`} />}
       </DataBoundary>
     </>
   );
