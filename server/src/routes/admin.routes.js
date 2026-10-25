@@ -293,6 +293,7 @@ router.get('/exams/:id/papers/:paperId/marks', exams.getMarks);
 router.put('/exams/:id/papers/:paperId/marks', exams.saveMarks);
 router.post('/exams/:id/publish', exams.publish);
 router.post('/exams/:id/unpublish', exams.unpublish);
+router.get('/exams/:id/progress', exams.progress);
 router.get('/exams/:id/results', exams.results);
 router.get('/exams/:id/results.csv', exams.resultsCsv);
 router.get('/exams/:id/report-cards.pdf', exams.reportCards);

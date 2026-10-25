@@ -2,6 +2,7 @@ import { HttpError } from '../middleware/error.js';
 import { getInstitute } from '../db/repo.js';
 import * as svc from '../services/exams.service.js';
 import { streamReportCards } from '../services/reportcard.service.js';
+import { loadBrand } from '../services/pdfBrand.js';
 
 const safe = (s) => String(s).replace(/[^A-Za-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'exam';
 
@@ -36,6 +37,7 @@ export const saveMarks = async (req, res) => res.json(await svc.saveMarkSheet({
 export const myPapers = async (req, res) => res.json({ papers: await svc.employeePapers(req.user.employeeId) });
 
 /* ---------- admin: results, CSV, report cards ---------- */
+export const progress = async (req, res) => res.json((await svc.getExam(req.params.id)).progress);
 export const results = async (req, res) => res.json(await svc.examResults(req.params.id));
 export async function resultsCsv(req, res) {
   const csv = await svc.resultsCsv(req.params.id);
@@ -47,14 +49,16 @@ export async function resultsCsv(req, res) {
 export async function reportCard(req, res) {
   const card = await svc.reportCardData(req.params.id, req.params.studentId, { publishedOnly: false });
   const institute = await getInstitute();
+  const brand = await loadBrand(institute);
   await req.tx.commit();
-  streamReportCards(res, { institute, cards: [card], filename: `report-card-${safe(card.student.code)}-${safe(card.exam.name)}.pdf` });
+  streamReportCards(res, { institute, brand, cards: [card], filename: `report-card-${safe(card.student.code)}-${safe(card.exam.name)}.pdf` });
 }
 export async function reportCards(req, res) {
   const cards = await svc.allReportCards(req.params.id);
   const institute = await getInstitute();
+  const brand = await loadBrand(institute);
   await req.tx.commit();
-  streamReportCards(res, { institute, cards, filename: `report-cards-${safe(cards[0].exam.name)}.pdf` });
+  streamReportCards(res, { institute, brand, cards, filename: `report-cards-${safe(cards[0].exam.name)}.pdf` });
 }
 
 /* ---------- student ---------- */
@@ -62,6 +66,7 @@ export const myResults = async (req, res) => res.json(await svc.studentResults(r
 export async function myReportCard(req, res) {
   const card = await svc.reportCardData(req.params.id, req.user.studentId, { publishedOnly: true });
   const institute = await getInstitute();
+  const brand = await loadBrand(institute);
   await req.tx.commit();
-  streamReportCards(res, { institute, cards: [card], filename: `report-card-${safe(card.exam.name)}.pdf` });
+  streamReportCards(res, { institute, brand, cards: [card], filename: `report-card-${safe(card.exam.name)}.pdf` });
 }

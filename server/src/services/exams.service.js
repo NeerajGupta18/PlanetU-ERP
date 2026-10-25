@@ -218,7 +218,52 @@ export async function getExam(id) {
     exam,
     roster: roster.length,
     papers: papers.map((p) => ({ ...p, entered: [...(byPaper.get(p.id)?.keys() || [])].length })),
+    progress: examProgress({ exam, papers, roster, byPaper }),
   };
+}
+
+/**
+ * Where an exam stands in the "Exams and results" process (keys from client/src/config/processes.js), and the
+ * checks it must pass before it is published. Nothing is stored: it is worked out from the papers and marks.
+ *   step    papers | marks | checked | published | reports  (the step being worked on now)
+ *   checks  [{ key, ok, text, fix }]  every check must be ok before Publish
+ *   papers  per paper: how many of the roster have a mark or Absent, and whether it is submitted
+ */
+export function examProgress({ exam, papers, roster, byPaper }) {
+  const rosterIds = roster.map((s) => s.id);
+  const perPaper = papers.map((p) => {
+    const have = byPaper.get(p.id) || new Map();
+    const entered = rosterIds.filter((id) => have.has(id)).length;
+    return {
+      id: p.id, subject: p.subject, employeeName: p.employeeName, marksStatus: p.marksStatus,
+      entered, roster: rosterIds.length, missing: rosterIds.length - entered,
+      pct: rosterIds.length ? Math.round((entered / rosterIds.length) * 100) : 0,
+    };
+  });
+  const waiting = perPaper.filter((p) => p.marksStatus !== 'submitted');
+  const gaps = perPaper.filter((p) => p.missing > 0);
+  const missingStudents = rosterIds.filter((id) => papers.some((p) => !(byPaper.get(p.id) || new Map()).has(id))).length;
+  const checks = [
+    { key: 'papers', ok: papers.length > 0, text: papers.length ? `${papers.length} paper${papers.length === 1 ? '' : 's'} set` : 'No papers yet', fix: 'Add a paper for each subject.' },
+    { key: 'students', ok: rosterIds.length > 0, text: rosterIds.length ? `${rosterIds.length} student${rosterIds.length === 1 ? '' : 's'} in this exam` : 'No students in this class and semester', fix: 'Add students to the class, or check the exam\'s semester.' },
+    {
+      key: 'submitted', ok: papers.length > 0 && !waiting.length,
+      text: waiting.length ? `Marks not submitted for: ${waiting.map((p) => p.subject).join(', ')}` : 'Every paper\'s marks are submitted',
+      fix: 'Ask the teacher of each paper to enter and submit the marks, or enter them yourself.',
+    },
+    {
+      key: 'complete', ok: rosterIds.length > 0 && missingStudents === 0,
+      text: missingStudents ? `${missingStudents} student${missingStudents === 1 ? ' is' : 's are'} missing a mark (${gaps.map((p) => `${p.subject}: ${p.missing}`).join(', ')})` : 'Every student has a mark or Absent in every paper',
+      fix: 'Open the paper and enter a mark or Absent for each student shown empty.',
+    },
+  ];
+  const ready = checks.every((c) => c.ok);
+  let step;
+  if (exam.status === 'published') step = 'reports';
+  else if (!papers.length) step = 'papers';
+  else if (waiting.length) step = 'marks';
+  else step = ready ? 'published' : 'checked';
+  return { step, ready, checks, papers: perPaper };
 }
 
 export async function updateExam(id, body, actor) {
@@ -296,6 +341,10 @@ export async function publishExam(id, actor) {
   if (!papers.length) throw new HttpError(400, 'Add at least one paper before publishing.');
   const waiting = papers.filter((p) => p.marksStatus !== 'submitted').map((p) => p.subject);
   if (waiting.length) throw new HttpError(400, `Marks are not submitted yet for: ${waiting.join(', ')}.`);
+  // Publish only when complete: a student added after a paper was submitted still needs a mark in it
+  const { checks } = examProgress({ exam, papers, roster: await rosterOf(exam), byPaper: await entriesOf(id) });
+  const failed = checks.find((c) => !c.ok);
+  if (failed) throw new HttpError(400, `${failed.text}. ${failed.fix}`);
   await q("update exams set status = 'published', published_at = now() where id = $1", [id]);
   await audit(actor, 'exam.publish', 'exam', id, { name: exam.name });
   return getExam(id);
