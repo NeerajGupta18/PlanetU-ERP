@@ -5,8 +5,8 @@
 import PDFDocument from 'pdfkit';
 import { fmtDate } from '../utils/pdfDate.js';
 import { fit } from '../utils/pdfText.js';
+import { DEFAULT_BRAND, drawLogo } from './pdfBrand.js';
 
-const BRAND = '#4338ca';
 const INK = '#111827';
 const MUTED = '#6b7280';
 const LINE = '#d1d5db';
@@ -32,7 +32,7 @@ function cells(s, i) {
   };
 }
 
-function tableHeader(doc, y) {
+function tableHeader(doc, y, BRAND) {
   doc.rect(M, y, W, ROW).fill(BRAND);
   let x = M;
   doc.font('Helvetica-Bold').fontSize(9).fillColor('#ffffff');
@@ -43,8 +43,9 @@ function tableHeader(doc, y) {
   return y + ROW;
 }
 
-function drawCard(doc, { institute, card }) {
+function drawCard(doc, { institute, card, brand = {} }) {
   const { exam, student, outcome, bands, provisional } = card;
+  const BRAND = brand.color || DEFAULT_BRAND;
   doc.addPage();
 
   if (provisional) {
@@ -54,11 +55,17 @@ function drawCard(doc, { institute, card }) {
     doc.restore();
   }
 
-  // Letterhead
-  doc.rect(M, 36, W, 3).fill(BRAND);
-  doc.font('Helvetica-Bold').fontSize(18).fillColor(BRAND).text(institute.name, M, 50, { width: W, align: 'center' });
-  if (institute.address) doc.font('Helvetica').fontSize(9).fillColor(MUTED).text(institute.address, M, doc.y + 1, { width: W, align: 'center' });
-  doc.moveDown(0.8);
+  // Letterhead: the institute's logo on the left, its name and address beside it, a band in its colour
+  const LOGO = 52;
+  const hasLogo = drawLogo(doc, brand.logo, M, 40, LOGO);
+  const tx = hasLogo ? M + LOGO + 12 : M;
+  const tw = W - (tx - M);
+  const align = hasLogo ? 'left' : 'center';
+  doc.font('Helvetica-Bold').fontSize(18).fillColor(BRAND).text(institute.name, tx, hasLogo ? 46 : 44, { width: tw, align });
+  if (institute.address) doc.font('Helvetica').fontSize(9).fillColor(MUTED).text(institute.address, tx, doc.y + 1, { width: tw, align });
+  const bandY = Math.max(doc.y, hasLogo ? 40 + LOGO : 0) + 8;
+  doc.rect(M, bandY, W, 3).fill(BRAND);
+  doc.y = bandY + 14;
   doc.font('Helvetica-Bold').fontSize(14).fillColor(INK).text('STATEMENT OF MARKS / REPORT CARD', M, doc.y, { width: W, align: 'center' });
   doc.font('Helvetica').fontSize(11).fillColor(MUTED)
     .text(`${exam.name} | ${exam.course}, Semester ${exam.semester}`, M, doc.y + 2, { width: W, align: 'center' });
@@ -81,11 +88,11 @@ function drawCard(doc, { institute, card }) {
   y += left.length * 16 + 22;
 
   // Marks table
-  y = tableHeader(doc, y);
+  y = tableHeader(doc, y, BRAND);
   outcome.subjects.forEach((s, i) => {
     // Leave room below the table for the summary, grading key and signature
-    if (y + ROW > 842 - 262) { doc.addPage(); y = tableHeader(doc, 50); }
-    if (i % 2) doc.rect(M, y, W, ROW).fill('#f8f9ff');
+    if (y + ROW > 842 - 262) { doc.addPage(); y = tableHeader(doc, 50, BRAND); }
+    if (i % 2) doc.rect(M, y, W, ROW).fill('#f8fafc');
     const row = cells(s, i);
     let x = M;
     for (const [key, , w, align] of COLS) {
@@ -109,7 +116,7 @@ function drawCard(doc, { institute, card }) {
   const bw = (W - 3 * 10) / 4;
   boxes.forEach(([k, v], i) => {
     const x = M + i * (bw + 10);
-    doc.roundedRect(x, y, bw, 46, 6).fillAndStroke('#f5f6ff', LINE);
+    doc.roundedRect(x, y, bw, 46, 6).fillAndStroke('#f8fafc', LINE);
     doc.font('Helvetica').fontSize(8.5).fillColor(MUTED).text(k, x, y + 8, { width: bw, align: 'center', lineBreak: false });
     doc.font('Helvetica-Bold').fontSize(14).fillColor(BRAND).text(v, x, y + 22, { width: bw, align: 'center', lineBreak: false });
   });
@@ -137,11 +144,11 @@ function drawCard(doc, { institute, card }) {
   doc.fontSize(7.5).fillColor('#9ca3af').text('This is a computer-generated report card.', M, foot + 62, { width: 220 });
 }
 
-/** Streams one or many report cards. `cards` come from exams.service (reportCardData / allReportCards). */
-export function streamReportCards(res, { institute, cards, filename }) {
+/** Streams one or many report cards. `cards` come from exams.service (reportCardData / allReportCards); `brand` from loadBrand(). */
+export function streamReportCards(res, { institute, brand, cards, filename }) {
   res.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `inline; filename="${filename}"`, 'Cache-Control': 'private, no-store' });
   const doc = new PDFDocument({ size: 'A4', margin: M, autoFirstPage: false, info: { Title: 'Report card', Author: institute.name } });
   doc.pipe(res);
-  for (const card of cards) drawCard(doc, { institute, card });
+  for (const card of cards) drawCard(doc, { institute, card, brand });
   doc.end();
 }

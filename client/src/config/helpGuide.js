@@ -193,9 +193,10 @@ export const HELP = [
   {
     id: 'exam-cell', who: ['admin', 'area:exams'], title: 'Publish exam results', module: 'exams', to: '/admin/exams',
     steps: [
-      'Open Exams & Results and the exam.',
-      'Each paper shows whether its marks are entered. Remind the teacher if one is still pending.',
-      'When all papers are in, choose "Publish results". Students and parents then see the results and report cards.',
+      'Open Exams and results and the exam. The step bar says what is next.',
+      'Each paper shows a progress bar of marks entered. Remind the teacher if one is still pending.',
+      '"Before you publish" lists the checks. When every student has a mark or Absent in every paper, choose "Publish results". Students and parents then see the results and report cards.',
+      'Then choose "Print report cards". They carry your institute\'s logo.',
     ],
   },
 
@@ -204,8 +205,9 @@ export const HELP = [
     id: 'mark', who: ['teaching'], title: 'Mark attendance', module: 'attendance', to: '/employee/attendance',
     steps: [
       'Open Mark attendance. In a college or university it lists only the lectures assigned to you today; in a school, the class teacher sees the class register for the day.',
-      'Tap Mark next to the lecture. Tap the few who are absent (A) or late (L), then "Mark the rest present" (or start with "Mark all present").',
-      'Choose "Submit attendance". Students and parents of absent students are told at once.',
+      'Tap "Mark attendance" (your next lecture is at the top of your home screen). Tap only the few who are absent (A) or late (L).',
+      'Choose "Review and submit": everyone you did not tap is marked present. Check the names, then "Submit attendance". Students and parents of absent students are told at once.',
+      'After submitting, the button takes you straight to your next lecture.',
       'In a college or university you can also start a QR check-in: choose how long it stays open, show the QR on the projector, and students scan it inside the app. Schools do not use this.',
     ],
   },

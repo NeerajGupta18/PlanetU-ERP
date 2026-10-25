@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Lock, PenLine, Save, Send } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import { Lock, PenLine, Save, Send } from 'lucide-react';
 import { api } from '../../api/http.js';
 import { useFetch } from '../../hooks/useFetch.js';
-import { Badge, Card, PageBanner } from '../../components/ui/Ui.jsx';
+import { Badge, Card, PageHeader } from '../../components/ui/Ui.jsx';
 import { DataBoundary } from '../../components/ui/Feedback.jsx';
 import { num } from '../../utils/exams.js';
 
@@ -96,10 +96,16 @@ function Sheet({ url, back, initial }) {
 
   return (
     <>
-      <PageBanner
+      <PageHeader
         icon={PenLine} title={paper.subject}
         subtitle={`${exam.name} · ${exam.course}, semester ${exam.semester} · out of ${num(paper.maxMarks)}, pass at ${num(paper.passMarks)}`}
-        actions={<Link to={back} className="btn btn--outline btn--sm"><ArrowLeft size={14} /> Back</Link>}
+        back={{ to: back, label: back === '/employee/exams' ? 'Exam marks' : exam.name }}
+        steps={{
+          process: 'exams',
+          current: exam.status === 'published' ? 'reports' : submitted ? 'checked' : 'marks',
+          waitingOn: exam.status === 'published' ? undefined : submitted ? 'Exam office' : paper.employeeName || 'Exam office',
+          next: exam.status === 'published' || submitted ? undefined : { hint: `${info.empty} of ${students.length} still empty. Type a mark and press Enter to go to the next student.` },
+        }}
       />
       <Card
         title={`${students.length} students`}

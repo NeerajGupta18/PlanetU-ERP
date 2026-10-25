@@ -1160,3 +1160,38 @@ a.banner__next:hover { text-decoration: underline; }
 .done-list { margin: 12px 0 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14px; }
 
 .dayend-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 12px; }
+
+/* ---------- Day 4: attendance in the fewest taps ---------- */
+.mark-table tr.is-absent td { background: var(--danger-bg); }
+.mark-table tr.is-late td { background: var(--warning-bg); }
+.mark-toggle__btn { touch-action: manipulation; }
+/* The summary and the one primary button stay in reach under the thumb while scrolling a long class */
+.mark-footer {
+  position: sticky; bottom: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  margin: 14px -20px -20px; padding: 12px 20px calc(12px + env(safe-area-inset-bottom)); background: var(--surface);
+  border-top: 1px solid var(--border); border-radius: 0 0 12px 12px;
+}
+.mark-footer__actions { display: flex; gap: 10px; }
+.review-list { display: grid; gap: 10px; margin: 0; }
+.review-list > div { display: grid; grid-template-columns: 90px 1fr; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.review-list dt { font-weight: 700; }
+.review-list dd { margin: 0; }
+.done-panel { display: flex; gap: 14px; align-items: center; }
+.done-panel p { margin: 2px 0 0; }
+.done-panel__icon { color: var(--success); flex: none; }
+@media (max-width: 600px) {
+  .mark-toggle__btn { width: 44px; height: 44px; }
+  .mark-footer__actions { width: 100%; flex-direction: column-reverse; }
+  .mark-footer__actions .btn { width: 100%; min-height: 44px; justify-content: center; }
+  .review-list > div { grid-template-columns: 1fr; gap: 2px; }
+}
+
+/* ---------- Day 4: exams, checks before publishing ---------- */
+.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.checks li { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); }
+.checks li > span { display: grid; gap: 2px; }
+.checks small { color: var(--muted); }
+.checks .is-ok svg { color: var(--success); flex: none; margin-top: 1px; }
+.checks .is-bad { border-color: var(--warning-line); background: var(--warning-bg); }
+.checks .is-bad svg { color: var(--warning); flex: none; margin-top: 1px; }
+.progress--sm { height: 6px; margin: 6px 0 2px; }
