@@ -93,7 +93,7 @@ export async function bulkAssign(structureId, admin) {
 /* ---------------- a student's charges ---------------- */
 
 const ITEM_SELECT = `
-  select i.id, i.label, i.amount, i.due_date as "dueDate", i.status, i.source, i.created_at as "createdAt",
+  select i.id, i.label, i.amount, i.due_date as "dueDate", i.status, i.source, i.created_at as "createdAt", i.waived_reason as "waivedReason",
          coalesce((select sum(a.amount) from payment_allocations a where a.fee_item_id = i.id), 0) as paid
   from student_fee_items i where i.student_id = $1 order by i.due_date nulls last, i.created_at`;
 
