@@ -94,6 +94,14 @@ export const templates = {
     cta: { label: 'View details', url: statusUrl },
   }),
 
+  applicationInvite: ({ institute, name, applicationNo, accessCode, course, statusUrl }) => mail(`Complete your application to ${institute}`, {
+    institute, title: 'Your application is ready to fill in',
+    lines: [`Hello ${name},`, `Thank you for your enquiry${course ? ` about ${course}` : ''}. We have started an application for you.`,
+      `Application number: ${applicationNo}`, `Access code: ${accessCode}`,
+      'Open the link, enter these two, fill in the form and upload your documents. You can stop and carry on later.'],
+    cta: { label: 'Fill in the application', url: statusUrl },
+  }),
+
   accessCodeRecovered: ({ institute, name, entries, statusUrl }) => mail('Your new application access code', {
     institute, title: 'New access code',
     lines: [`Hello ${name},`, 'Someone (hopefully you) asked for a new access code. The old code no longer works.',

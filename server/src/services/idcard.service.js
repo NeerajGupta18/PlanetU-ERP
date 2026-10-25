@@ -7,17 +7,24 @@ import PDFDocument from 'pdfkit';
 import { HttpError } from '../middleware/error.js';
 import { readBytes } from './files.service.js';
 import { fmtDate } from '../utils/pdfDate.js';
+import { DEFAULT_BRAND, drawLogo } from './pdfBrand.js';
 
 const W = 242.6; // 3.375in at 72dpi
 const H = 153;   // 2.125in
-const BRAND = '#4338ca';
 
-function front(doc, { institute, student, term }) {
+function front(doc, { institute, student, term, brand }) {
+  const BRAND = brand.color || DEFAULT_BRAND;
   doc.addPage({ size: [W, H], margin: 0 });
   doc.rect(0, 0, W, H).fill('#ffffff');
   doc.rect(0, 0, W, 34).fill(BRAND);
-  doc.fillColor('#ffffff').fontSize(9).font('Helvetica-Bold').text(institute.name.toUpperCase(), 10, 8, { width: W - 20, height: 20, ellipsis: true });
-  doc.fontSize(6.5).font('Helvetica').text(institute.tagline || `${term.student} ID Card`, 10, 22, { width: W - 20 });
+  // The logo sits on a small white tile so it reads on any band colour
+  let hx = 10;
+  if (brand.logo) {
+    doc.roundedRect(6, 4, 26, 26, 3).fill('#ffffff');
+    if (drawLogo(doc, brand.logo, 8, 6, 22)) hx = 38;
+  }
+  doc.fillColor('#ffffff').fontSize(9).font('Helvetica-Bold').text(institute.name.toUpperCase(), hx, 8, { width: W - hx - 10, height: 20, ellipsis: true });
+  doc.fontSize(6.5).font('Helvetica').text(institute.tagline || `${term.student} ID Card`, hx, 22, { width: W - hx - 10 });
 
   const photoW = 62; const photoH = 74; const photoX = 12; const photoY = 44;
   doc.rect(photoX, photoY, photoW, photoH).lineWidth(0.75).stroke('#d1d5db');
@@ -65,7 +72,7 @@ function back(doc, { institute, student }) {
  * database transaction has been committed - `photoStorageKey` (if any) must already be resolved,
  * since reading file bytes happens outside any transaction (same pattern as file downloads).
  */
-export async function streamIdCard(res, { institute, student, term, photoStorageKey }) {
+export async function streamIdCard(res, { institute, student, term, photoStorageKey, brand = {} }) {
   if (!['Active', 'Alumni'].includes(student.status)) throw new HttpError(409, 'An ID card can only be issued for an active or alumni record.');
   let photo = null;
   if (photoStorageKey) {
@@ -74,7 +81,7 @@ export async function streamIdCard(res, { institute, student, term, photoStorage
   res.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `inline; filename="${student.studentCode}-id-card.pdf"`, 'Cache-Control': 'private, no-store' });
   const doc = new PDFDocument({ autoFirstPage: false });
   doc.pipe(res);
-  front(doc, { institute, student: { ...student, photo }, term });
+  front(doc, { institute, student: { ...student, photo }, term, brand });
   back(doc, { institute, student });
   doc.end();
 }

@@ -11,7 +11,13 @@ export const list = async (req, res) => res.json(await svc.listApplications({
 export const get = async (req, res) => res.json({ application: await svc.getApplication(req.params.id) });
 export const review = async (req, res) => res.json({ application: await svc.reviewDocument(req.params.id, req.params.docId, req.body || {}, req.user) });
 export const decide = async (req, res) => res.json({ application: await svc.decide(req.params.id, req.body || {}, req.user) });
-export const enroll = async (req, res) => res.json(await svc.enroll(req.params.id, req.user));
+export const enroll = async (req, res) => res.json(await svc.enroll(req.params.id, req.user, req.body || {}));
+export const enrolPlan = async (req, res) => res.json(await svc.enrolPlan(req.params.id));
+export const board = async (req, res) => res.json(await svc.board({ courseId: req.query.courseId, search: req.query.search }));
+export const createEnquiry = async (req, res) => res.status(201).json(await svc.createEnquiry(req.body, req.user));
+export const getEnquiry = async (req, res) => res.json({ enquiry: await svc.getEnquiry(req.params.id) });
+export const sendFormLink = async (req, res) => res.json(await svc.sendFormLink(req.params.id, req.user));
+export const removeEnquiry = async (req, res) => { await svc.removeEnquiry(req.params.id, req.user); res.json({ success: true }); };
 
 export const getSettings = async (req, res) => res.json({ settings: await svc.getSettings() });
 export const updateSettings = async (req, res) => res.json({ settings: await svc.updateSettings(req.body, req.user) });
