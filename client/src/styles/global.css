@@ -924,6 +924,38 @@ a.stepbar__btn:hover .stepbar__dot, button.stepbar__btn:not(:disabled):hover .st
 .child-card__rows dt { color: var(--muted); }
 .child-card__rows dd { margin: 0; font-weight: 600; text-align: right; }
 .child-card__rows .is-bad { color: var(--danger); }
+
+/* Parent home: My child today */
+.kid-switch { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 4px; }
+.kid-switch__item { min-height: 44px; padding: 8px 18px; border-radius: 999px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font: inherit; font-weight: 600; cursor: pointer; white-space: nowrap; transition: background 0.15s, border-color 0.15s; touch-action: manipulation; }
+.kid-switch__item:hover { border-color: var(--brand-500); }
+.kid-switch__item.is-active { background: var(--brand); border-color: var(--brand); color: #fff; }
+.kid-switch__item:disabled { opacity: 0.7; cursor: default; }
+.myday { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.myday > :first-child { grid-row: span 2; }
+@media (max-width: 860px) { .myday { grid-template-columns: minmax(0, 1fr); } .myday > :first-child { grid-row: auto; } }
+.myday__line { margin: 0 0 10px; font-weight: 600; color: var(--muted); }
+.myday__line.is-good { color: var(--success); } .myday__line.is-bad { color: var(--danger); }
+.myday__classes { list-style: none; margin: 0; padding: 0; display: grid; }
+.myday__classes li { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid var(--border); min-height: 44px; }
+.myday__time { font-family: var(--font-head); font-weight: 600; font-size: 14px; }
+.myday__what { display: grid; min-width: 0; }
+.myday__what strong, .myday__what small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.myday__what small { display: inline-flex; align-items: center; gap: 4px; }
+.myday__big { font-family: var(--font-head); font-size: 26px; font-weight: 700; color: var(--text); }
+.myday__big.is-bad { color: var(--danger); }
+.myday__fee { display: grid; gap: 2px; }
+.myday__hint { margin: 8px 0 0; font-size: 14px; }
+.myday__receipt { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; margin: 12px 0 0; padding-top: 10px; border-top: 1px solid var(--border); font-size: 13.5px; }
+.myday__notices { list-style: none; margin: 0; padding: 0; }
+.myday__notices li { display: flex; justify-content: space-between; align-items: center; gap: 10px; border-top: 1px solid var(--border); }
+.myday__notices li:first-child, .myday__classes li:first-child { border-top: 0; }
+.myday__notices a { display: flex; align-items: center; gap: 8px; min-height: 44px; min-width: 0; color: var(--text); text-decoration: none; }
+.myday__notices a strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.myday__notices a:hover strong { color: var(--link); }
+.myday__notices small { white-space: nowrap; }
+.kid-switch + .banner { margin-top: 4px; }
+@media (max-width: 640px) { .myday .btn--sm { min-height: 44px; } }
 .overview-link { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 @media (max-width: 520px) { .child-switch > span { display: none; } .child-switch select { max-width: 112px; } .topbar__right { gap: 4px; } .usermenu { padding: 4px; } }
 .skip-link { position: absolute; left: 12px; top: -60px; z-index: 100; padding: 10px 14px; border-radius: 10px; background: var(--brand); color: #fff; font-weight: 600; text-decoration: none; }

@@ -44,7 +44,8 @@ export default function PayOnlineModal({ scope, onClose, onDone }) {
         name: institute?.name || BRAND.name,
         description: scope.label,
         prefill: order.prefill,
-        theme: { color: '#4029c9' },
+        // The institute's own colour (it replaces --brand), so the payment sheet looks like the rest of the app
+        theme: { color: getComputedStyle(document.documentElement).getPropertyValue('--brand').trim() || '#1e3a5f' },
         modal: { ondismiss: () => setBusy(false) },
         handler: report,
       });
