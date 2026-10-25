@@ -35,7 +35,7 @@ export const AREAS = {
 };
 
 /** Never for staff, whatever their role. */
-export const ADMIN_ONLY = ['institute', 'billing', 'audit', 'staff-roles'];
+export const ADMIN_ONLY = ['institute', 'billing', 'audit', 'staff-roles', 'setup'];
 
 /** Read-only lists any staff role may use to fill pickers and filters. */
 export const LOOKUPS = ['courses', 'departments', 'designations', 'employees', 'students', 'timetable', 'calendar'];
