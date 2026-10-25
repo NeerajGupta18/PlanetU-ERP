@@ -1,0 +1,28 @@
+PlanetU Campus ERP
+User guide: Student
+
+Signing in
+Institute code, choose Student, your student ID (PRN) and password, tick "I'm not a robot".
+The office gives you a one-time password when you are enrolled. The app asks you to change it the first time you sign in.
+
+Your home page
+- Cards for your attendance, next class, work due this week, fees due, next exam and latest result.
+- The attendance card says how many classes you can still miss, or how many you must attend to reach 75%.
+- "To do" lists what is next, most urgent first.
+
+Scan for attendance (college and university)
+When the teacher shows a QR code, tap Scan in the bottom bar and point the camera at it.
+You will see "Attendance marked successfully". The code changes every few seconds, so a photo of it will not work.
+
+Assignments
+Coursework shows work still "To do". Choose "Open and hand in", write or attach, and submit.
+
+Fees
+Fees shows each charge, its due date and what is paid. Pay online if it is switched on, otherwise at the fee counter.
+Every payment has a receipt to download.
+
+Results
+Results shows each published exam with marks, grade and GPA. Download the report card from there.
+
+Certificates
+Certificates, Request next to the one you need, say what it is for. Download it once the office issues it.

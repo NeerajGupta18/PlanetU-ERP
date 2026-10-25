@@ -1,0 +1,34 @@
+PlanetU Campus ERP
+User guide: Teacher or faculty
+
+Signing in
+Institute code, choose Employee, your employee ID and password, tick "I'm not a robot".
+Install the app on your phone: Android app from the institute, or "Add to Home Screen" on iPhone.
+
+Your home page
+- "Today's lectures" is at the top, with your next lecture first.
+- The cards show answers to grade, papers with marks to enter, and your students below 75%.
+
+Mark attendance (under a minute)
+College or university, every lecture:
+1. Tap "Mark attendance" on your next lecture.
+2. Tap only the few who are absent (A) or late (L). Everyone else counts as present.
+3. "Review and submit", check the names, then "Submit attendance".
+   Absent students and their parents are told at once. The button then takes you to your next lecture.
+4. Or start a QR check-in: choose how long it stays open, show the QR on the projector. Students scan it in the app.
+School, once a day:
+The class teacher opens the class register in the first period, taps the absent ones and submits.
+No lectures on Sunday or holidays, so there is nothing to mark on those days.
+
+Enter exam marks
+1. Open Exam marks. Papers waiting for you are at the top.
+2. Type each mark and press Enter to go to the next student. Tick Absent where needed.
+3. It saves as you go. Choose "Submit marks" when the paper is complete.
+
+Assignments
+Coursework, "New assignment": class, subject, due date and marks, then "Save and publish".
+Open it later to grade each answer or send one back to redo.
+
+Leave and payslips
+- My leave: your balance is at the top. "Apply for leave", pick type and dates, give a reason.
+- My payslips: choose the month once the office finalises payroll.

@@ -1,0 +1,27 @@
+PlanetU Campus ERP
+User guide: Parent
+
+Getting in
+1. The institute sends you an invite by email when your child is enrolled. Open the link and set a password.
+2. Sign in with the institute code, choose Parent, your login ID and password.
+3. The first time, the app asks for your consent. The first box is needed to see your child's records.
+   The second, email reminders, is your choice. Your answer is saved with the date and time.
+
+My child today (your home page)
+- Each class today, with Present, Absent or Late once the teacher submits the register.
+- Fees due, attendance, the latest result and new notices.
+- The orange button at the top is the one thing to do next, for example "Pay" or "Read the new notice".
+- More than one child? Tap their name at the top of the page to switch.
+
+Pay a fee (three screens)
+1. Home: tap the orange button, or Fees in the bottom bar.
+2. Fees: tap Pay, check the amount, pay by UPI, card or netbanking.
+3. The receipt shows straight away. Download it any time from "Payments and receipts".
+If online payment is not switched on for your institute, the page says so: pay at the fee counter.
+
+Results and notices
+- Results: every published exam and the report card to download.
+- Notices: under More. Important notices are shown in red.
+
+Need help?
+Menu, "Help and feedback" sends a question to the institute office.

@@ -1,0 +1,66 @@
+PlanetU Campus ERP
+Demo script: admission to result to parent (about 20 minutes)
+
+Before the demo
+- Use the college demo: institute code demo-college. It has 120 students in three divisions of BCA.
+- Hold the demo on a weekday. On Sundays and holidays there are no lectures to mark.
+- Open the live site once, a few minutes early. The free hosting sleeps when idle and takes about a minute to wake.
+- Keep two windows: a laptop browser for the office, and a phone (or the browser at phone size) for teacher and parent.
+- Demo passwords: Admin@123, Employee@123, Student@123, Parent@123.
+- Vendor login: on the live site use your own owner login. SA001 / SuperAdmin@123 exists only on a local copy.
+
+1. The vendor view (2 minutes)
+   Sign in as Super Admin with the owner login.
+   - Institutes: each client with its type, plan and a Setup bar showing how far it is in seven steps.
+   - Point out the 30, 60 and 90-day check-ins. "We watch every new client until it is running."
+   - "Add institute": show the type choice (school, college, university) and close without saving.
+
+2. Setting up an institute (3 minutes)
+   Sign in as Admin: demo-college, ADM001.
+   - Dashboard: the cards, and "Needs your attention".
+   - Office, "Set up your institute": the seven steps with a progress bar. Open "Review the setup".
+   - Show the student import Template and say: "Check before import explains every bad row before anything is saved."
+
+3. Admission to enrolled (4 minutes)
+   Still as Admin. Students, Admissions.
+   - The board has one column per step. Choose "Add enquiry": a name, a phone number, BCA. Save.
+   - On the card choose "Fill in at desk" and complete the form.
+   - Open it, "Check documents", then Accept.
+   - "Take fee and enrol": pick the fee plan and the enrolment fee, choose cash, confirm.
+   - Point out what it made: the student and their login, the ID card, and a parent invite.
+
+4. Fee and receipt with the logo (3 minutes)
+   Finance, Fees & Payments.
+   - The Fee cycle step bar says what is next.
+   - Collect: type a name (for example Aarav), "Record payment", cash, save. Download the receipt: it carries the college logo.
+   - Remind: a ready message for each overdue student, with WhatsApp in one tap.
+   - Day-end: today's money by method and by who took it.
+
+5. Attendance in under a minute (3 minutes, on the phone)
+   Sign in as Employee: demo-college, EMP001.
+   - Home shows today's lectures. Tap "Mark attendance" on the next one.
+   - Tap two students as absent. "Review and submit", then "Submit attendance".
+   - "Everyone else is present. The two parents are told at once."
+   - Optional: start a QR check-in and scan it from the student login (STU2026001) on another phone.
+
+6. Exam result and report card (3 minutes)
+   Back as Admin. Academics, Exams & Results.
+   - Mid-Semester Examination, Division A: the step bar and a progress bar for each paper.
+     "Before you publish" shows what is missing. Publish is locked until every mark is in.
+   - End-Semester Examination, Division A: already published. Open the Results tab, then "Print report cards". The cards carry the logo.
+
+7. The parent (2 minutes, on the phone)
+   Sign in as Parent: demo-college, PAR001.
+   - The first time: the consent screen. Tick the first box and continue.
+   - "Aarav today": today's classes with Present or Absent, fees due, attendance, latest result, notices.
+   - The orange button is the one next thing. Tap it to reach the fees. If online payment is switched on, pay by UPI and show the receipt.
+     If not, the page says "pay at the fee counter".
+   - Results: the report card to download. Tap Simran at the top to switch child.
+
+Closing line
+"Every job is a short process with a step bar, one clear next button, and your logo on everything a parent sees."
+
+After the demo
+- Local copy: run npm run db:setup to put the demo data back.
+- Live site: the demo institutes are loaded only if missing, so the new enquiry and payment stay.
+  To start fresh each time the site wakes, set DEMO_RESET_ON_START to true in Render (see RENDER.md). Decide this together first.
