@@ -284,11 +284,12 @@ export const HELP = [
 
   /* ---------------- parents ---------------- */
   {
-    id: 'parent-home', who: ['parent'], title: 'Your children at a glance', to: '/parent/home',
+    id: 'parent-home', who: ['parent'], title: 'My child today', to: '/parent/home',
     steps: [
-      'Each child has a card: present or absent today, attendance, fees due, latest result and next exam.',
-      'If you have more than one child linked, switch between them with "Child" at the top.',
-      'Tap Attendance, Results or Fees on a card to see the details for that child.',
+      'Home shows your child\'s day: each class today with Present, Absent or Late once the teacher submits the register, fees due, attendance, the latest result and new notices.',
+      'The orange button at the top is the one thing to do next, for example "Pay ₹2,500" or "Read the new notice".',
+      'To pay, tap Pay, check the amount and pay by UPI, card or netbanking. The receipt appears straight away. If online payment is off, pay at the fee counter.',
+      'If you have more than one child linked, tap their name above the page to switch.',
     ],
   },
 
