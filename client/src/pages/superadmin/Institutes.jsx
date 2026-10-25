@@ -61,19 +61,19 @@ export default function Institutes() {
         <DataBoundary loading={list.loading} error={list.error} data={list.data} reload={list.reload}>
           {list.data && (list.data.tenants.length === 0 ? <EmptyState title="No institutes yet" hint="Add your first client to get started." /> : (
             <div className="table-wrap">
-              <table className="table">
+              <table className="table table--stack">
                 <thead><tr><th>Institute</th><th>Type</th><th>Plan</th><th>Status</th><th>Setup</th><th>Employees</th><th>Students</th><th>Modules</th><th>Actions</th></tr></thead>
                 <tbody>
                   {list.data.tenants.map((t) => (
                     <tr key={t.id}>
                       <td><strong>{t.name}</strong><div className="muted">code: {t.code}</div></td>
-                      <td><Badge tone="purple">{typeLabel(t.type)}</Badge></td>
-                      <td><Badge tone={t.settings?.demo ? 'amber' : 'blue'}>{t.plan}</Badge></td>
-                      <td><Badge tone={t.status === 'active' ? 'green' : 'red'}>{t.status}</Badge></td>
-                      <td><SetupCell t={t} /></td>
-                      <td>{t.employees}</td>
-                      <td>{t.students}</td>
-                      <td className="muted">{t.modules.length}</td>
+                      <td data-label="Type"><Badge tone="purple">{typeLabel(t.type)}</Badge></td>
+                      <td data-label="Plan"><Badge tone={t.settings?.demo ? 'amber' : 'blue'}>{t.plan}</Badge></td>
+                      <td data-label="Status"><Badge tone={t.status === 'active' ? 'green' : 'red'}>{t.status}</Badge></td>
+                      <td data-label="Setup"><SetupCell t={t} /></td>
+                      <td data-label="Employees">{t.employees}</td>
+                      <td data-label="Students">{t.students}</td>
+                      <td className="muted" data-label="Modules">{t.modules.length}</td>
                       <td>
                         <div className="row-actions">
                           <button type="button" className="btn btn--outline btn--sm" onClick={() => setEdit(t)}><Settings2 size={13} /> Configure</button>

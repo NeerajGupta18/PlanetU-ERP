@@ -84,7 +84,7 @@ export default function Fees() {
             <DataBoundary loading={structures.loading} error={structures.error} data={structures.data} reload={structures.reload}>
               {structures.data && (structures.data.structures.length === 0 ? <EmptyState title="No fee plans yet" hint="A fee plan lists the charges for a class, such as tuition and exam fee, with due dates." action={{ label: 'Create a fee plan', onClick: () => setNewStructure(true) }} /> : (
                 <div className="table-wrap">
-                  <table className="table">
+                  <table className="table table--stack">
                     <thead><tr><th>Name</th><th>{t('course', 'Course')}</th><th>Year</th><th>Total</th><th>Assigned</th><th /></tr></thead>
                     <tbody>
                       {structures.data.structures.map((s) => <StructureRow key={s.id} s={s} onChanged={reloadAll} />)}
@@ -233,7 +233,7 @@ function Overview({ summary, onOpen, onSetup }) {
           <div>
             <h3 className="section-title"><AlertTriangle size={16} /> Students with overdue fees</h3>
             {data.overdueStudents.length === 0 ? <EmptyState title="Nobody is overdue" hint="Every charge that is past its due date has been paid." /> : (
-              <div className="table-wrap"><table className="table">
+              <div className="table-wrap"><table className="table table--stack">
                 <thead><tr><th>Student</th><th>Course</th><th>Overdue since</th><th className="num">Overdue amount</th><th /></tr></thead>
                 <tbody>{data.overdueStudents.map((o) => (
                   <tr key={o.studentId}>
@@ -295,7 +295,7 @@ function StudentLedger({ selected, setSelected, onChanged }) {
                 {dues.data.totals.overdue > 0 && <> · {inr0(dues.data.totals.overdue)} overdue</>} · {dues.data.totals.clear} fully paid
               </p>
               <div className="table-wrap">
-                <table className="table">
+                <table className="table table--stack">
                   <thead><tr><th>Roll no.</th><th>Student</th><th className="num">Charged</th><th className="num">Paid</th><th className="num">Due</th><th /></tr></thead>
                   <tbody>
                     {dues.data.students.map((r) => (
@@ -352,7 +352,7 @@ function StudentLedgerDetail({ student, onBack, onChanged }) {
             <StatCard value={inr0(fees.data.summary.outstanding)} label="Outstanding" icon={Wallet} {...(fees.data.summary.outstanding > 0 ? { status: 'warn', hint: 'To collect' } : { status: 'good', hint: 'Fully paid' })} />
           </div>
           <div className="table-wrap">
-            <table className="table">
+            <table className="table table--stack">
               <thead><tr><th>Item</th><th>Due</th><th>Amount</th><th>Paid</th><th>Status</th><th /></tr></thead>
               <tbody>
                 {fees.data.items.length === 0 ? <tr><td colSpan={6}><EmptyState title="No charges yet" /></td></tr> : fees.data.items.map((i) => (
@@ -453,7 +453,7 @@ function AllPayments() {
       <DataBoundary loading={list.loading} error={list.error} data={list.data} reload={list.reload}>
         {list.data && (list.data.payments.length === 0 ? <EmptyState title="No payments yet" /> : (
           <div className="table-wrap">
-            <table className="table">
+            <table className="table table--stack">
               <thead><tr><th>Receipt</th><th>Student</th><th>Amount</th><th>Method</th><th>Date</th><th /></tr></thead>
               <tbody>
                 {list.data.payments.map((p) => (
@@ -498,7 +498,7 @@ function OnlinePayments() {
       <DataBoundary loading={list.loading} error={list.error} data={list.data} reload={list.reload}>
         {list.data && (list.data.orders.length === 0 ? <EmptyState title="No online payments yet" /> : (
           <div className="table-wrap">
-            <table className="table">
+            <table className="table table--stack">
               <thead><tr><th>Date</th><th>Student</th><th>Amount</th><th>Status</th><th>Razorpay payment</th><th>Receipt / note</th><th /></tr></thead>
               <tbody>
                 {list.data.orders.map((o) => (

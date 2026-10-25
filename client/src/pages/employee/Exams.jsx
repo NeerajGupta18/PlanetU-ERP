@@ -15,7 +15,7 @@ export default function Exams() {
 
   const Table = ({ rows, action }) => (
     <div className="table-wrap">
-      <table className="table">
+      <table className="table table--stack">
         <thead><tr><th>Exam</th><th>Subject</th><th>Class</th><th>Out of</th><th>Progress</th><th /></tr></thead>
         <tbody>
           {rows.map((p, i) => (

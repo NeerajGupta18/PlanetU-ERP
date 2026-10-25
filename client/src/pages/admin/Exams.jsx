@@ -62,7 +62,7 @@ function ExamList({ onCreate }) {
           <EmptyState title="No exams yet" hint="You can start an exam from the course timetable so each subject becomes a paper." action={{ label: 'Create an exam', onClick: onCreate }} />
         ) : (
           <div className="table-wrap">
-            <table className="table">
+            <table className="table table--stack">
               <thead><tr><th>Exam</th><th>Course</th><th>Dates</th><th>Marks submitted</th><th>Status</th><th /></tr></thead>
               <tbody>
                 {data.exams.map((e) => (

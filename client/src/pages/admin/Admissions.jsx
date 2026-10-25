@@ -188,7 +188,7 @@ export default function Admissions() {
         <DataBoundary loading={list.loading} error={list.error} data={list.data} reload={list.reload}>
           {list.data && (rows.length === 0 ? <EmptyState title="No applications here" hint="Try another stage above, or clear the filters." /> : (
             <div className="table-wrap">
-              <table className="table">
+              <table className="table table--stack">
                 <thead>
                   <tr>
                     <th className="col-check"><input type="checkbox" aria-label="Select all" checked={allPicked} onChange={() => setPicked(allPicked ? new Set() : new Set(rows.map((a) => a.id)))} /></th>

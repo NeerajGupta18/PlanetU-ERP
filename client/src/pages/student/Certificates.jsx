@@ -51,7 +51,7 @@ export default function Certificates() {
             <Card title="My requests">
               {data.requests.length === 0 ? <EmptyState title="No requests yet" hint="Choose a certificate above." /> : (
                 <div className="table-wrap">
-                  <table className="table">
+                  <table className="table table--stack">
                     <thead><tr><th>Certificate</th><th>Purpose</th><th>Asked on</th><th>Status</th><th /></tr></thead>
                     <tbody>
                       {data.requests.map((r) => (

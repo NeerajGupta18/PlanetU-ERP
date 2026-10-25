@@ -810,6 +810,7 @@ a.stepbar__btn:hover .stepbar__dot, button.stepbar__btn:not(:disabled):hover .st
   .no-print, .stepbar, .wizard-actions { display: none !important; }
 }
 .toolbar__filters .input--icon { padding-left: 34px; }
+@media (max-width: 640px) { .toolbar__filters > .input-wrap { flex: 1 1 100%; min-width: 0 !important; } }
 
 .child-switch { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--muted); }
 .child-switch select { padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); font: inherit; color: var(--text); max-width: 160px; }
