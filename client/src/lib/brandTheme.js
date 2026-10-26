@@ -13,11 +13,17 @@ const VARS = {
   '--brand-shadow': (c) => `color-mix(in srgb, ${c} 25%, transparent)`,
 };
 
+/** Suggested institute colours: all dark enough for white writing. Setup and the front page offer the same ones. */
+export const SWATCHES = ['#1E3A5F', '#0F766E', '#7F1D1D', '#14532D', '#4C1D95', '#9A3412', '#1E40AF', '#334155'];
+
+/** The --brand variables for one colour, to apply to any element (the front page previews them on a small mock-up). */
+export const brandVars = (color) => Object.fromEntries(Object.entries(VARS).map(([name, make]) => [name, make(color)]));
+
 export function applyBrandColor(color) {
   const root = document.documentElement.style;
   const ok = typeof color === 'string' && /^#[0-9a-f]{6}$/i.test(color) && CSS.supports?.('color', 'color-mix(in srgb, red 50%, white)');
-  for (const [name, make] of Object.entries(VARS)) {
-    if (ok) root.setProperty(name, make(color)); else root.removeProperty(name);
+  for (const [name, value] of Object.entries(brandVars(ok ? color : '#000000'))) {
+    if (ok) root.setProperty(name, value); else root.removeProperty(name);
   }
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', ok ? color : '#1E3A5F');
 }
