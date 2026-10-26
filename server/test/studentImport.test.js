@@ -280,8 +280,10 @@ describe('Importing', () => {
     const m = await mails();
     assert.equal(m.length, 3);
     assert.ok(m.every((x) => x.template === 'accountSetup'));
-    assert.match(m[0].text_body, /Your login ID: OLD-0001/);
-    assert.match(m[0].text_body, /expires in 168 hours/);
+    // The three mails are queued in one transaction, so they share created_at and their order is not fixed: pick Aditi's
+    const aditi = m.find((x) => x.to_email === 'aditi@imptest.example');
+    assert.match(aditi.text_body, /Your login ID: OLD-0001/);
+    assert.match(aditi.text_body, /expires in 168 hours/);
   });
 
   it('the emailed link lets the student choose a password and sign in; the unknown initial password does not work', async () => {
