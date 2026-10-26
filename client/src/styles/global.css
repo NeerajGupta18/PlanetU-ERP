@@ -372,6 +372,13 @@ a.stat:hover { border-color: var(--brand-100); box-shadow: 0 0 0 3px var(--brand
 .schedule__title { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-weight: 600; }
 .schedule__meta { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 2px; font-size: 12.5px; color: var(--muted); }
 .schedule__meta span { display: inline-flex; align-items: center; gap: 4px; }
+/* The middle column may shrink (long badges wrap), so the button never pushes past the card's edge */
+.schedule__body { min-width: 0; }
+.schedule__title .badge { white-space: normal; }
+@media (max-width: 640px) {
+  .schedule__item { flex-wrap: wrap; }
+  .schedule__item > .btn { flex: 1 0 100%; min-height: 44px; }
+}
 
 .upcoming__item { display: flex; gap: 12px; align-items: center; }
 .datebox { flex: none; width: 50px; height: 54px; border-radius: 10px; display: grid; place-content: center; text-align: center; line-height: 1.1; background: var(--brand-50); color: var(--brand-700); }
