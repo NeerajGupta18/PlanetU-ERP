@@ -34,12 +34,18 @@ export function useReveal(rootRef, enabled) {
   }, [rootRef, enabled]);
 }
 
-/** One captured screen. Laptop captures are 1280 x 800, phone captures 780 x 1688 (390 px wide at 2x). */
+/**
+ * One captured screen. Laptop captures are 1280 x 800 with a 640 copy, phone captures 780 x 1688 with a 390 copy
+ * (-sm). On phones the screens are drawn small, so `sizes` asks for the small copy even on sharp screens.
+ */
 export function Shot({ name, alt, phone = false, eager = false, className = '' }) {
+  const [big, small] = phone ? [780, 390] : [1280, 640];
   return (
     <img
       className={`lp-shot ${className}`} src={`/landing/${name}.webp`} alt={alt}
-      width={phone ? 780 : 1280} height={phone ? 1688 : 800}
+      srcSet={`/landing/${name}-sm.webp ${small}w, /landing/${name}.webp ${big}w`}
+      sizes={phone ? '(max-width: 640px) 150px, (max-width: 1023px) 220px, 270px' : '(max-width: 640px) 240px, (max-width: 1023px) 92vw, 640px'}
+      width={big} height={phone ? 1688 : 800}
       loading={eager ? 'eager' : 'lazy'} decoding="async" fetchpriority={eager ? 'high' : undefined}
     />
   );

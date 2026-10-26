@@ -155,7 +155,7 @@ export default function Landing() {
     <div className="site lp" ref={root}>
       <a className="lp-skip" href="#main">Skip to content</a>
       <header className="lp-nav">
-        <Link to="/" className="lp-nav__brand"><BrandMark size={30} /> <span>{BRAND.short} Campus ERP</span></Link>
+        <Link to="/" className="lp-nav__brand"><BrandMark size={30} src="/landing/brand-mark.webp" /> <span>{BRAND.short} Campus ERP</span></Link>
         <nav aria-label="Page sections" className="lp-nav__links">
           <a href="#year">The year</a><a href="#setup">Setup</a><a href="#roles">Roles</a><a href="#trust">Trust</a><a href="#pricing">Pricing</a>
         </nav>

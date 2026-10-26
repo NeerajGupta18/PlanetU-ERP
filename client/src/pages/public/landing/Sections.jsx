@@ -160,7 +160,7 @@ export function Look() {
 
       <div className="lp-mini" style={style} aria-label="Preview of the app in the chosen colour" role="img">
         <div className="lp-mini__top">
-          <img src="/landing/demo-logo.png" alt="" width="28" height="28" />
+          <img src="/landing/demo-logo.webp" alt="" width="28" height="28" loading="lazy" />
           <strong>Horizon College of Technology</strong>
         </div>
         <div className="lp-mini__body">
