@@ -109,3 +109,7 @@ Not in these days: scheduled morning runs (needs the paid always-on server), aut
 - Every agent action appears in the approval inbox and the audit log.
 - Without an API key the assistants say "Not connected" and the rest of the ERP works.
 - All tests pass; every new screen walked on a phone and a laptop; demo script includes the new parts.
+
+## Local database safety
+- This repo's local database is on port 5433. Before running `npm run db:setup` or any test, confirm DATABASE_URL points to localhost:5433 and this repo's own database. If it points anywhere else, stop and tell Neeraj.
+- Day 10: when the assistants are live, remove the "Coming soon" label from the assistants section of the landing page.
