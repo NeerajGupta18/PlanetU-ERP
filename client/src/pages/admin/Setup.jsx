@@ -15,7 +15,7 @@ import DataTable from '../../components/ui/DataTable.jsx';
 import { useDialogs } from '../../components/ui/Dialogs.jsx';
 import StaffImport from '../../components/campus/StaffImport.jsx';
 import { PROCESSES } from '../../config/processes.js';
-import { applyBrandColor, whiteContrast } from '../../lib/brandTheme.js';
+import { SWATCHES, applyBrandColor, whiteContrast } from '../../lib/brandTheme.js';
 
 const STEPS = PROCESSES.setup.steps;
 const labelOf = (key) => STEPS.find((s) => s.key === key)?.label;
@@ -119,7 +119,6 @@ function StepActions({ busy, label = 'Save and continue', onClick, disabled, chi
 
 /* ------------------------------------------------------------------ 1. Profile and logo */
 
-const SWATCHES = ['#1E3A5F', '#0F766E', '#7F1D1D', '#14532D', '#4C1D95', '#9A3412', '#1E40AF', '#334155'];
 
 function ProfileStep({ onDone, w }) {
   const { refresh, institute } = useAuth();

@@ -90,7 +90,8 @@ const ForgotPassword = lazy(() => import('./pages/ForgotPassword.jsx'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword.jsx'));
 const ChangePassword = lazy(() => import('./pages/ChangePassword.jsx'));
 const ApplyStatus = lazy(() => import('./pages/public/ApplyStatus.jsx'));
-const Landing = lazy(() => import('./pages/public/Landing.jsx'));
+const loadLanding = () => import('./pages/public/Landing.jsx');
+const Landing = lazy(loadLanding);
 const Privacy = lazy(() => import('./pages/public/Privacy.jsx'));
 const Consent = lazy(() => import('./pages/Consent.jsx'));
 const SuperAdminDemoRequests = lazy(() => import('./pages/superadmin/DemoRequests.jsx'));
@@ -101,6 +102,15 @@ const SuperAdminInstitutes = lazy(() => import('./pages/superadmin/Institutes.js
 // Inside the Android app or an installed home-screen app, people come to sign in, not to read the front page
 const inApp = () => /PlanetUApp/.test(navigator.userAgent) || window.navigator.standalone === true
   || window.matchMedia?.('(display-mode: standalone)').matches;
+
+// A browser opening the front page: fetch the page and its first screen while the sign-in check runs, not after it
+if (window.location.pathname === '/' && !inApp()) {
+  loadLanding();
+  const hero = Object.assign(document.createElement('link'), { rel: 'preload', as: 'image', fetchPriority: 'high' });
+  hero.setAttribute('imagesrcset', '/landing/admin-dashboard-sm.webp 640w, /landing/admin-dashboard.webp 1280w');
+  hero.setAttribute('imagesizes', '(max-width: 640px) 240px, (max-width: 1023px) 92vw, 640px');
+  document.head.appendChild(hero);
+}
 
 function Home() {
   const { user, loading } = useAuth();
