@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Bot, CalendarCheck, CheckCircle2, ChevronDown, FileCheck2, Fingerprint, KeyRound, Layers, ListChecks, Palette, Rocket,
+  Bot, CalendarCheck, CheckCircle2, ChevronDown, FileCheck2, Fingerprint, KeyRound, Layers, ListChecks, MessageCircleQuestion, Palette, Rocket,
   ShieldCheck, Smartphone, UsersRound,
 } from 'lucide-react';
 import { api } from '../../api/http.js';
@@ -13,6 +13,9 @@ import Story from './landing/Story.jsx';
 import { Look, Roles, SetupSteps } from './landing/Sections.jsx';
 import './landing/landing.css';
 
+// The help chat is its own chunk, fetched only when the bubble is clicked
+const HelpChat = lazy(() => import('./landing/HelpChat.jsx'));
+
 // Every line on this page must be true in the product today: no invented clients, counts, prices or hosting claims.
 
 const PROOF = [
@@ -23,13 +26,14 @@ const PROOF = [
   { icon: ShieldCheck, text: "Each institute's data kept apart in the database" },
 ];
 
-// The assistants are being built now; the badge says so until they are live
+// Each of these is live in the ERP today (and the last one is the chat bubble on this page)
 const ASSISTANTS = [
   { title: 'Ask PlanetU', who: 'Principal and admin', text: "Questions in plain words about your own institute, answered with the figures it used, plus a one-screen morning brief." },
   { title: 'Fee follow-up', who: 'Accountant', text: 'Finds overdue fees, groups them by family and drafts the reminders. Nothing goes out until you press Send.' },
   { title: 'Setup fixer', who: 'Admin', text: 'Tidies a messy student or staff sheet and explains every fix. It imports only after you approve.' },
   { title: 'Attendance watch', who: 'Class teacher and principal', text: 'Spots three absences in a row or a student near the minimum, and drafts a note to the parent for you to check.' },
   { title: 'Admissions helper', who: 'Admission office', text: 'Checks an enquiry for missing documents and duplicates and drafts the reply. Every decision stays with your staff.' },
+  { title: 'Help chat', who: 'Visitors to this page', text: 'Answers questions about PlanetU from our product facts, books a demo or takes a message. It never quotes a price and hands you to a person when you ask.' },
 ];
 
 const TRUST = [
@@ -139,6 +143,9 @@ function useStickyBar(heroRef, demoRef) {
 /** The public front page: one college year in one scroll, with real screens from the demo college. Signed-out web visitors land here. */
 export default function Landing() {
   const root = useRef(null);
+  const bubble = useRef(null);
+  const [chat, setChat] = useState(false);
+  const closeChat = () => { setChat(false); setTimeout(() => bubble.current?.focus(), 0); };
   const hero = useRef(null);
   const demo = useRef(null);
   const motion = useMedia(MOTION_OK);
@@ -214,7 +221,7 @@ export default function Landing() {
         <section className="lp-section" aria-labelledby="assistants">
           <SectionHead id="assistants" eyebrow={<><Bot size={15} aria-hidden="true" /> Meet the assistants</>} title="They draft. You decide."
             lead="AI assistants that do real office jobs inside your own institute's data. They only prepare work; a person approves every important change. Payments, marks and admission decisions always stay with your staff." />
-          <p className="lp-soon lp-reveal"><span>Coming soon</span> Being built now. Ask to see them in your demo.</p>
+          <p className="lp-soon lp-reveal"><span>In your demo</span> Ask to see them working on the demo college.</p>
           <div className="lp-grid lp-grid--assist">
             {ASSISTANTS.map((a) => (
               <article key={a.title} className="lp-card lp-reveal">
@@ -288,6 +295,14 @@ export default function Landing() {
         <span>{BRAND.name}</span>
         <nav aria-label="Footer"><Link to="/privacy">Privacy</Link><Link to="/login">Sign in</Link></nav>
       </footer>
+
+      {chat
+        ? <Suspense fallback={<div className="lp-chat lp-chat--loading" role="status">Opening the help chat...</div>}><HelpChat onClose={closeChat} /></Suspense>
+        : (
+          <button type="button" ref={bubble} className={`lp-bubble ${sticky ? 'lp-bubble--raised' : ''}`} onClick={() => setChat(true)} aria-haspopup="dialog">
+            <MessageCircleQuestion size={22} aria-hidden="true" /> <span>Questions? <small>AI help</small></span>
+          </button>
+        )}
 
       <div className={`lp-sticky ${sticky ? 'is-shown' : ''}`} aria-hidden={!sticky}>
         <a href="#demo" className="btn btn--next btn--block" tabIndex={sticky ? 0 : -1}>Book a demo</a>
