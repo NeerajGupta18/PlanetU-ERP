@@ -581,7 +581,7 @@ function InboxTab({ inbox, onDecided }) {
 const APPROVE = {
   fee_reminders: (p) => ({ what: `Send ${plural(p.toSend, 'reminder')} now? Each guardian gets the message in the app, and WhatsApp links are prepared.`, label: `Send ${p.toSend}` }),
   parent_notes: (p) => ({ what: `Send ${plural(p.toSend, 'parent note')} now? Parents get the note in the app, and WhatsApp links are prepared.`, label: `Send ${p.toSend}` }),
-  enquiry_reply: (p) => ({ what: `Send this reply to ${p.application.applicationNo} by email now? The application itself does not change.`, label: 'Send reply' }),
+  enquiry_reply: (p) => ({ what: `Send this reply to ${p.application?.applicationNo} by email now? The application itself does not change.`, label: 'Send reply' }),
 };
 const APPROVE_BUTTON = {
   fee_reminders: (p) => `Send ${plural(p.toSend, 'reminder')}`,
@@ -619,7 +619,7 @@ function ProposalModal({ id, onClose, onDecided }) {
             {p.status === 'pending' && (
               <div className="form-actions proposal-actions">
                 <button type="button" className="btn btn--outline" onClick={() => decide('reject')} disabled={busy}>Reject</button>
-                <button type="button" className="btn btn--primary" onClick={() => decide('approve')} disabled={busy || ((p.kind === 'fee_reminders' || p.kind === 'parent_notes') && !p.toSend)}>
+                <button type="button" className="btn btn--primary" onClick={() => decide('approve')} disabled={busy || ((p.kind === 'fee_reminders' || p.kind === 'parent_notes') && !p.toSend) || (p.kind === 'enquiry_reply' && !p.application)}>
                   {APPROVE_BUTTON[p.kind]?.(p) || 'Approve and import'}
                 </button>
               </div>
@@ -714,6 +714,7 @@ function NotesProposal({ p }) {
 }
 
 function ReplyProposal({ p }) {
+  if (!p.application) return <p className="note">{p.nextStep}</p>;
   return (
     <>
       <p><strong>{p.application.applicationNo}</strong>: {p.application.name}, {p.application.course} ({APP_STATUS[p.application.status] || p.application.status})</p>

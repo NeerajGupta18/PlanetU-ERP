@@ -180,7 +180,15 @@ export async function applyEnquiryReply(p) {
 
 /** What the approver sees: the check as it is now, and the reply exactly as it will go out. */
 export async function replyProposalDetail(p) {
-  const { check, a, message } = await filled(p);
+  let f;
+  try {
+    f = await filled(p);
+  } catch (err) {
+    // The application was removed after the reply was drafted: the proposal can still be read and rejected
+    if (err instanceof HttpError && err.status === 404) return { application: null, documents: [], duplicates: [], nextStep: 'This application no longer exists, so the reply cannot be sent. Reject the proposal.', preview: null, hasPhone: false };
+    throw err;
+  }
+  const { check, a, message } = f;
   return {
     application: { applicationNo: a.applicationNo, name: a.name, course: a.course, status: a.status },
     documents: check.documents, duplicates: check.duplicates, nextStep: check.nextStep,
