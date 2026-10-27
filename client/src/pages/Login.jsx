@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import {
   AlertCircle, Briefcase, Building2, Eye, EyeOff, GraduationCap, LockKeyhole, LogIn, ShieldCheck, UserCog, UserRound, Users,
@@ -10,6 +10,8 @@ import { BRAND } from '../config/brand.js';
 import BrandMark from '../components/ui/BrandMark.jsx';
 import RobotCheck from '../components/auth/RobotCheck.jsx';
 import { GetTheAppBanner, GetTheAppCard } from '../components/campus/GetTheApp.jsx';
+import { FingerprintOffer, SavedAccounts } from '../components/auth/FingerprintSignIn.jsx';
+import { fingerprintPossible, fingerprintReady, savedAccounts, shouldOffer } from '../lib/fingerprint.js';
 
 const ROLES = [
   { value: 'super_admin', label: 'Super Admin', icon: ShieldCheck, idLabel: 'Email or Super Admin ID' },
@@ -54,6 +56,13 @@ export default function Login() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [demo, setDemo] = useState(null); // the sample sign-ins, when the server is in demo mode
+  // Android app only: saved fingerprint accounts, and the "Use fingerprint next time?" offer after a password sign-in
+  const [mode, setMode] = useState(() => (fingerprintPossible() && savedAccounts().length ? 'saved' : 'form'));
+  const [fpReady, setFpReady] = useState(false);
+  const [offer, setOffer] = useState(null);
+  const holdRef = useRef(false); // keeps this page up while deciding whether to show the offer
+
+  useEffect(() => { fingerprintReady().then(setFpReady); }, []);
 
   useEffect(() => {
     api.get('/auth/demo-logins').then((d) => { if (d.enabled) setDemo(d); }).catch(() => {});
@@ -70,7 +79,7 @@ export default function Login() {
     return () => clearTimeout(t);
   }, [tenantCode]);
 
-  if (user) return <Navigate to={ROLE_HOME[user.role]} replace />;
+  if (user && !offer && !holdRef.current) return <Navigate to={ROLE_HOME[user.role]} replace />;
 
   const needsCode = role !== 'super_admin';
   const current = ROLES.find((r) => r.value === role);
@@ -82,13 +91,18 @@ export default function Login() {
     if (!identifier.trim() || !password) return setError('Enter your ID or email and your password.');
     if (!captchaToken) return setError('Tick "I\'m not a robot" before signing in.');
     setBusy(true);
+    const code = tenantCode.trim().toLowerCase();
+    holdRef.current = fpReady && needsCode;
     try {
       const u = await login({
-        role, identifier: identifier.trim(), password, captchaToken, tenantCode: needsCode ? tenantCode.trim().toLowerCase() : undefined,
+        role, identifier: identifier.trim(), password, captchaToken, tenantCode: needsCode ? code : undefined,
       });
-      if (needsCode) localStorage.setItem('erp.institute', tenantCode.trim().toLowerCase());
+      if (needsCode) localStorage.setItem('erp.institute', code);
+      if (holdRef.current && shouldOffer(code, u)) { setOffer({ user: u, tenantCode: code }); return; }
+      holdRef.current = false;
       navigate(ROLE_HOME[u.role], { replace: true });
     } catch (err) {
+      holdRef.current = false;
       setError(err.message);
       setCaptchaToken(null); // tokens are single-use, so the check must be repeated
       setResetKey((k) => k + 1);
@@ -126,6 +140,25 @@ export default function Login() {
       </aside>
 
       <main className="login__panel">
+        {offer ? (
+          <div className="login__card">
+            <FingerprintOffer
+              tenantCode={offer.tenantCode} user={offer.user} institute={instituteName}
+              onDone={() => { holdRef.current = false; navigate(ROLE_HOME[offer.user.role], { replace: true }); }}
+            />
+          </div>
+        ) : mode === 'saved' ? (
+          <div className="login__card">
+            <SavedAccounts
+              onSignedIn={(u) => navigate(ROLE_HOME[u.role], { replace: true })}
+              onUsePassword={(a, why) => {
+                if (a) { setRole(a.role); setTenantCode(a.tenantCode); setIdentifier(a.loginId); }
+                setPassword(''); setError(why || ''); setMode('form');
+              }}
+              onSwitchAccount={() => { setIdentifier(''); setPassword(''); setError(''); setMode('form'); }}
+            />
+          </div>
+        ) : (
         <form className="login__card" onSubmit={onSubmit} noValidate>
           <h2>Sign in</h2>
           <p className="login__hint">Choose your role, then enter your credentials.</p>
@@ -213,7 +246,14 @@ export default function Login() {
               )) : <button type="button" className="login__demo" onClick={() => fillDemo()}>Fill</button>}
             </div>
           )}
+
+          {fingerprintPossible() && savedAccounts().length > 0 && (
+            <button type="button" className="btn btn--outline btn--block" onClick={() => { setError(''); setMode('saved'); }}>
+              Sign in with fingerprint
+            </button>
+          )}
         </form>
+        )}
         <GetTheAppCard />
         <p className="login__legal"><Link to="/privacy">Privacy notice</Link></p>
       </main>
