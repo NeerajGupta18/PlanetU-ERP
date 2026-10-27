@@ -1315,3 +1315,30 @@ a.banner__next:hover { text-decoration: underline; }
   .site-hero__cta .btn--lg { min-height: 48px; }
 }
 .login__legal { margin: 0; font-size: 13px; }
+
+/* Assistants (Day 9): AI output is always labelled, and the figures it used sit right under it */
+.ai-status { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 14px; }
+.ai-label { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: var(--brand); background: var(--brand-50); border: 1px solid var(--brand-100); border-radius: 999px; padding: 2px 10px; }
+.ai-answer { margin-top: 14px; padding: 14px 16px; border: 1px solid var(--brand-100); border-left: 3px solid var(--brand); border-radius: var(--radius); background: var(--surface); display: grid; gap: 8px; justify-items: start; }
+.ai-answer p { margin: 0; line-height: 1.5; }
+.ai-template { white-space: pre-wrap; font-size: 15px; }
+.ask-form { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+.ask-form > :first-child { flex: 1 1 320px; }
+.ask-form .btn { min-height: 44px; }
+.ask-quick { margin-top: 12px; }
+.ask-quick .chip { min-height: 36px; text-align: left; }
+.ask-quick .chip:disabled { opacity: 0.55; cursor: default; }
+.figures { margin-top: 16px; display: grid; gap: 14px; }
+.figures__title { font-family: var(--font-head); font-size: 15px; margin: 0; }
+.figures__block { display: grid; gap: 8px; }
+.figures__values { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 0; }
+.figures__values div { display: grid; }
+.figures__values dt { font-size: 12px; color: var(--muted); }
+.figures__values dd { margin: 0; font-family: var(--font-head); font-weight: 600; }
+.fix-counts { margin: 12px 0; padding-left: 18px; display: grid; gap: 2px; }
+@media (max-width: 640px) {
+  .ask-form { flex-direction: column; align-items: stretch; }
+  .ask-form > :first-child { flex-basis: auto; }
+  .ask-form .btn { width: 100%; }
+}
+.proposal-actions { margin-top: 0; }

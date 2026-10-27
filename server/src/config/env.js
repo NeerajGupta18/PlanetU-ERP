@@ -95,4 +95,17 @@ export const env = {
   get BILLING_TRIAL_DAYS() { const n = Number(process.env.BILLING_TRIAL_DAYS); return Number.isInteger(n) && n >= 0 && n <= 180 ? n : 14; },
   get BILLING_GRACE_DAYS() { const n = Number(process.env.BILLING_GRACE_DAYS); return Number.isInteger(n) && n >= 0 && n <= 60 ? n : 7; },
   BILLING_WORKER: process.env.BILLING_WORKER !== 'false',
+
+  // AI assistants. All model calls go through server/agents/llm.js. Two separate keys: the office assistants
+  // (AGENT_*) and the public help chat (PUBLIC_*), so a busy public chat cannot use up the office allowance.
+  // No key: every assistant shows "Not connected" and the rest of the ERP works. Read lazily.
+  get AGENT_LLM_PROVIDER() { return process.env.AGENT_LLM_PROVIDER || 'groq'; },
+  get AGENT_LLM_MODEL() { return process.env.AGENT_LLM_MODEL || ''; },
+  get AGENT_LLM_API_KEY() { return process.env.AGENT_LLM_API_KEY || ''; },
+  get PUBLIC_LLM_PROVIDER() { return process.env.PUBLIC_LLM_PROVIDER || 'gemini'; },
+  get PUBLIC_LLM_MODEL() { return process.env.PUBLIC_LLM_MODEL || ''; },
+  get PUBLIC_LLM_API_KEY() { return process.env.PUBLIC_LLM_API_KEY || ''; },
+  // Our own limits, kept below the provider's free plan (Groq: 200,000 tokens a day, 30 requests a minute)
+  get AGENT_DAILY_TOKENS() { const n = Number(process.env.AGENT_DAILY_TOKENS); return Number.isInteger(n) && n > 0 ? n : 60000; },
+  get AGENT_RUNS_PER_MINUTE() { const n = Number(process.env.AGENT_RUNS_PER_MINUTE); return Number.isInteger(n) && n > 0 ? n : 6; },
 };

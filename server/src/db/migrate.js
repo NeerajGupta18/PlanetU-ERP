@@ -71,6 +71,7 @@ export async function runMigrations({ log = console.log } = {}) {
       alter default privileges in schema public grant usage on sequences to erp_app;
       revoke all on schema_migrations from erp_app;
       revoke update, delete on audit_log from erp_app;
+      revoke update, delete on agent_runs from erp_app;
     `);
     log('[migrate] up to date');
   } finally {
