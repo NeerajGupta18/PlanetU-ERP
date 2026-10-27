@@ -90,6 +90,7 @@ const Apply = lazy(() => import('./pages/public/Apply.jsx'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword.jsx'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword.jsx'));
 const ChangePassword = lazy(() => import('./pages/ChangePassword.jsx'));
+const TrustedDevices = lazy(() => import('./pages/TrustedDevices.jsx'));
 const ApplyStatus = lazy(() => import('./pages/public/ApplyStatus.jsx'));
 const loadLanding = () => import('./pages/public/Landing.jsx');
 const Landing = lazy(loadLanding);
@@ -131,6 +132,7 @@ export default function App() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route element={<ProtectedRoute />}><Route path="/change-password" element={<ChangePassword />} /></Route>
+      <Route element={<ProtectedRoute />}><Route path="/devices" element={<TrustedDevices />} /></Route>
       <Route element={<ProtectedRoute />}><Route path="/consent" element={<Consent />} /></Route>
       <Route path="/privacy" element={<Privacy />} />
 

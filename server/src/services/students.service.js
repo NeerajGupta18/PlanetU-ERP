@@ -1,6 +1,7 @@
 import { q } from '../db/pool.js';
 import { HttpError } from '../middleware/error.js';
 import { audit } from '../db/audit.js';
+import { revokeAllFor } from './devices.service.js';
 
 const SELECT = `
   select s.id, s.student_code as "studentCode", s.roll_no as "rollNo", s.enrollment_no as "enrollmentNo",
@@ -49,7 +50,8 @@ export async function updateStudent(id, body, admin) {
   await q(`update students set ${sets.join(', ')} where id = $${params.length}`, params);
   // Disabling a student's status also blocks their login without deleting their history
   if (body.status) {
-    await q(`update users set status = $1 where student_id = $2`, [body.status === 'Active' ? 'active' : 'disabled', id]);
+    const { rows: users } = await q(`update users set status = $1 where student_id = $2 returning id`, [body.status === 'Active' ? 'active' : 'disabled', id]);
+    if (body.status !== 'Active') await revokeAllFor(users.map((u) => u.id), 'deactivated'); // and ends fingerprint sign-in
     await audit(admin, 'student.status_change', 'student', id, { status: body.status });
   }
   return getStudent(id);
