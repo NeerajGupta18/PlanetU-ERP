@@ -58,6 +58,9 @@ export default function Consent() {
                 Your answer is saved with the date and time. Only {name} and the people it allows can see your child's details.
                 Read the <Link to="/privacy" target="_blank">privacy notice</Link>. To change your answer later, contact the office.
               </p>
+              <p className="consent__note">
+                The office may use AI assistants to prepare drafts, such as a fee reminder or an attendance note. They see only student codes and first names, never phone numbers, emails or addresses, and a staff member checks and approves every message before it is sent.
+              </p>
               {!answers.records && <p className="form-hint" style={{ marginTop: 12 }}>Tick the first box to continue. The app cannot show your child's details without it.</p>}
               <div className="form-actions">
                 <button type="button" className="btn btn--outline" onClick={() => logout()}>Sign out</button>

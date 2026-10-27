@@ -72,6 +72,7 @@ export async function runMigrations({ log = console.log } = {}) {
       revoke all on schema_migrations from erp_app;
       revoke update, delete on audit_log from erp_app;
       revoke update, delete on agent_runs from erp_app;
+      revoke update, delete on support_chat_runs from erp_app;
     `);
     log('[migrate] up to date');
   } finally {

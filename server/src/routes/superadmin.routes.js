@@ -27,6 +27,8 @@ router.get('/diagnostics/network', sa.networkDiagnostics);
 // ---- "Book a demo" requests from the public landing page ----
 router.get('/demo-requests', demo.list);
 router.put('/demo-requests/:id', demo.setStatus);
+router.get('/support-messages', demo.listMessages);
+router.put('/support-messages/:id', demo.setMessageStatus);
 
 // ---- billing: PlanetU charging its institutes ----
 router.get('/billing/overview', bill.overview);

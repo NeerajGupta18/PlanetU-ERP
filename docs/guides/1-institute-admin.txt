@@ -53,6 +53,20 @@ Exams and results
 Notices
 Open Notices, "New notice". Choose who sees it. Tick Important or "Pin to the top" if needed.
 
+AI assistants (Office, Assistants)
+The assistants read your institute's records and prepare work. Nothing changes until a person approves it.
+- Ask PlanetU: type a question in plain words, for example "Which classes had the lowest attendance this week?".
+  The answer shows the figures it used. The morning brief shows today's key figures on one screen.
+- Fee follow-up: lists overdue fees by guardian and drafts one reminder in English, Hindi or Marathi.
+- Setup fixer: upload a messy student or staff sheet. It tidies columns, names, phone numbers and duplicates and explains each fix.
+- Attendance watch: students absent on each of their last three days, or below or close to 75%. It drafts one note for parents.
+- Admissions helper: pick an application, paste the applicant's message if there is one, and it checks the documents,
+  looks for duplicates, suggests the next step and drafts a reply. Accept, waitlist and reject stay with you.
+- Approvals tab: open each proposal, check it, then approve (for example "Send 12 reminders") or reject.
+  Reminders and notes go into the app with a ready WhatsApp link. A reply goes by email.
+- Activity tab: every run, who asked, what it did and how much of the daily allowance it used.
+If the page says "Not connected", the model key has not been added on the server yet. Everything else works as usual.
+
 When something goes wrong
 - Every error message says how to fix it. Read it first.
 - Forgot password: use "Forgot password" on the sign-in page.

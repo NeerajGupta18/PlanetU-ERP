@@ -18,7 +18,7 @@ export const onPage = (pathname, to) => pathname === to || pathname.startsWith(`
  *  flat - every page by itself, sections included, with its group and parent item (used by search and breadcrumbs)
  */
 export function useNav() {
-  const { user, tenant, office } = useAuth();
+  const { user, tenant, office, classTeacher } = useAuth();
   const { hasModule, t } = useTenantConfig();
   const locked = Boolean(tenant?.billingLocked);
 
@@ -49,7 +49,7 @@ export function useNav() {
 
     if (user?.role === 'employee') {
       // Teaching pages only for people who teach; then the office pages their staff roles cover; then "Me"
-      const mine = (MENU_TREE.employee || []).filter((e) => !e.teaching || office?.teaching !== false);
+      const mine = (MENU_TREE.employee || []).filter((e) => (!e.teaching || office?.teaching !== false) && (!e.classTeacher || classTeacher));
       add(mine.filter((e) => !e.group));
       if (office?.areas) {
         // An office link stays when the role covers it; sections the role does not cover drop out.
@@ -81,5 +81,5 @@ export function useNav() {
     return { tree, flat, links };
     // hasModule / t are recreated each render but only depend on tenant
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.role, tenant, locked, office]);
+  }, [user?.role, tenant, locked, office, classTeacher]);
 }

@@ -3,8 +3,9 @@
  *
  * Everything runs as the signed-in person, inside their own request transaction (Row Level Security), with the
  * same office roles as the rest of the admin area: the institute admin has every assistant; a principal has Ask
- * PlanetU; an accountant Fee follow-up; an admission officer the Setup fixer for student sheets. Staff sheets and
- * the run log stay with the institute admin.
+ * PlanetU and Attendance watch; an accountant Fee follow-up; an admission officer the Setup fixer for student
+ * sheets and the Admissions helper. A class teacher with no office role has Attendance watch for their own
+ * classes only. Staff sheets and the run log stay with the institute admin.
  */
 import { Router } from 'express';
 import multer from 'multer';
@@ -21,6 +22,8 @@ import { hasArea } from '../../agents/tools.js';
 import { askQuestion, briefFigures, briefSummary } from '../../agents/askPlanetU.js';
 import { applyFeeReminders, draftReminders, feeOverview, feeProposalDetail } from '../../agents/feeFollowup.js';
 import { applyImport, fixSheet } from '../../agents/setupFixer.js';
+import { applyParentNotes, canWatch, classesOf, draftNotes, notesProposalDetail, watchOverview } from '../../agents/attendanceWatch.js';
+import { applyEnquiryReply, checkApplication, helpWithEnquiry, helperList, replyProposalDetail } from '../../agents/admissionsHelper.js';
 import { decidableKinds, decide, getProposal, listProposals, listRuns } from '../../agents/proposals.js';
 import { IMPORT_LIMITS, analyse as analyseStudents, previewRow as studentRow } from '../services/studentImport.service.js';
 import { analyse as analyseStaff, previewRow as staffRow } from '../services/staffImport.service.js';
@@ -31,17 +34,20 @@ const h = asyncHandler;
 /** Who is asking, with their office powers (as in the admin area). Students and parents have no assistants. */
 async function assistantAccess(req, res, next) {
   try {
-    let office;
+    let office; let classes = [];
     if (req.user.role === 'admin') office = { full: true };
     else if (req.user.role === 'employee') {
       const o = await officeOf(req.user);
-      if (!o) throw new HttpError(403, 'You do not have access to the assistants.');
-      office = { full: false, areas: o.areas, roles: o.roles };
-      req.user = { ...req.user, role: 'admin', staff: { roles: o.roles.map((r) => r.role) } };
+      classes = await classesOf(req.user.employeeId);
+      if (!o && !classes.length) throw new HttpError(403, 'You do not have access to the assistants.');
+      office = { full: false, areas: o?.areas || {}, roles: o?.roles || [] };
+      if (o) req.user = { ...req.user, role: 'admin', staff: { roles: o.roles.map((r) => r.role) } };
     } else throw new HttpError(403, 'You do not have access to the assistants.');
-    req.ctx = { user: req.user, tenant: req.tenant, office };
+    req.ctx = { user: req.user, tenant: req.tenant, office, classes };
     req.can = {
       ask: office.full || hasArea(req.ctx, 'dashboard'),
+      attendance: canWatch(req.ctx),
+      admissions: req.tenant.modules.includes('admissions') && hasArea(req.ctx, 'admissions'),
       fees: req.tenant.modules.includes('fees') && hasArea(req.ctx, 'fees'),
       setupStudents: req.tenant.modules.includes('students') && hasArea(req.ctx, 'students'),
       setupStaff: office.full,
@@ -89,6 +95,15 @@ router.post('/brief/summary', need('ask'), runLimit, h(async (req, res) => res.j
 router.get('/fees/overview', need('fees'), h(async (req, res) => res.json(await feeOverview(req.query.courseId || undefined))));
 router.post('/fees/draft', need('fees'), runLimit, h(async (req, res) => res.json(await draftReminders(req.ctx, req.body || {}))));
 
+/* Attendance watch */
+router.get('/attendance/overview', need('attendance'), h(async (req, res) => res.json(await watchOverview(req.ctx, req.query.courseId || undefined))));
+router.post('/attendance/draft', need('attendance'), runLimit, h(async (req, res) => res.json(await draftNotes(req.ctx, req.body || {}))));
+
+/* Admissions helper */
+router.get('/admissions/applications', need('admissions'), h(async (req, res) => res.json(await helperList())));
+router.get('/admissions/check/:id', need('admissions'), h(async (req, res) => res.json(await checkApplication(req.params.id))));
+router.post('/admissions/help', need('admissions'), runLimit, h(async (req, res) => res.json(await helpWithEnquiry(req.ctx, req.body || {}))));
+
 /* Setup fixer */
 router.post('/setup/clean', runLimit, sheetUpload, h(async (req, res) => {
   const kind = req.body?.kind;
@@ -104,10 +119,12 @@ async function importDetail(p) {
   const a = await (staff ? analyseStaff : analyseStudents)(Buffer.from(p.payload.csv, 'utf8'));
   return { check: { summary: a.summary, rows: a.rows.slice(0, 200).map(staff ? staffRow : studentRow) } };
 }
-const applyProposal = (p, user) => (p.kind === 'fee_reminders' ? applyFeeReminders(p, user) : applyImport(p, user));
+const DETAILS = { fee_reminders: feeProposalDetail, parent_notes: notesProposalDetail, enquiry_reply: replyProposalDetail, import: importDetail };
+const APPLY = { fee_reminders: applyFeeReminders, parent_notes: applyParentNotes, enquiry_reply: applyEnquiryReply };
+const applyProposal = (p, user) => (APPLY[p.kind] || applyImport)(p, user);
 
 router.get('/proposals', need('inbox'), h(async (req, res) => res.json(await listProposals(req.ctx, { status: req.query.status || undefined }))));
-router.get('/proposals/:id', need('inbox'), h(async (req, res) => res.json(await getProposal(req.ctx, req.params.id, { feeDetail: feeProposalDetail, importDetail }))));
+router.get('/proposals/:id', need('inbox'), h(async (req, res) => res.json(await getProposal(req.ctx, req.params.id, DETAILS))));
 router.post('/proposals/:id/decide', need('inbox'), h(async (req, res) => res.json(await decide(req.ctx, req.params.id, req.body || {}, applyProposal))));
 
 /* Run log */

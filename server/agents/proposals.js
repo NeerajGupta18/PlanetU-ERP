@@ -9,19 +9,32 @@ import { HttpError } from '../src/middleware/error.js';
 import { hasArea } from './tools.js';
 
 // Which office area may decide each kind. Staff import is the institute admin's alone (like the Setup page).
+// Parent notes may also be decided by a class teacher, for their own classes only.
 const KINDS = {
   fee_reminders: { area: 'fees', module: 'fees' },
   student_import: { area: 'students', module: 'students' },
   staff_import: { area: null, module: null },
+  parent_notes: { area: 'attendance', module: 'attendance', classTeacher: true },
+  enquiry_reply: { area: 'admissions', module: 'admissions' },
 };
 
 export function canDecide(ctx, kind) {
   const k = KINDS[kind];
   if (!k) return false;
   if (k.module && !ctx.tenant?.modules?.includes(k.module)) return false;
+  if (k.classTeacher && (ctx.classes || []).length) return true;
   return k.area ? hasArea(ctx, k.area) : Boolean(ctx.office?.full);
 }
 export const decidableKinds = (ctx) => Object.keys(KINDS).filter((k) => canDecide(ctx, k));
+
+/** A class teacher (without the attendance office role) only sees parent notes for classes they teach. */
+const onlyOwnClasses = (ctx) => !hasArea(ctx, 'attendance');
+function canDecideRow(ctx, p) {
+  if (!canDecide(ctx, p.kind)) return false;
+  if (p.kind !== 'parent_notes' || !onlyOwnClasses(ctx)) return true;
+  const mine = ctx.classes || [];
+  return (p.payload?.courseIds || []).every((id) => mine.includes(id));
+}
 
 export async function createProposal(ctx, { runId, agent, kind, title, summary, payload, figures }) {
   const { rows: [p] } = await q(
@@ -41,32 +54,37 @@ export async function listProposals(ctx, { status } = {}) {
   const kinds = decidableKinds(ctx);
   if (status && !['pending', 'approved', 'rejected', 'failed'].includes(status)) throw new HttpError(400, 'Unknown status.');
   const params = [kinds];
-  let where = 'p.kind = any($1)';
+  let scope = '';
+  if (onlyOwnClasses(ctx)) { params.push(JSON.stringify(ctx.classes || [])); scope = ` and (p.kind <> 'parent_notes' or coalesce(p.payload->'courseIds', '[]') <@ $${params.length}::jsonb)`; }
+  let where = `p.kind = any($1)${scope}`;
+  const countParams = [...params];
   if (status) { params.push(status); where += ` and p.status = $${params.length}`; }
   const { rows } = await q(`select ${LIST_COLUMNS} ${FROM} where ${where} order by (p.status = 'pending') desc, p.created_at desc limit 100`, params);
-  const { rows: [c] } = await q("select count(*)::int as n from agent_proposals where status = 'pending' and kind = any($1)", [kinds]);
+  const { rows: [c] } = await q(`select count(*)::int as n from agent_proposals p where p.status = 'pending' and p.kind = any($1)${scope}`, countParams);
   return { proposals: rows, pending: c.n };
 }
 
 async function loadOwn(ctx, id, lock = false) {
   const { rows: [p] } = await q(`select p.*, cu.name as "createdByName", du.name as "decidedByName" ${FROM} where p.id = $1 ${lock ? 'for update of p' : ''}`, [id]);
-  if (!p || !canDecide(ctx, p.kind)) throw new HttpError(404, 'That proposal was not found.');
+  if (!p || !canDecideRow(ctx, p)) throw new HttpError(404, 'That proposal was not found.');
   return p;
 }
 
 /**
  * One proposal with what the person needs to decide: for fee reminders the guardians and amounts as they are
- * NOW (and, once sent, how many have paid since); for an import the cleaned rows' check. Phone numbers and the
- * raw sheet are not sent to the browser before approval.
+ * NOW (and, once sent, how many have paid since); for an import the cleaned rows' check; for parent notes the
+ * students' figures now; for a reply the application's check. Phone numbers and the raw sheet are not sent to
+ * the browser before approval. `details` maps a kind to its detail function.
  */
-export async function getProposal(ctx, id, { feeDetail, importDetail }) {
+export async function getProposal(ctx, id, details) {
   const p = await loadOwn(ctx, id);
   const base = {
     id: p.id, agent: p.agent, kind: p.kind, title: p.title, summary: p.summary, figures: p.figures, status: p.status,
     createdAt: p.created_at, createdBy: p.createdByName, decidedAt: p.decided_at, decidedBy: p.decidedByName, decisionNote: p.decision_note, result: p.result,
   };
-  if (p.kind === 'fee_reminders') return { ...base, template: p.payload.template, language: p.payload.language, ...(await feeDetail(p)) };
-  return { ...base, fileName: p.payload.fileName, ...(await importDetail(p)) };
+  if (p.kind === 'fee_reminders') return { ...base, template: p.payload.template, language: p.payload.language, ...(await details.fee_reminders(p)) };
+  if (p.kind === 'parent_notes' || p.kind === 'enquiry_reply') return { ...base, ...(await details[p.kind](p)) };
+  return { ...base, fileName: p.payload.fileName, ...(await details.import(p)) };
 }
 
 /**

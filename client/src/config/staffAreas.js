@@ -17,8 +17,9 @@ export function officeGrant(office, path) {
   const seg = String(path).split('/')[2] || 'dashboard';
   if (ADMIN_ONLY.includes(seg)) return null;
   if (seg === 'reports') return office.reportGroups?.length ? { scope: 'all' } : null;
-  // The assistants page: a principal (Ask PlanetU), an accountant (Fee follow-up) or the admission office (Setup fixer)
-  if (seg === 'assistants') return ['dashboard', 'fees', 'students'].some((a) => office.areas?.[a]?.scope === 'all') ? { scope: 'all' } : null;
+  // The assistants page: a principal (Ask PlanetU, Attendance watch), an accountant (Fee follow-up) or the admission
+  // office (Setup fixer, Admissions helper)
+  if (seg === 'assistants') return ['dashboard', 'fees', 'students', 'attendance', 'admissions'].some((a) => office.areas?.[a]?.scope === 'all') ? { scope: 'all' } : null;
   const area = AREA_OF[seg];
   return area ? office.areas?.[area] || null : null;
 }

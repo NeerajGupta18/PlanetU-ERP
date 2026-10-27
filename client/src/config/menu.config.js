@@ -173,6 +173,7 @@ export const MENU_TREE = {
       { label: 'Learning', to: '/employee/learning', module: 'learning' },
     ] },
     { label: 'Exam marks', to: '/employee/exams', icon: GraduationCap, module: 'exams', teaching: true },
+    { label: 'Attendance watch', to: '/employee/assistants', icon: Sparkles, module: 'attendance', classTeacher: true },
     // Office pages from the employee's staff roles (principal, accountant, librarian...) go here - see useNav
     {
       group: 'Me', icon: UserRound, items: [

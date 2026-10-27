@@ -94,6 +94,13 @@ export const templates = {
     cta: { label: 'View details', url: statusUrl },
   }),
 
+  // A reply the admission office approved (drafted by the Admissions helper)
+  applicationMessage: ({ institute, applicationNo, message, statusUrl }) => mail(`About your application ${applicationNo}`, {
+    institute, title: 'A message from the admission office',
+    lines: String(message).split(/\n+/).filter(Boolean),
+    cta: { label: 'View your application', url: statusUrl },
+  }),
+
   applicationInvite: ({ institute, name, applicationNo, accessCode, course, statusUrl }) => mail(`Complete your application to ${institute}`, {
     institute, title: 'Your application is ready to fill in',
     lines: [`Hello ${name},`, `Thank you for your enquiry${course ? ` about ${course}` : ''}. We have started an application for you.`,

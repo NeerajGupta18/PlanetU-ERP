@@ -1,4 +1,5 @@
 import { officeOf } from '../services/staff.service.js';
+import { classesOf } from '../../agents/attendanceWatch.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
@@ -50,7 +51,9 @@ async function sessionExtras(user, tenant) {
   const office = user.role === 'employee' ? await officeOf({ role: 'employee', employeeId: user.employeeId ?? user.employee_id }) : null;
   // A parent who has not yet agreed to the consent screen is sent there first (see ProtectedRoute)
   const consentNeeded = asksConsent(user) ? (await consentStatus(user.id)).needed : false;
-  return { institute: await instituteBrief(), notifications, billing, office, consentNeeded };
+  // A class teacher gets the Attendance watch assistant for their own classes
+  const classTeacher = user.role === 'employee' ? (await classesOf(user.employeeId ?? user.employee_id)).length > 0 : false;
+  return { institute: await instituteBrief(), notifications, billing, office, consentNeeded, classTeacher };
 }
 
 /* ---------- captcha ---------- */

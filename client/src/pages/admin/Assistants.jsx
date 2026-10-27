@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
-  AlertTriangle, BadgeIndianRupee, Banknote, CalendarOff, ClipboardCheck, FileSpreadsheet, History, Inbox, MessageSquareText,
-  Send, Sparkles, Users2, Wand2,
+  AlertTriangle, BadgeIndianRupee, Banknote, CalendarOff, ClipboardCheck, FileSpreadsheet, History, Inbox, MailQuestion, MessageSquareText,
+  Send, Sparkles, UserCheck, Users2, Wand2,
 } from 'lucide-react';
 import { api } from '../../api/http.js';
 import { useFetch } from '../../hooks/useFetch.js';
@@ -23,19 +24,27 @@ const QUICK = [
   'What is waiting for a decision?',
 ];
 const STATUS = { pending: ['amber', 'Waiting'], approved: ['green', 'Approved'], rejected: ['gray', 'Rejected'], failed: ['red', 'Failed'] };
-const AGENT = { ask: 'Ask PlanetU', brief: 'Morning brief', fees: 'Fee follow-up', setup: 'Setup fixer' };
+const AGENT = { ask: 'Ask PlanetU', brief: 'Morning brief', fees: 'Fee follow-up', setup: 'Setup fixer', attendance: 'Attendance watch', admissions: 'Admissions helper' };
+const AGENT_ICON = { fees: BadgeIndianRupee, setup: FileSpreadsheet, attendance: UserCheck, admissions: MailQuestion };
+const LANGUAGE_OPTIONS = <><option value="en">English</option><option value="hi">Hindi</option><option value="mr">Marathi</option></>;
 const OUTCOME = { answered: 'Answered', proposed: 'Proposal made', refused: 'Nothing to do', busy: 'Busy', capped: 'Allowance used up', error: 'Failed' };
 const words = (k) => k.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase());
 const num = (v) => (typeof v === 'number' ? v.toLocaleString('en-IN') : v ?? '');
 
-/** The AI assistants: questions, morning brief, fee follow-up, sheet cleaning, and the approval inbox. */
+/**
+ * The AI assistants: questions, morning brief, fee follow-up, sheet cleaning, attendance watch, admissions helper
+ * and the approval inbox. Class teachers open the same page at /employee/assistants.
+ */
 export default function Assistants() {
+  const { pathname } = useLocation();
   const { data: status, loading, error, reload } = useFetch('/assistants/status');
   const inbox = useFetch(status?.can.inbox ? '/assistants/proposals' : null);
   const can = status?.can || {};
   const tabs = [
     can.ask && { id: 'ask', label: 'Ask PlanetU', icon: MessageSquareText },
+    can.attendance && { id: 'attendance', label: 'Attendance watch', icon: UserCheck },
     can.fees && { id: 'fees', label: 'Fee follow-up', icon: BadgeIndianRupee },
+    can.admissions && { id: 'admissions', label: 'Admissions helper', icon: MailQuestion },
     (can.setupStudents || can.setupStaff) && { id: 'setup', label: 'Setup fixer', icon: Wand2 },
     can.inbox && { id: 'inbox', label: `Approvals${inbox.data?.pending ? ` (${inbox.data.pending})` : ''}`, icon: Inbox },
     can.log && { id: 'log', label: 'Activity', icon: History },
@@ -49,7 +58,7 @@ export default function Assistants() {
       <PageHeader
         icon={Sparkles} title="Assistants"
         subtitle="AI helpers that read your institute's records and prepare work. Nothing changes until a person approves it."
-        next={inbox.data?.pending ? { text: `${inbox.data.pending} proposal${inbox.data.pending === 1 ? '' : 's'} waiting for your decision`, to: '/admin/assistants?tab=inbox' } : undefined}
+        next={inbox.data?.pending ? { text: `${inbox.data.pending} proposal${inbox.data.pending === 1 ? '' : 's'} waiting for your decision`, to: `${pathname}?tab=inbox` } : undefined}
       />
       <DataBoundary loading={loading} error={error} data={status} reload={reload}>
         {status && (
@@ -59,10 +68,12 @@ export default function Assistants() {
                 ? <><Badge tone="green">Connected</Badge> AI model: {status.model}. Used today: {num(status.tokensToday)} of {num(status.dailyTokens)} tokens.</>
                 : <><Badge tone="amber">Not connected</Badge> The assistants need a model key, which your technical person adds on the server. Everything else in the ERP works as usual, and the morning brief figures still show.</>}
             </div>
-            {!tabs.length ? <Card><EmptyState title="No assistant for your role" hint="The assistants are for the principal, the accountant, the admission office and the institute admin." /></Card> : (
+            {!tabs.length ? <Card><EmptyState title="No assistant for your role" hint="The assistants are for the principal, the accountant, the admission office, class teachers and the institute admin." /></Card> : (
               <>
                 <Tabs tabs={tabs} active={active} onChange={setTab} />
                 {active === 'ask' && <AskTab connected={status.connected} />}
+                {active === 'attendance' && <AttendanceTab connected={status.connected} onProposal={refresh} openInbox={() => setTab('inbox')} />}
+                {active === 'admissions' && <AdmissionsTab connected={status.connected} onProposal={refresh} openInbox={() => setTab('inbox')} />}
                 {active === 'fees' && <FeesTab connected={status.connected} onProposal={refresh} openInbox={() => setTab('inbox')} />}
                 {active === 'setup' && <SetupTab connected={status.connected} can={can} onProposal={refresh} openInbox={() => setTab('inbox')} />}
                 {active === 'inbox' && <InboxTab inbox={inbox} onDecided={refresh} />}
@@ -243,9 +254,7 @@ function FeesTab({ connected, onProposal, openInbox }) {
           <p className="muted">The assistant writes one reminder in the language you choose, with blanks for the name and amount. The system fills those from the records when you approve, so the assistant never sees names, phone numbers or amounts.</p>
           <div className="ask-form">
             <FormField label="Language">
-              <select className="input" value={language} onChange={(e) => setLanguage(e.target.value)}>
-                <option value="en">English</option><option value="hi">Hindi</option><option value="mr">Marathi</option>
-              </select>
+              <select className="input" value={language} onChange={(e) => setLanguage(e.target.value)}>{LANGUAGE_OPTIONS}</select>
             </FormField>
             <button type="button" className="btn btn--primary" onClick={make} disabled={!connected || busy}>{busy ? 'Drafting...' : 'Draft the reminder'}</button>
           </div>
@@ -357,6 +366,188 @@ function ImportRows({ rows }) {
   );
 }
 
+/* ---------------- Attendance watch ---------------- */
+
+const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+
+/** Why a student is on the list, always in words (never colour alone). */
+function Reasons({ s, minimum }) {
+  return (
+    <span className="chips">
+      {s.threeInARow && <Badge tone="red">Absent 3 days in a row</Badge>}
+      {s.level === 'below' && <Badge tone="red">Below {minimum}%</Badge>}
+      {s.level === 'near' && <Badge tone="amber">Close to {minimum}%</Badge>}
+      {!s.flagged && s.flagged !== undefined && <Badge tone="green">Improved since</Badge>}
+    </span>
+  );
+}
+
+function AttendanceTab({ connected, onProposal, openInbox }) {
+  const [courseId, setCourseId] = useState('');
+  const { data, loading, error, reload } = useFetch(`/assistants/attendance/overview${courseId ? `?courseId=${courseId}` : ''}`);
+  const [language, setLanguage] = useState('en');
+  const [busy, setBusy] = useState(false);
+  const [draft, setDraft] = useState(null);
+  const [err, setErr] = useState('');
+  const make = async () => {
+    setBusy(true); setErr(''); setDraft(null);
+    try { setDraft(await api.post('/assistants/attendance/draft', { language, courseId: courseId || undefined })); onProposal(); } catch (e) { setErr(e.message); } finally { setBusy(false); }
+  };
+  return (
+    <>
+      <Card
+        title="Students who need a word with home" icon={UserCheck}
+        action={data?.classes?.length > 1 && (
+          <select className="input input--sm" aria-label="Class" value={courseId} onChange={(e) => setCourseId(e.target.value)}>
+            <option value="">All my classes</option>
+            {data.classes.map((c) => <option key={c.id} value={c.id}>{c.code}</option>)}
+          </select>
+        )}
+      >
+        <DataBoundary loading={loading} error={error} data={data} reload={reload}>
+          {data && (
+            <>
+              <p className="muted">Absent on each of their last three days of registers, or below or within {data.nearBy} points of the {data.minimum}% minimum this term. Worked out from submitted registers only.</p>
+              <div className="stats">
+                <StatCard value={num(data.counts.flagged)} label={`Flagged of ${num(data.watched)} students`} icon={Users2} {...pending(data.counts.flagged, { act: 'Draft a note', clear: 'Nobody flagged' })} />
+                <StatCard value={num(data.counts.threeInARow)} label="Absent 3 days in a row" icon={CalendarOff} />
+                <StatCard value={num(data.counts.below)} label={`Below ${data.minimum}%`} icon={AlertTriangle} />
+                <StatCard value={num(data.counts.near)} label={`Close to ${data.minimum}%`} icon={ClipboardCheck} />
+              </div>
+              <DataTable
+                caption="Flagged students" rows={data.students} rowKey="id"
+                empty={{ title: 'Nobody needs a note', hint: 'When a student misses three days in a row or slips near the minimum, they appear here.' }}
+                columns={[
+                  { key: 'name', label: 'Student', render: (s) => <><strong>{s.name}</strong> <small className="muted">{s.code}</small></> },
+                  { key: 'classCode', label: 'Class' },
+                  { key: 'percent', label: 'This term', num: true, render: (s) => `${s.percent}%` },
+                  { key: 'why', label: 'Why', render: (s) => <Reasons s={s} minimum={data.minimum} /> },
+                  { key: 'parent', label: 'Parent', render: (s) => (s.parentLinked ? <Badge tone="green">In the app</Badge> : s.hasPhone ? <Badge tone="blue">Mobile on file</Badge> : <Badge tone="gray">No contact</Badge>) },
+                ]}
+              />
+            </>
+          )}
+        </DataBoundary>
+      </Card>
+      {data?.counts.flagged > 0 && (
+        <Card title="Draft one parent note" icon={Send}>
+          <p className="muted">The assistant writes one caring note in the language you choose, with blanks for the name and attendance. The system fills those from the registers when you approve, so the assistant never sees names, phone numbers or figures.</p>
+          <div className="ask-form">
+            <FormField label="Language">
+              <select className="input" value={language} onChange={(e) => setLanguage(e.target.value)}>{LANGUAGE_OPTIONS}</select>
+            </FormField>
+            <button type="button" className="btn btn--primary" onClick={make} disabled={!connected || busy}>{busy ? 'Drafting...' : `Draft a note for ${plural(data.counts.flagged, 'parent')}`}</button>
+          </div>
+          {err && <p className="form-error" role="alert">{err}</p>}
+          {draft && <DraftReady draft={draft} text={draft.template} openInbox={openInbox} nothing="Nothing has been sent." />}
+        </Card>
+      )}
+    </>
+  );
+}
+
+/** The drafted text, labelled as AI, and the proposal now waiting. */
+function DraftReady({ draft, text, openInbox, nothing }) {
+  return (
+    <div className="ai-answer" role="status">
+      <AiLabel />
+      <p className="ai-template">{text}</p>
+      {draft.usedStandard && <p className="note">{draft.standardReason}</p>}
+      <p><strong>{draft.proposal.title}</strong> is ready and waiting for approval. {nothing}</p>
+      <button type="button" className="btn btn--outline btn--sm" onClick={openInbox}>Open approvals</button>
+    </div>
+  );
+}
+
+/* ---------------- Admissions helper ---------------- */
+
+const DOC_TONE = { verified: ['green', 'Checked'], uploaded: ['blue', 'Uploaded, to check'], pending: ['blue', 'Uploaded, to check'], rejected: ['red', 'Rejected'], missing: ['amber', 'Missing'] };
+const APP_STATUS = { draft: 'Enquiry', submitted: 'Submitted', documents_pending: 'Waiting for documents', waitlisted: 'Waitlisted', accepted: 'Accepted', rejected: 'Rejected', enrolled: 'Enrolled' };
+
+/** Documents, possible duplicates and the suggested next step: all worked out from the records, no AI. */
+function ApplicationCheck({ documents, duplicates, nextStep }) {
+  return (
+    <>
+      <div className="wizard-note" role="status"><strong>Suggested next step:</strong> {nextStep} <span className="muted">A suggestion only: every decision stays with the admission office.</span></div>
+      <DataTable
+        caption="Required documents" rows={documents} rowKey="docType"
+        columns={[
+          { key: 'label', label: 'Document', render: (d) => d.label[0].toUpperCase() + d.label.slice(1) },
+          { key: 'status', label: 'Status', render: (d) => <Badge tone={DOC_TONE[d.status]?.[0] || 'gray'}>{DOC_TONE[d.status]?.[1] || d.status}</Badge> },
+        ]}
+      />
+      {duplicates.length > 0
+        ? (
+          <DataTable
+            caption="Possible duplicates" rows={duplicates.map((d, i) => ({ ...d, i }))} rowKey="i"
+            columns={[
+              { key: 'ref', label: 'Record', render: (d) => <strong>{d.ref}</strong> },
+              { key: 'kind', label: 'Kind', render: (d) => (d.kind === 'student' ? 'Student' : 'Application') },
+              { key: 'status', label: 'Status', render: (d) => APP_STATUS[d.status] || d.status },
+              { key: 'matched', label: 'Same', render: (d) => d.matched.join(', ') },
+            ]}
+          />
+        )
+        : <p className="muted">No possible duplicate found (same email, mobile, or name and date of birth).</p>}
+    </>
+  );
+}
+
+function AdmissionsTab({ connected, onProposal, openInbox }) {
+  const list = useFetch('/assistants/admissions/applications');
+  const [id, setId] = useState('');
+  const check = useFetch(id ? `/assistants/admissions/check/${id}` : null);
+  const [message, setMessage] = useState('');
+  const [language, setLanguage] = useState('en');
+  const [busy, setBusy] = useState(false);
+  const [out, setOut] = useState(null);
+  const [err, setErr] = useState('');
+  const help = async (e) => {
+    e.preventDefault();
+    setBusy(true); setErr(''); setOut(null);
+    try { setOut(await api.post('/assistants/admissions/help', { applicationId: id, message, language })); onProposal(); } catch (e2) { setErr(e2.message); } finally { setBusy(false); }
+  };
+  const apps = list.data?.applications || [];
+  return (
+    <>
+      <Card title="Check an enquiry and draft the reply" icon={MailQuestion}>
+        <DataBoundary loading={list.loading} error={list.error} data={list.data} reload={list.reload}>
+          {list.data && (apps.length === 0
+            ? <EmptyState compact title="No open applications" hint="Enquiries and submitted applications appear here. Add one from Admissions." action={{ label: 'Open Admissions', to: '/admin/admissions' }} />
+            : (
+              <form className="review-grid" onSubmit={help}>
+                <FormField label="Application">
+                  <select className="input" value={id} onChange={(e) => { setId(e.target.value); setOut(null); }}>
+                    <option value="">Choose an application</option>
+                    {apps.map((a) => <option key={a.id} value={a.id}>{a.applicationNo}: {a.name}, {a.course} ({APP_STATUS[a.status] || a.status})</option>)}
+                  </select>
+                </FormField>
+                {id && (
+                  <>
+                    <DataBoundary loading={check.loading} error={check.error} data={check.data} reload={check.reload}>
+                      {check.data && <ApplicationCheck {...check.data} />}
+                    </DataBoundary>
+                    <FormField label="Their message (optional)" hint="Paste the applicant's email or WhatsApp message. It is read as information only, never as instructions, and phone numbers and emails are removed before the assistant sees it.">
+                      <textarea className="input" rows={4} maxLength={2000} value={message} onChange={(e) => setMessage(e.target.value)} />
+                    </FormField>
+                    <div className="ask-form">
+                      <FormField label="Reply language">
+                        <select className="input" value={language} onChange={(e) => setLanguage(e.target.value)}>{LANGUAGE_OPTIONS}</select>
+                      </FormField>
+                      <button type="submit" className="btn btn--primary" disabled={!connected || busy}>{busy ? 'Drafting...' : 'Draft the reply'}</button>
+                    </div>
+                  </>
+                )}
+              </form>
+            ))}
+        </DataBoundary>
+        {err && <p className="form-error" role="alert">{err}</p>}
+        {out && <DraftReady draft={out} text={out.reply} openInbox={openInbox} nothing="Nothing has been sent, and the application has not changed." />}
+      </Card>
+    </>
+  );
+}
+
 /* ---------------- Approval inbox ---------------- */
 
 function InboxTab({ inbox, onDecided }) {
@@ -366,10 +557,10 @@ function InboxTab({ inbox, onDecided }) {
     <Card title="Proposals from the assistants" icon={Inbox}>
       <DataBoundary loading={loading} error={error} data={data} reload={reload}>
         {data && (data.proposals.length === 0
-          ? <EmptyState compact title="Nothing is waiting" hint="When an assistant prepares reminders or an import, it waits here for your approval." />
+          ? <EmptyState compact title="Nothing is waiting" hint="When an assistant prepares reminders, notes, a reply or an import, it waits here for your approval." />
           : data.proposals.map((p) => (
             <div key={p.id} className="approval">
-              <span className="approval__icon" aria-hidden="true">{p.agent === 'fees' ? <BadgeIndianRupee size={18} /> : <FileSpreadsheet size={18} />}</span>
+              <span className="approval__icon" aria-hidden="true">{(() => { const Icon = AGENT_ICON[p.agent] || FileSpreadsheet; return <Icon size={18} />; })()}</span>
               <div className="approval__main">
                 <div><Badge tone={STATUS[p.status][0]}>{STATUS[p.status][1]}</Badge> <strong>{p.title}</strong></div>
                 <span>{p.summary}</span>
@@ -386,6 +577,18 @@ function InboxTab({ inbox, onDecided }) {
   );
 }
 
+// What "Approve" says and does, per kind of proposal (imports fall back to "Import")
+const APPROVE = {
+  fee_reminders: (p) => ({ what: `Send ${plural(p.toSend, 'reminder')} now? Each guardian gets the message in the app, and WhatsApp links are prepared.`, label: `Send ${p.toSend}` }),
+  parent_notes: (p) => ({ what: `Send ${plural(p.toSend, 'parent note')} now? Parents get the note in the app, and WhatsApp links are prepared.`, label: `Send ${p.toSend}` }),
+  enquiry_reply: (p) => ({ what: `Send this reply to ${p.application?.applicationNo} by email now? The application itself does not change.`, label: 'Send reply' }),
+};
+const APPROVE_BUTTON = {
+  fee_reminders: (p) => `Send ${plural(p.toSend, 'reminder')}`,
+  parent_notes: (p) => `Send ${plural(p.toSend, 'note')}`,
+  enquiry_reply: () => 'Send the reply',
+};
+
 function ProposalModal({ id, onClose, onDecided }) {
   const { data: p, loading, error, reload } = useFetch(`/assistants/proposals/${id}`);
   const { confirm, prompt, toast } = useDialogs();
@@ -393,8 +596,8 @@ function ProposalModal({ id, onClose, onDecided }) {
   const decide = async (decision) => {
     let note = '';
     if (decision === 'approve') {
-      const what = p.kind === 'fee_reminders' ? `Send ${p.toSend} reminder${p.toSend === 1 ? '' : 's'} now? Each guardian gets the message in the app, and WhatsApp links are prepared.` : `${p.title}? The ready rows are imported now.`;
-      if (!(await confirm(what, { title: 'Approve', confirmLabel: p.kind === 'fee_reminders' ? `Send ${p.toSend}` : 'Import' }))) return;
+      const { what, label } = APPROVE[p.kind]?.(p) || { what: `${p.title}? The ready rows are imported now.`, label: 'Import' };
+      if (!(await confirm(what, { title: 'Approve', confirmLabel: label }))) return;
     } else {
       note = await prompt('Why is this not approved? (optional)', { title: 'Reject', confirmLabel: 'Reject', danger: true });
       if (note === null) return;
@@ -416,12 +619,15 @@ function ProposalModal({ id, onClose, onDecided }) {
             {p.status === 'pending' && (
               <div className="form-actions proposal-actions">
                 <button type="button" className="btn btn--outline" onClick={() => decide('reject')} disabled={busy}>Reject</button>
-                <button type="button" className="btn btn--primary" onClick={() => decide('approve')} disabled={busy || (p.kind === 'fee_reminders' && !p.toSend)}>
-                  {p.kind === 'fee_reminders' ? `Send ${p.toSend} reminder${p.toSend === 1 ? '' : 's'}` : 'Approve and import'}
+                <button type="button" className="btn btn--primary" onClick={() => decide('approve')} disabled={busy || ((p.kind === 'fee_reminders' || p.kind === 'parent_notes') && !p.toSend) || (p.kind === 'enquiry_reply' && !p.application)}>
+                  {APPROVE_BUTTON[p.kind]?.(p) || 'Approve and import'}
                 </button>
               </div>
             )}
-            {p.kind === 'fee_reminders' ? <FeeProposal p={p} /> : (
+            {p.kind === 'fee_reminders' && <FeeProposal p={p} />}
+            {p.kind === 'parent_notes' && <NotesProposal p={p} />}
+            {p.kind === 'enquiry_reply' && <ReplyProposal p={p} />}
+            {(p.kind === 'student_import' || p.kind === 'staff_import') && (
               <>
                 <p className="muted">From the file {p.fileName}: {p.check.summary.ready} ready, {p.check.summary.withErrors} will be skipped.</p>
                 <ImportRows rows={p.check.rows} />
@@ -468,6 +674,56 @@ function FeeProposal({ p }) {
           ]}
         />
       )}
+    </>
+  );
+}
+
+function NotesProposal({ p }) {
+  const links = p.result?.links || [];
+  return (
+    <>
+      {p.status === 'pending' && p.preview && (
+        <div className="ai-answer">
+          <span className="muted">The first note, exactly as it will go out:</span>
+          <p className="ai-template">{p.preview}</p>
+        </div>
+      )}
+      {p.result?.improved > 0 && <p className="note">{plural(p.result.improved, 'student')} had improved by the time this was approved, so no note went to them.</p>}
+      {links.length > 0 && (
+        <DataTable
+          caption="Ready-to-send WhatsApp messages" rows={links.map((l, i) => ({ ...l, i }))} rowKey="i"
+          columns={[
+            { key: 'student', label: 'Student', render: (l) => <strong>{l.student}</strong> },
+            { key: 'percent', label: 'This term', num: true, render: (l) => `${l.percent}%` },
+            { key: 'wa', label: '', actions: true, render: (l) => (l.whatsapp ? <a className="btn btn--outline btn--sm" href={l.whatsapp} target="_blank" rel="noreferrer">Open WhatsApp</a> : <span className="muted">No mobile</span>) },
+          ]}
+        />
+      )}
+      {p.status === 'pending' && (
+        <DataTable
+          caption="Students in this round" rows={p.students.map((s, i) => ({ ...s, i }))} rowKey="i"
+          columns={[
+            { key: 'name', label: 'Student', render: (s) => <><strong>{s.name}</strong> <small className="muted">{s.code}</small></> },
+            { key: 'percent', label: 'This term now', num: true, render: (s) => `${s.percent}%` },
+            { key: 'why', label: 'Why', render: (s) => <Reasons s={s} minimum={p.minimum} /> },
+          ]}
+        />
+      )}
+    </>
+  );
+}
+
+function ReplyProposal({ p }) {
+  if (!p.application) return <p className="note">{p.nextStep}</p>;
+  return (
+    <>
+      <p><strong>{p.application.applicationNo}</strong>: {p.application.name}, {p.application.course} ({APP_STATUS[p.application.status] || p.application.status})</p>
+      <div className="ai-answer">
+        <span className="muted">{p.status === 'pending' ? 'The reply, exactly as it will go out by email:' : 'The reply as sent:'}</span>
+        <p className="ai-template">{p.preview}</p>
+      </div>
+      {p.result?.whatsapp && <a className="btn btn--outline btn--sm" href={p.result.whatsapp} target="_blank" rel="noreferrer">Also send on WhatsApp</a>}
+      <ApplicationCheck documents={p.documents} duplicates={p.duplicates} nextStep={p.nextStep} />
     </>
   );
 }

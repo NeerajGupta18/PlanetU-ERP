@@ -27,6 +27,11 @@ const SECTIONS = [
     'Details are never sold and never used for advertising. Each institute\'s details are kept apart from every other institute\'s.',
     'Online fee payments are handled by the payment provider; card and bank details are not stored in this app.',
   ]],
+  ['AI assistants', [
+    'Staff may use AI assistants in the app to prepare drafts, such as a fee reminder, an attendance note or a reply to an applicant. An assistant only prepares work: a staff member checks and approves every change and every message before it goes out.',
+    'The AI model is sent only what the task needs: student and staff codes and first names, and figures such as percentages. Phone numbers, email addresses and home addresses are never sent to it; the app fills them in itself when a message is sent.',
+    'The help chat on the public website is also an AI assistant. It answers from a fixed sheet of product facts, has no access to any institute\'s records, and does not need your name unless you choose to book a demo or leave a message.',
+  ]],
   ['How long it is kept', [
     'For as long as the student or staff member is with the institute, and after that only as long as the institute needs it for its records or the law requires.',
   ]],

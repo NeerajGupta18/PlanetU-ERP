@@ -29,6 +29,13 @@ Assignments
 Coursework, "New assignment": class, subject, due date and marks, then "Save and publish".
 Open it later to grade each answer or send one back to redo.
 
+Class teacher: Attendance watch
+If you are the class teacher of a class, the menu has "Attendance watch".
+1. It lists your students absent on each of their last three days, or below or close to 75% this term.
+2. Choose the language and "Draft a note". The app fills in each child's name and attendance.
+3. Open Approvals, read the first note exactly as it will go out, then "Send N notes". Parents see it in the app,
+   and a ready WhatsApp message is prepared for each one. Nothing is sent before you approve.
+
 Leave and payslips
 - My leave: your balance is at the top. "Apply for leave", pick type and dates, give a reason.
 - My payslips: choose the month once the office finalises payroll.

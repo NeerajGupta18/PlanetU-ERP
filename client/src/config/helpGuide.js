@@ -218,6 +218,16 @@ export const HELP = [
     ],
   },
 
+  {
+    id: 'assistants', who: ['admin', 'area:dashboard', 'area:fees', 'area:students', 'area:attendance', 'area:admissions'], title: 'Use the AI assistants', to: '/admin/assistants',
+    steps: [
+      'Open Assistants. Each tab is one assistant your role can use: Ask PlanetU, Attendance watch, Fee follow-up, Admissions helper, Setup fixer.',
+      'An assistant only prepares work: an answer with the figures it used, a reminder, a parent note, a reply or a cleaned sheet.',
+      'Anything that would change data or send a message waits in the Approvals tab. Open it, check it, then approve or reject.',
+      'Payments, marks and admission decisions always stay with your staff. If the page says "Not connected", the rest of the app works as usual.',
+    ],
+  },
+
   /* ---------------- teaching staff ---------------- */
   {
     id: 'mark', who: ['teaching'], title: 'Mark attendance', module: 'attendance', to: '/employee/attendance',
@@ -227,6 +237,14 @@ export const HELP = [
       'Choose "Review and submit": everyone you did not tap is marked present. Check the names, then "Submit attendance". Students and parents of absent students are told at once.',
       'After submitting, the button takes you straight to your next lecture.',
       'In a college or university you can also start a QR check-in: choose how long it stays open, show the QR on the projector, and students scan it inside the app. Schools do not use this.',
+    ],
+  },
+  {
+    id: 'watch', who: ['teaching'], title: 'Attendance watch (class teachers)', module: 'attendance', to: '/employee/assistants',
+    steps: [
+      'If you are a class teacher, open Attendance watch. It lists your students absent on each of their last three days, or below or close to 75% this term.',
+      'Choose the language and "Draft a note". The app fills in each child\'s name and attendance itself.',
+      'Open Approvals, read the first note exactly as it will go out, then "Send". Parents see it in the app, and a WhatsApp message is ready for each one.',
     ],
   },
   {
