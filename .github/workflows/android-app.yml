@@ -31,6 +31,10 @@ jobs:
           distribution: temurin
           java-version: 21
 
+      # brand.sh resizes the app icon with ImageMagick, which the Ubuntu 24.04 runners no longer include
+      - name: Install ImageMagick
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq imagemagick
+
       - name: Create the Android project
         working-directory: android-app
         run: |

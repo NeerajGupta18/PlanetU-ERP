@@ -3,7 +3,8 @@
 set -e
 RES=android/app/src/main/res
 SRC=../client/public/icon-maskable-512.png
-IM=$(command -v magick || command -v convert)
+IM=$(command -v magick || command -v convert || true)
+[ -n "$IM" ] || { echo "ImageMagick is needed to size the app icon (apt-get install imagemagick)." >&2; exit 1; }
 size() { # folder legacy-size foreground-size
   for f in ic_launcher.png ic_launcher_round.png; do "$IM" "$SRC" -resize "${2}x${2}" "$RES/$1/$f"; done
   "$IM" "$SRC" -resize "${3}x${3}" "$RES/$1/ic_launcher_foreground.png"
