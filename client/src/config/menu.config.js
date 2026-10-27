@@ -1,6 +1,7 @@
 import {
   ScanLine, Rocket,
   Inbox, BedDouble, Banknote, DoorOpen, Briefcase, NotebookPen, QrCode, BookOpen, BookOpenCheck, Boxes, Bus, Building2, CalendarCheck, CalendarOff, CalendarDays, CircleDollarSign, ClipboardCheck, CreditCard, FileBarChart2, FileText, LifeBuoy, Star, GraduationCap, LayoutDashboard, ListChecks, Megaphone, School, Network, Server, Settings2, Table2, UserRound, Users, Users2, Wallet,
+  Sparkles,
 } from 'lucide-react';
 
 /**
@@ -85,6 +86,7 @@ export const MENU_TREE = {
   admin: [
     { label: 'Dashboard', to: '/admin/dashboard', icon: LayoutDashboard },
     { label: 'Approvals', to: '/admin/approvals', icon: Inbox, badge: 'approvals' },
+    { label: 'Assistants', to: '/admin/assistants', icon: Sparkles },
     {
       group: 'Students', icon: Users2, items: [
         { label: 'Admissions', to: '/admin/admissions', icon: ClipboardCheck, module: 'admissions', term: ['admission', 'Admissions'] },

@@ -63,6 +63,7 @@ const EmployeeLeave = lazy(() => import('./pages/employee/Leave.jsx'));
 const AdminLeave = lazy(() => import('./pages/admin/Leave.jsx'));
 const AdminStaffRoles = lazy(() => import('./pages/admin/StaffRoles.jsx'));
 const AdminApprovals = lazy(() => import('./pages/admin/Approvals.jsx'));
+const AdminAssistants = lazy(() => import('./pages/admin/Assistants.jsx'));
 const StudentCheckin = lazy(() => import('./pages/student/Checkin.jsx'));
 const StudentPlacement = lazy(() => import('./pages/student/Placement.jsx'));
 const Visitors = lazy(() => import('./pages/shared/Visitors.jsx'));
@@ -209,6 +210,7 @@ export default function App() {
             <Route path="assignments/:id" element={<AssignmentDetail role="admin" />} />
           </Route>
           <Route path="approvals" element={<AdminApprovals />} />
+          <Route path="assistants" element={<AdminAssistants />} />
           <Route path="staff-roles" element={<AdminStaffRoles />} />
           <Route element={<ModuleGate module="visitors" />}><Route path="visitors" element={<Visitors role="admin" />} /></Route>
           <Route element={<ModuleGate module="placement" />}>
