@@ -28,21 +28,22 @@ export async function createDemoRequest(body = {}) {
     city: text(body.city, 80, 'the city'),
     students: text(body.students, 20, 'the number of students'),
     message: text(body.message, 1000, 'the message'),
+    source: body.source === 'chat' ? 'chat' : 'form',
   };
   if (!row.instituteType) throw new HttpError(400, 'Choose the kind of institute: school, college, university or other.');
   if (!PHONE_RE.test(row.phone)) throw new HttpError(400, 'Enter a phone number with digits only, for example 98765 43210.');
   if (!EMAIL_RE.test(row.email)) throw new HttpError(400, 'Enter an email address like name@institute.edu.');
   const { rows: [r] } = await q(
-    `insert into demo_requests (name, institute, institute_type, phone, email, city, students, message)
-     values ($1, $2, $3, $4, $5, $6, $7, $8) returning id`,
-    [row.name, row.institute, row.instituteType, row.phone, row.email, row.city, row.students, row.message],
+    `insert into demo_requests (name, institute, institute_type, phone, email, city, students, message, source)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9) returning id`,
+    [row.name, row.institute, row.instituteType, row.phone, row.email, row.city, row.students, row.message, row.source],
   );
   return { id: r.id };
 }
 
 export async function listDemoRequests() {
   const { rows } = await q(
-    `select id, name, institute, institute_type as "instituteType", phone, email, city, students, message, status,
+    `select id, name, institute, institute_type as "instituteType", phone, email, city, students, message, status, source,
             created_at as "createdAt"
      from demo_requests order by (status = 'new') desc, created_at desc limit 200`,
   );

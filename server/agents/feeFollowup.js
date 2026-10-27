@@ -15,8 +15,9 @@ import { notifyStudent } from '../src/services/inbox.service.js';
 import { tenantInfo } from '../src/services/notifications.service.js';
 import { Refusal, ask, guardedRun, playbook } from './runner.js';
 import { createProposal } from './proposals.js';
+import { LANGUAGES, checkTemplate, cleanDraft, fillTemplate } from './templates.js';
 
-export const LANGUAGES = { en: 'English', hi: 'Hindi', mr: 'Marathi' };
+export { LANGUAGES, fillTemplate };
 export const PLACEHOLDERS = ['guardian', 'students', 'amount', 'since', 'institute', 'link'];
 const REQUIRED = ['guardian', 'amount', 'link'];
 
@@ -28,19 +29,7 @@ export const STANDARD = {
 };
 
 /** Why a template cannot be used, or null when it is fine. */
-export function templateProblem(t) {
-  if (typeof t !== 'string' || t.trim().length < 20) return 'too short';
-  if (t.length > 700) return 'too long';
-  if (/[0-9०-९]/.test(t)) return 'it contains digits; amounts and dates must come from the records';
-  if (/https?:|www\./i.test(t)) return 'it contains a web address; the link is filled in by the system';
-  const used = [...t.matchAll(/\{([^{}]*)\}/g)].map((m) => m[1]);
-  const unknown = used.filter((p) => !PLACEHOLDERS.includes(p));
-  if (unknown.length) return `unknown placeholder {${unknown[0]}}`;
-  if (/[{}]/.test(t.replace(/\{[a-z]+\}/g, ''))) return 'a stray curly bracket';
-  const missing = REQUIRED.filter((p) => !used.includes(p));
-  if (missing.length) return `the {${missing[0]}} placeholder is missing`;
-  return null;
-}
+export const templateProblem = (t) => checkTemplate(t, { allowed: PLACEHOLDERS, required: REQUIRED });
 
 const rupees = (n) => `Rs. ${Math.round(Number(n)).toLocaleString('en-IN')}`;
 const day = (d) => new Date(`${String(d).slice(0, 10)}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -50,10 +39,6 @@ const guardianKey = (r) => {
   return d.length === 10 ? `p:${d}` : `s:${r.id}`;
 };
 
-/** The placeholders filled from records. Only ever done on the server. */
-export function fillTemplate(template, values) {
-  return template.replace(/\{([a-z]+)\}/g, (m, k) => (values[k] ?? m));
-}
 
 /** Overdue students grouped by guardian (same guardian phone = one reminder). Amounts straight from SQL. */
 export async function overdueGroups({ courseId } = {}) {
@@ -94,7 +79,7 @@ export async function draftReminders(ctx, { language, courseId } = {}) {
       messages: [{ role: 'system', content: playbook('fees') }, { role: 'user', content: `Language: ${LANGUAGES[language]}. Write the template.` }],
       maxTokens: 500,
     });
-    const drafted = String(msg.content || '').trim().replace(/^["'“”]+|["'“”]+$/g, '');
+    const drafted = cleanDraft(msg.content);
     const problem = templateProblem(drafted);
     const template = problem ? STANDARD[language] : drafted;
     const n = o.guardians;

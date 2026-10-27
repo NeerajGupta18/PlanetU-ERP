@@ -1,0 +1,70 @@
+PlanetU Campus ERP: fact sheet for the website help chat
+
+What it is
+- PlanetU Campus ERP is campus management software from PlanetU Technovision for schools, colleges and universities.
+- The institute chooses its kind (school, college or university) when it is created, and the words and screens follow: classes and a daily register for a school, semesters and lecture-wise attendance for a college.
+- It covers admissions, fees, attendance, timetable, exams and results, report cards, a parent app, notices, leave, payroll, library, hostel, transport, placement, visitors, and a help desk for questions and feedback.
+
+Phones
+- Every screen works on a phone.
+- There is an Android app. On an iPhone or a computer it can be added to the home screen from the browser.
+
+Setting up
+- A seven-step setup guide: profile and logo, academic year, classes and divisions, subjects and teachers, fee heads and plans, import students and staff, invite people.
+- Setup takes about 30 minutes once the student and staff lists are ready. Work is saved at every step.
+- Existing student and staff lists can be imported from a sheet saved as CSV. "Check before import" lists each bad row and says how to fix it. Nothing is saved until the office confirms.
+- Sample data can be switched on to try things first, and removed later with one click.
+- For a pilot, the PlanetU team helps set up and import the institute's data.
+
+Your look
+- The institute's logo and colour appear on every screen, and the logo is on receipts, ID cards and report cards.
+
+Each role has its own home
+- The principal, the fee office, teachers, students and parents each open to a home page made for their job.
+- Office staff roles (principal, accountant, admission officer, exam cell, librarian and others) each see only their own pages.
+
+Admissions
+- The admissions board has one column per step: enquiry, application, documents, decision, offer, fee, enrolled.
+- Applicants can fill in the form from their phone with a link, or the office fills it in at the desk.
+- The office checks documents, then accepts, waitlists or rejects. Enrolling creates the student, their login and ID card, and invites the parent.
+
+Fees
+- Fee plans per class. Payments are recorded at the counter with a receipt carrying the institute's logo.
+- Online payment by UPI, card or netbanking can be switched on. Without it, parents see what is due and pay at the fee counter, and the receipt then shows in their app.
+- Overdue fees: ready reminder messages for WhatsApp or in the app, late fees, concessions, and a day-end summary that can be printed or downloaded as PDF.
+
+Attendance
+- Colleges and universities: teachers mark a register for every lecture. Only the absent or late students are tapped; everyone else counts as present. Marking takes under a minute.
+- Colleges and universities can also use QR check-in: the teacher shows a QR code and students scan it in the app.
+- Schools: the class teacher takes one register a day.
+- Absent students and their parents are told at once in the app.
+- Reports list students below 75% attendance.
+
+Exams and results
+- Teachers enter marks paper by paper. Results can be published only when every student has a mark or Absent in every paper.
+- Students and parents see published results at once. Report cards carry the institute's logo.
+
+Parents
+- Parents get an invite by email when their child is enrolled.
+- Their home page "My child today" shows today's classes with present, absent or late, fees due, attendance, the latest result and new notices. Parents with more than one child can switch between them.
+- Parents give consent the first time they sign in, and their answer is saved with the date and time.
+
+Keeping data safe
+- Each institute's records are kept apart inside the database itself (row-level security), not only on the screen.
+- Each role sees only its own work: a parent their own child, a teacher their own classes, the fee office the fees.
+- Passwords are stored scrambled, sign-in has an "I'm not a robot" check, and repeated wrong tries are slowed down.
+- Fee, admission and exam actions are logged with the person and the time.
+- There is a privacy notice on the website.
+
+AI assistants inside the ERP
+- Ask PlanetU (principal and admin): questions in plain words about the institute's own data, answered with the figures it used, and a morning brief.
+- Fee follow-up (accountant): finds overdue fees, groups them by family and drafts the reminders.
+- Setup fixer (admin): tidies a messy student or staff sheet and explains every fix.
+- Attendance watch (class teacher and principal): spots three absent days in a row or a student near the minimum, and drafts a note to the parent.
+- Admissions helper (admission office): checks an application for missing documents and duplicates and drafts the reply.
+- The assistants only prepare work. A person approves every important change. Payments, marks and admission decisions always stay with the institute's staff.
+
+Plans and demo
+- Plans for schools, colleges and universities. It is priced per institute, by size. The team sends a clear quote after a short talk. This chat does not give prices.
+- A paid pilot for one term is possible, with help to set up and import data.
+- A demo is a 30-minute walk through admission, fee receipt, attendance and results, on a phone and a laptop. The team calls within one working day of a demo request.

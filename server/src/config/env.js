@@ -108,4 +108,7 @@ export const env = {
   // Our own limits, kept below the provider's free plan (Groq: 200,000 tokens a day, 30 requests a minute)
   get AGENT_DAILY_TOKENS() { const n = Number(process.env.AGENT_DAILY_TOKENS); return Number.isInteger(n) && n > 0 ? n : 60000; },
   get AGENT_RUNS_PER_MINUTE() { const n = Number(process.env.AGENT_RUNS_PER_MINUTE); return Number.isInteger(n) && n > 0 ? n : 6; },
+  // The public help chat: a tighter daily allowance of its own, and messages per minute from one connection
+  get PUBLIC_DAILY_TOKENS() { const n = Number(process.env.PUBLIC_DAILY_TOKENS); return Number.isInteger(n) && n > 0 ? n : 30000; },
+  get PUBLIC_CHAT_PER_MINUTE() { const n = Number(process.env.PUBLIC_CHAT_PER_MINUTE); return Number.isInteger(n) && n > 0 ? n : 6; },
 };
