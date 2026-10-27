@@ -117,3 +117,15 @@ Not in these days: scheduled morning runs (needs the paid always-on server), aut
 ## Local database safety
 - This repo's local database is on port 5433. Before running `npm run db:setup` or any test, confirm DATABASE_URL points to localhost:5433 and this repo's own database. If it points anywhere else, stop and tell Neeraj.
 - Day 10: when the assistants are live, remove the "Coming soon" label from the assistants section of the landing page.
+
+## Day 11 (Wed 28 Oct): fingerprint login, Android app only
+Goal: sign in once with ID and password, offer "Use fingerprint next time", then unlock that account with a fingerprint on later opens. Web and the iPhone web app stay unchanged.
+- Offer fingerprint only after a successful password sign-in in the Android app, and only if the phone has biometrics enrolled. Remember "no" per account and let the user enable it later from their profile.
+- The server issues a random device token per user and device. Store only its HASH in a new table (user, institute, device label, token hash, created, last used, expires after 30 days, revoked). Institute-isolated like every other table. This is an additive migration, so STOP for Neeraj's go-ahead. Rate-limit the token sign-in endpoint and write it to the audit log.
+- The app keeps the token in Android Keystore-backed secure storage, readable only after a successful fingerprint. NEVER store the password on the phone.
+- Several accounts per phone (up to 5): a Saved accounts screen, tap an account then fingerprint. "Use password instead" and "Switch account" always available.
+- Revoke the token on: logout with "forget this device", password change, account deactivation, an admin or the user removing the device (list devices in the profile). After 30 days ask for the password again.
+- Two-step verification: a trusted device skips the second step for non-admin accounts; admin and owner accounts still require it.
+- Use a free open-source plugin. Check its licence and Capacitor 7 support from its own README before installing, and do not use any paid or "Insiders" plugin. Report the package and licence in the summary.
+- Tests cannot cover the fingerprint prompt. Add server tests for: token issue, hash-only storage, valid, expired, revoked and other-institute tokens, and rate limiting. Build the APK with the existing GitHub Actions workflow and tell Neeraj exactly where to download it.
+- In the summary give Neeraj a phone test checklist: enable it, unlock, wrong fingerprint three times, logout and forget device, password change revokes, admin removes a device, a second saved account, and expiry.
