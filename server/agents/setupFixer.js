@@ -41,10 +41,16 @@ export function matchHeader(cells, columns) {
   return { map, unknown, used };
 }
 
-/** "RAHUL SHARMA" / "rahul sharma" -> "Rahul Sharma". Names already in mixed case are left alone. */
+/**
+ * "RAHUL SHARMA" / "rahul DESAI" -> "Rahul Sharma" / "Rahul Desai", word by word. A word already in mixed case
+ * ("McKenzie") and short initials ("A.K.") are left alone.
+ */
 export function nameCase(v) {
-  if (!/[a-z]/i.test(v) || (v !== v.toUpperCase() && v !== v.toLowerCase())) return v;
-  return v.toLowerCase().replace(/(^|[\s'.-])([a-z])/g, (m, a, b) => a + b.toUpperCase());
+  return v.split(' ').map((w) => {
+    if (!/[a-z]/i.test(w) || (w !== w.toUpperCase() && w !== w.toLowerCase())) return w;
+    if (w === w.toUpperCase() && /^([A-Z]\.)+$/.test(w)) return w;
+    return w.toLowerCase().replace(/(^|['.-])([a-z])/g, (m, a, b) => a + b.toUpperCase());
+  }).join(' ');
 }
 
 /** "+91 98123-45600", "098123 45600", "91 9812345600" -> "9812345600". Anything else is left as typed. */

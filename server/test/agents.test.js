@@ -303,6 +303,8 @@ describe('Setup fixer', () => {
     assert.equal(nameCase('RAHUL SHARMA'), 'Rahul Sharma');
     assert.equal(nameCase('d\'souza anil'), 'D\'Souza Anil');
     assert.equal(nameCase('McKenzie'), 'McKenzie');
+    assert.equal(nameCase('rohan DESAI'), 'Rohan Desai');
+    assert.equal(nameCase('A.K. SINGH'), 'A.K. Singh');
     assert.equal(phoneFix('+91 98123-45600'), '9812345600');
     assert.equal(phoneFix('098123 45600'), '9812345600');
     const { rows, removed, counts } = cleanRows([

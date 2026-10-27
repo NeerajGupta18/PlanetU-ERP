@@ -1341,3 +1341,4 @@ a.banner__next:hover { text-decoration: underline; }
   .ask-form > :first-child { flex-basis: auto; }
   .ask-form .btn { width: 100%; }
 }
+.proposal-actions { margin-top: 0; }

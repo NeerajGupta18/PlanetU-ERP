@@ -12,6 +12,7 @@ import DataTable from '../../components/ui/DataTable.jsx';
 import Modal from '../../components/ui/Modal.jsx';
 import { useDialogs } from '../../components/ui/Dialogs.jsx';
 import { inr0 } from '../../utils/billing.js';
+import { inrShort } from '../../utils/kpi.js';
 import { fmtDate } from '../../utils/dates.js';
 
 const QUICK = [
@@ -75,7 +76,12 @@ export default function Assistants() {
   );
 }
 
-const AiLabel = () => <span className="ai-label"><Sparkles size={13} aria-hidden="true" /> Written by AI</span>;
+const AiLabel = ({ text = 'Written by AI' }) => <span className="ai-label"><Sparkles size={13} aria-hidden="true" /> {text}</span>;
+
+/** The model's text as plain paragraphs; its **bold** marks become bold, nothing else is interpreted. */
+const AiText = ({ text }) => String(text).split(/\n{2,}/).map((para, i) => (
+  <p key={i}>{para.split(/\*\*(.+?)\*\*/g).map((part, j) => (j % 2 ? <strong key={j}>{part}</strong> : part))}</p>
+));
 
 /* ---------------- Ask PlanetU ---------------- */
 
@@ -108,7 +114,7 @@ function AskTab({ connected }) {
           {answer && (
             <div className="ai-answer">
               <AiLabel />
-              <p>{answer.answer}</p>
+              <AiText text={answer.answer} />
               {!answer.grounded && <p className="note">The assistant's wording did not match the figures, so only the figures are shown.</p>}
             </div>
           )}
@@ -174,7 +180,7 @@ function MorningBrief({ connected }) {
               {f.attendanceYesterday && <StatCard value={overall(f.attendanceYesterday)} label="Attendance yesterday" icon={ClipboardCheck} to="/admin/attendance" />}
               {f.attendanceWeek && <StatCard value={lowest ? `${lowest.percent}%` : null} label={lowest ? `Lowest this week: ${lowest.class}` : 'Lowest class this week'} icon={ClipboardCheck} to="/admin/attendance" />}
               {f.below75 && <StatCard value={num(f.below75.count)} label="Students below 75% this term" icon={Users2} {...pending(f.below75.count, { act: 'Follow up' })} />}
-              {f.dues && <StatCard value={inr0(f.dues.overdue)} label={`Overdue fees (${f.dues.students_overdue} students)`} icon={BadgeIndianRupee} to="/admin/fees" {...pending(f.dues.overdue, { level: 'bad', act: 'Past the due date', clear: 'Nothing overdue' })} />}
+              {f.dues && <StatCard value={inrShort(f.dues.overdue)} sub={inr0(f.dues.overdue)} label={`Overdue fees (${f.dues.students_overdue} students)`} icon={BadgeIndianRupee} to="/admin/fees" {...pending(f.dues.overdue, { level: 'bad', act: 'Past the due date', clear: 'Nothing overdue' })} />}
               {f.collectedYesterday && <StatCard value={inr0(f.collectedYesterday.total)} label={`Collected yesterday (${f.collectedYesterday.receipts} receipts)`} icon={Banknote} />}
               {f.waiting && <StatCard value={num(f.waiting.approvals + f.waiting.assistant_proposals)} label="Waiting for a decision" icon={Inbox} to="/admin/approvals" {...pending(f.waiting.approvals + f.waiting.assistant_proposals)} />}
               {f.onLeave && <StatCard value={num(f.onLeave.count)} label="Staff on leave today" icon={CalendarOff} sub={f.onLeave.staff.map((s) => `${s.first_name} (${s.code})`).join(', ')} />}
@@ -184,7 +190,7 @@ function MorningBrief({ connected }) {
             {summary && (
               <div className="ai-answer" role="status">
                 <AiLabel />
-                <p>{summary.summary || 'The assistant\'s wording did not match the figures, so only the figures are shown.'}</p>
+                <AiText text={summary.summary || 'The assistant\'s wording did not match the figures, so only the figures are shown.'} />
               </div>
             )}
           </>
@@ -215,7 +221,7 @@ function FeesTab({ connected, onProposal, openInbox }) {
               <div className="stats stats--3">
                 <StatCard value={num(data.guardians)} label="Guardians to remind" icon={Users2} />
                 <StatCard value={num(data.students)} label="Students with overdue fees" icon={Users2} />
-                <StatCard value={inr0(data.overdueTotal)} label="Overdue in all" icon={BadgeIndianRupee} {...pending(data.overdueTotal, { level: 'bad', act: 'Past the due date', clear: 'Nothing overdue' })} />
+                <StatCard value={inrShort(data.overdueTotal)} sub={inr0(data.overdueTotal)} label="Overdue in all" icon={BadgeIndianRupee} {...pending(data.overdueTotal, { level: 'bad', act: 'Past the due date', clear: 'Nothing overdue' })} />
               </div>
               <DataTable
                 caption="Guardians with overdue fees" rows={data.groups} rowKey="key"
@@ -306,7 +312,7 @@ function SetupTab({ connected, can, onProposal, openInbox }) {
                 columns={[
                   { key: 'heading', label: 'Heading in your sheet' },
                   { key: 'field', label: 'Used as', render: (c) => c.field || <span className="muted">Not used</span> },
-                  { key: 'by', label: 'Matched by', render: (c) => (c.by === 'assistant' ? <AiLabel /> : 'Known spelling') },
+                  { key: 'by', label: 'Matched by', render: (c) => (c.by === 'assistant' ? <AiLabel text="Matched by AI" /> : 'Known spelling') },
                 ]}
               />
             )}
@@ -367,7 +373,7 @@ function InboxTab({ inbox, onDecided }) {
               <div className="approval__main">
                 <div><Badge tone={STATUS[p.status][0]}>{STATUS[p.status][1]}</Badge> <strong>{p.title}</strong></div>
                 <span>{p.summary}</span>
-                <small>Prepared by {AGENT[p.agent]} for {p.createdBy || 'a former user'}, {fmtDate(p.createdAt)}{p.decidedBy ? `. ${STATUS[p.status][1]} by ${p.decidedBy}` : ''}</small>
+                <small>Prepared by {AGENT[p.agent]} for {p.createdBy || 'a former user'}, {fmtDate(String(p.createdAt).slice(0, 10))}{p.decidedBy ? `. ${STATUS[p.status][1]} by ${p.decidedBy}` : ''}</small>
               </div>
               <div className="approval__actions">
                 <button type="button" className={`btn btn--sm ${p.status === 'pending' ? 'btn--primary' : 'btn--outline'}`} onClick={() => setOpen(p.id)}>{p.status === 'pending' ? 'Review' : 'View'}</button>
@@ -407,6 +413,14 @@ function ProposalModal({ id, onClose, onDecided }) {
         {p && (
           <div className="review-grid">
             <div><Badge tone={STATUS[p.status][0]}>{STATUS[p.status][1]}</Badge> <span className="muted">{p.summary}</span></div>
+            {p.status === 'pending' && (
+              <div className="form-actions proposal-actions">
+                <button type="button" className="btn btn--outline" onClick={() => decide('reject')} disabled={busy}>Reject</button>
+                <button type="button" className="btn btn--primary" onClick={() => decide('approve')} disabled={busy || (p.kind === 'fee_reminders' && !p.toSend)}>
+                  {p.kind === 'fee_reminders' ? `Send ${p.toSend} reminder${p.toSend === 1 ? '' : 's'}` : 'Approve and import'}
+                </button>
+              </div>
+            )}
             {p.kind === 'fee_reminders' ? <FeeProposal p={p} /> : (
               <>
                 <p className="muted">From the file {p.fileName}: {p.check.summary.ready} ready, {p.check.summary.withErrors} will be skipped.</p>
@@ -415,14 +429,6 @@ function ProposalModal({ id, onClose, onDecided }) {
             )}
             {p.result?.error && <p className="form-error">Could not apply it: {p.result.error}</p>}
             {p.decisionNote && <p className="note">Note: {p.decisionNote}</p>}
-            {p.status === 'pending' && (
-              <div className="form-actions">
-                <button type="button" className="btn btn--outline" onClick={() => decide('reject')} disabled={busy}>Reject</button>
-                <button type="button" className="btn btn--primary" onClick={() => decide('approve')} disabled={busy || (p.kind === 'fee_reminders' && !p.toSend)}>
-                  {p.kind === 'fee_reminders' ? `Send ${p.toSend} reminder${p.toSend === 1 ? '' : 's'}` : 'Approve and import'}
-                </button>
-              </div>
-            )}
           </div>
         )}
       </DataBoundary>
