@@ -21,7 +21,7 @@ import { LANGUAGES, checkTemplate, cleanDraft, fillTemplate } from './templates.
 export const DOC_LABEL = { photo: 'passport-size photo', signature: 'signature', id_proof: 'ID proof', marksheet: 'previous marksheet', other: 'document' };
 export const REPLY_PLACEHOLDERS = ['name', 'application_no', 'course', 'missing', 'link'];
 const STATUS_WORDS = {
-  draft: 'started, form not yet submitted', submitted: 'submitted, being checked', documents_pending: 'waiting for a document from the applicant',
+  draft: 'the applicant has started the form but not submitted it yet', submitted: 'submitted, and the office is checking it', documents_pending: 'the office is waiting for a document from the applicant',
   accepted: 'decided by the office', waitlisted: 'decided by the office', rejected: 'decided by the office', enrolled: 'enrolled',
 };
 // A reply must not announce or promise a decision: those words send it back to the standard wording
