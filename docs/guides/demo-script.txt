@@ -8,6 +8,7 @@ Before the demo
 - Keep two windows: a laptop browser for the office, and a phone (or the browser at phone size) for teacher and parent.
 - Demo passwords: Admin@123, Employee@123, Student@123, Parent@123.
 - Vendor login: on the live site use your own owner login. SA001 / SuperAdmin@123 exists only on a local copy.
+- For the assistants, the model keys must be added on the server first (see the hand-over note). Demo data only.
 
 1. The vendor view (2 minutes)
    Sign in as Super Admin with the owner login.
@@ -56,6 +57,21 @@ Before the demo
    - The orange button is the one next thing. Tap it to reach the fees. If online payment is switched on, pay by UPI and show the receipt.
      If not, the page says "pay at the fee counter".
    - Results: the report card to download. Tap Simran at the top to switch child.
+
+8. The assistants (4 minutes)
+   Needs the model key on the server. Without it the page says "Not connected": show the morning brief figures and say the rest is ready.
+   Sign in as Employee EMP007 (the principal). Open Assistants.
+   - Ask PlanetU: tap "Which classes had the lowest attendance this week?". Point at "Figures used": the numbers come from the records.
+   - Attendance watch: the flagged students and why. "Draft a note" in Marathi, then show it waiting in Approvals.
+   Sign in as Admin. Assistants.
+   - Fee follow-up: "Draft the reminder", open Approvals, show the first reminder filled in, then "Send N reminders".
+   - Admissions helper: pick an application, paste a message, "Draft the reply". "It checks and drafts. Your office decides."
+   - Activity: every run, who asked and what it did.
+   Line to say: "They draft. You decide. They never touch payments, marks or admission decisions."
+
+9. The help chat (1 minute)
+   On the public page, tap "Questions? AI help", tick "I'm not a robot", tap "Does it work on phones?".
+   Then ask "How much does it cost?": it does not quote a price and offers a demo or a message to the team.
 
 Closing line
 "Every job is a short process with a step bar, one clear next button, and your logo on everything a parent sees."

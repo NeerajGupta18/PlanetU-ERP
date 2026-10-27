@@ -22,10 +22,12 @@ What is ready
 - Exams: marks per paper, checks before publishing, report cards with the logo.
 - Parent home ("My child today") with fees, attendance, results and notices, and recorded consent.
 - Public landing page with a demo request form, and a privacy page.
+- AI assistants that prepare work for a person to approve: Ask PlanetU with a morning brief, Fee follow-up, Setup fixer,
+  Attendance watch and Admissions helper, with an approval inbox and a log of every run. A help chat on the public page.
 - Every process shows a step bar with one clear next button. The main pages of every role were checked at phone and laptop width.
 
 Checks
-- Automated tests: about 700, all passing. Run them with: node --test --test-concurrency=1
+- Automated tests: about 800, all passing. They never call a real AI model. Run them with: node --test --test-concurrency=1
 - Backup and restore: scripts/backup.sh and scripts/restore.sh. A backup was taken and restored on a local copy.
 
 Still to do together
@@ -35,6 +37,9 @@ Still to do together
 - The privacy page is marked "to be reviewed by the institute's adviser". It needs that review before real use.
 - Pilot data for the first real institute.
 - Online fee payment needs the institute's own payment gateway keys.
+- The assistants need model keys on the server: AGENT_LLM_PROVIDER, AGENT_LLM_MODEL, AGENT_LLM_API_KEY for the office
+  assistants, and PUBLIC_LLM_PROVIDER, PUBLIC_LLM_MODEL, PUBLIC_LLM_API_KEY for the help chat. Without them they say "Not connected".
+- The free model plans may use what is sent to improve their products. Use demo data only until a paid or no-training plan is in place.
 
 Not included yet
 Board-format report cards, NAAC, NBA and NIRF reports, official WhatsApp or SMS sending, multi-campus,

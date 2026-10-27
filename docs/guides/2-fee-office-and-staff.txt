@@ -16,9 +16,24 @@ Accountant: a normal day
 4. Remind tab: send the ready messages by WhatsApp or "Send in app".
 5. Day-end tab, before you leave: count the cash against the cash total, then Print or Download PDF.
 
+Accountant: Fee follow-up assistant
+1. Open Assistants, Fee follow-up. It lists overdue fees by guardian.
+2. Choose the language and "Draft the reminder". It writes one message with blanks; the app fills in names and amounts.
+3. Open Approvals, check the first reminder exactly as it will go out, then "Send N reminders".
+   Anyone who paid in between is skipped. Later the same page shows how many have paid since.
+
 Principal
 - Your home page shows the institute overview and what needs a decision.
 - Approvals has leave, certificates and applications waiting. Approve or reject with a remark.
+- Assistants: Ask PlanetU answers questions in plain words with the figures it used, and the morning brief shows today on one screen.
+- Attendance watch lists students absent three days in a row or near 75%, and drafts a note for their parents to approve.
+
+Admission officer
+- Admissions board as in the admin guide.
+- Assistants, Admissions helper: choose an application, paste the applicant's message if any, and "Draft the reply".
+  It checks documents and duplicates and suggests a next step. The reply goes out only after you approve it in Approvals.
+  It never accepts, rejects or waitlists anyone.
+- Assistants, Setup fixer: clean a messy student sheet. It imports only after approval.
 
 Head of department
 - Department leave: approve or reject requests from your department.

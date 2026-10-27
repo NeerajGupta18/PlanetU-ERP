@@ -20,6 +20,15 @@ Billing has plans, invoices and payments. Demo institutes are never billed.
 
 Demo requests
 People who fill in the form on the public page show under Demo requests. Call them back and choose "Mark contacted".
+Requests booked through the help chat carry the label "From the chat".
+Below them, "Messages from the help chat" lists people who asked for a person, a price or a contract. Reply and mark them.
+
+The help chat on the public page
+- It is an AI assistant that answers only from server/agents/playbooks/support-facts.txt. Keep that sheet true and short.
+- It never gives prices. It hands over to a person when asked, for prices, contracts, refunds or personal data,
+  and after two answers it could not give.
+- It needs its own model key (PUBLIC_LLM_PROVIDER, PUBLIC_LLM_MODEL, PUBLIC_LLM_API_KEY) and has its own daily allowance
+  (PUBLIC_DAILY_TOKENS). Without a key it says it is not connected, and booking a demo or leaving a message still works.
 
 Configure or pause a client
 Institutes, Configure: change modules or plan, reset the admin's password. Suspend stops sign-ins without deleting anything.
