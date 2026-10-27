@@ -272,6 +272,7 @@ export default function App() {
           <Route element={<ModuleGate module="grievance" />}><Route path="support" element={<EmployeeSupport />} /></Route>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<EmployeeDashboard />} />
+          <Route element={<ModuleGate module="attendance" />}><Route path="assistants" element={<AdminAssistants />} /></Route>
           <Route path="help" element={<Help />} />
           <Route element={<ModuleGate module="learning" />}>
             <Route path="learning" element={<LearningManage role="employee" />} />
