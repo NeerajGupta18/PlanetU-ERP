@@ -1,3 +1,5 @@
+import { cachedDashboard } from '../services/dashCache.js';
+import { platformOverview } from '../services/platformDashboard.service.js';
 import { env } from '../config/env.js';
 import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
@@ -47,7 +49,7 @@ export function presets(req, res) {
   });
 }
 
-export async function dashboard(req, res) {
+async function dashboardData() {
   const { rows: [t] } = await q(`
     select count(*)::int as total,
            count(*) filter (where status = 'active')::int as active,
@@ -63,7 +65,7 @@ export async function dashboard(req, res) {
     `select count(distinct tenant_id) filter (where at >= now() - interval '7 days')::int as "activeWeek"
      from audit_log where action = 'auth.login' and tenant_id is not null`,
   );
-  res.json({
+  return {
     stats: { ...t, users: u.n, activeWeek: l.activeWeek }, byType, recent,
     billing: {
       mrr: b.mrr, collectedThisMonth: b.collected.thisMonth, receivables: b.receivables, needsReview: b.needsReview,
@@ -71,7 +73,23 @@ export async function dashboard(req, res) {
       overdue: b.attention.overdue, trialsEnding: b.attention.trialsEnding, suspended: b.attention.suspended,
     },
     quiet: await quietInstitutes(7),
-  });
+  };
+}
+
+export async function dashboard(req, res) {
+  res.json(await dashboardData());
+}
+
+/** One answer for the whole platform dashboard. ?fresh=1 is the refresh button. */
+export async function dashboardOverview(req, res) {
+  res.json(await cachedDashboard(
+    { tenantId: null, userId: req.user.id, kind: 'platform', fresh: req.query.fresh !== undefined },
+    async () => {
+      const base = await dashboardData();
+      const overdue = new Map(base.billing.overdue.map((o) => [o.tenantId, o.amount]));
+      return { ...base, overview: await platformOverview(overdue) };
+    },
+  ));
 }
 
 export async function listTenants(req, res) {

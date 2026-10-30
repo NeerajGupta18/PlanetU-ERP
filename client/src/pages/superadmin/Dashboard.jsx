@@ -1,27 +1,71 @@
 import { Link } from 'react-router-dom';
-import { AlertTriangle, BarChart3, Building2, CheckCircle2, Clock, Hourglass, LayoutDashboard, ListTodo, Moon, TrendingUp } from 'lucide-react';
-import { useFetch } from '../../hooks/useFetch.js';
-import { Badge, Card, PageBanner, StatCard, pending, CollapsibleCards } from '../../components/ui/Ui.jsx';
-import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
+import { BarChart3, Clock, Filter, HeartPulse, LayoutDashboard, ListChecks, ListTodo } from 'lucide-react';
+import { Badge, Card, PageBanner, CollapsibleCards } from '../../components/ui/Ui.jsx';
+import DataTable from '../../components/ui/DataTable.jsx';
+import { EmptyState, ErrorState } from '../../components/ui/Feedback.jsx';
+import { Funnel } from '../../components/dash/Charts.jsx';
+import { Freshness, KpiCard, KpiGrid, KpiLoading, useDashboard } from '../../components/dash/KpiCard.jsx';
+import { PROCESSES } from '../../config/processes.js';
 import { BarChart } from '../../components/ui/Charts.jsx';
 import AttentionList from '../../components/campus/AttentionList.jsx';
 import { fmtDate } from '../../utils/dates.js';
-import { inr0, inrShort, plural } from '../../utils/kpi.js';
+import { inr0, inrCompact, inrShort, numIn, plural } from '../../utils/kpi.js';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export default function Dashboard() {
-  const { data, loading, error, reload } = useFetch('/super-admin/dashboard');
+  const { data, loading, error, reload, refresh } = useDashboard('/super-admin/dashboard/overview');
+  if (error && !data) return <ErrorState error={error} onRetry={reload} />;
+  if (!data) return <KpiLoading />;
+  return <div className="dash-page"><View d={data} loading={loading} onRefresh={refresh} /></div>;
+}
+
+const FLAG = { red: ['Act now', 'red'], amber: ['Watch', 'amber'], green: ['Healthy', 'green'] };
+const stepLabel = (key) => PROCESSES.setup.steps.find((s) => s.key === key)?.label || key;
+
+/** The flagship: one row per institute with a flag and the reason, most urgent first. */
+function HealthBoard({ rows }) {
   return (
-    <DataBoundary loading={loading} error={error} data={data} reload={reload}>
-      {data && <View d={data} />}
-    </DataBoundary>
+    <Card title="Client health board" icon={HeartPulse} action={<Link to="/super-admin/institutes" className="btn btn--outline btn--sm">Institutes</Link>}>
+      <DataTable
+        caption="Client health: one row per institute with a flag and the reason" rows={rows}
+        empty={{ title: 'No institutes yet', hint: 'Add your first institute to watch its health here.', action: { label: 'Add an institute', to: '/super-admin/institutes' } }}
+        columns={[
+          { key: 'flag', label: 'Flag', render: (i) => <Badge tone={FLAG[i.flag][1]}>{FLAG[i.flag][0]}</Badge> },
+          { key: 'name', label: 'Institute', render: (i) => <><strong>{i.name}</strong>{i.demo && <> <Badge tone="gray">Demo</Badge></>}<div className="muted">{i.code}</div></> },
+          { key: 'reason', label: 'Why', render: (i) => i.reason },
+          { key: 'people', label: 'Students / staff', num: true, render: (i) => `${numIn(i.students)} / ${numIn(i.employees)}` },
+          { key: 'last', label: 'Last active', render: (i) => (i.lastActive ? fmtDate(String(i.lastActive).slice(0, 10)) : 'Never') },
+        ]}
+      />
+    </Card>
   );
 }
 
-function View({ d }) {
+function SetupProgress({ rows }) {
+  const list = rows.filter((i) => i.setup);
+  return (
+    <Card title="Setup progress" icon={ListChecks}>
+      {list.length === 0 ? <EmptyState compact title="Nothing to show" hint="Each institute's seven setup steps show here." /> : (
+        <ul className="setup-bars">
+          {list.map((i) => (
+            <li key={i.id}>
+              <span className="setup-bars__name">{i.name}</span>
+              <span className="progress" role="progressbar" aria-label={`${i.name} setup`} aria-valuemin={0} aria-valuemax={i.setup.total} aria-valuenow={i.setup.done}><span className="progress__fill" style={{ width: `${(i.setup.done / i.setup.total) * 100}%` }} /></span>
+              <small>{i.setup.done === i.setup.total ? 'Ready' : `${i.setup.done} of ${i.setup.total}, next: ${stepLabel(i.setup.current)}`}</small>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
+function View({ d, loading, onRefresh }) {
   const b = d.billing;
-  const paying = d.stats.total - d.stats.demo;
+  const o = d.overview;
+  const t = o.totals;
+  const a = o.assistants;
   const items = [
     ...b.overdue.map((o) => ({ key: `o-${o.tenantId}`, tone: 'bad', title: `${o.name}: ${inr0(o.amount)} overdue`, detail: o.status === 'past_due' ? 'In the grace period' : 'Invoice past its due date', link: '/super-admin/billing' })),
     ...b.trialsEnding.map((t) => ({ key: `t-${t.tenantId}`, tone: 'warn', title: `${t.name}: trial ends ${fmtDate(t.endsOn)}`, detail: 'Help them choose a plan', link: '/super-admin/billing' })),
@@ -34,19 +78,35 @@ function View({ d }) {
   return (
     <CollapsibleCards>
       <PageBanner icon={LayoutDashboard} title="Platform Dashboard" subtitle="Every institute running on PlanetU ERP" />
+      <Freshness at={d.generatedAt} loading={loading} onRefresh={onRefresh} />
 
-      <div className="stats stats--3">
-        <StatCard value={<>{d.stats.active}<small>of {d.stats.total}</small></>} label="Institutes active" icon={Building2} to="/super-admin/institutes"
-          sub={`${d.stats.demo} demo, ${paying} customer${paying === 1 ? '' : 's'}`} {...(d.stats.suspended ? { status: 'warn', hint: `${d.stats.suspended} suspended` } : {})}
-        />
-        <StatCard value={inr0(b.collectedThisMonth)} label="Received this month" icon={TrendingUp} to="/super-admin/billing" status="info" sub={`Monthly recurring ${inr0(b.mrr)}`} />
-        <StatCard value={inr0(b.receivables.overdue)} label="Overdue invoices" icon={AlertTriangle} to="/super-admin/billing"
-          sub={`${inr0(b.receivables.outstanding)} unpaid in all`} {...pending(b.receivables.overdueCount, { level: 'bad', act: `${plural(b.receivables.overdueCount, 'invoice')} to chase`, clear: 'Nothing overdue' })}
-        />
-        <StatCard value={b.trialsEnding.length} label="Trials ending in 7 days" icon={Hourglass} to="/super-admin/billing" {...pending(b.trialsEnding.length, { act: 'Follow up', clear: 'None ending' })} />
-        <StatCard value={d.stats.activeWeek} label="Institutes signed in this week" icon={CheckCircle2} to="/super-admin/institutes" sub={`${d.stats.users} user accounts in all`} />
-        <StatCard value={d.quiet.length} label="No sign-in for 7 days" icon={Moon} to="/super-admin/institutes" {...(d.quiet.length ? { status: 'info', hint: 'Check in with them' } : { status: 'clear', hint: 'Everyone active' })} />
+      <KpiGrid>
+        <KpiCard label="Institutes" value={numIn(t.institutes)} to="/super-admin/institutes" meaning="All institutes, including demo ones" sub={`${t.byType.map((x) => `${x.count} ${x.key}`).join(', ')}. ${d.stats.active} active, ${d.stats.suspended} suspended, ${t.demo} demo`} />
+        <KpiCard label="Students, all institutes" value={numIn(t.students)} to="/super-admin/institutes" meaning="A count only. No student's record is read here." sub={`${numIn(t.employees)} employees`} />
+        <KpiCard label="Average setup done" value={t.setupAverage === null ? null : `${t.setupAverage}%`} to="/super-admin/institutes" meaning="Average share of the seven setup steps finished" sub={`${plural(t.stuck, 'institute')} stuck for over a week`} />
+        <KpiCard label="No activity in 7 days" value={numIn(t.quiet)} to="/super-admin/institutes" meaning="Nobody at the institute did anything recorded for 7 days" />
+        <KpiCard label="Check-ins due" value={numIn(t.checksDue)} to="/super-admin/institutes" meaning="Institutes at their 30, 60 or 90-day check-in this week" />
+        <KpiCard label="Demo requests" value={numIn(o.demoRequests.new)} to="/super-admin/demo-requests" meaning="New requests from the front page" sub={`new. ${numIn(o.messagesWaiting)} chat ${o.messagesWaiting === 1 ? 'message' : 'messages'} waiting`} />
+        <KpiCard label="Assistant tokens today" value={numIn(a.tokensToday)} to="/super-admin/institutes" meaning="Tokens used by every institute's assistants today" sub={`Busiest institute ${numIn(a.busiest)} of ${numIn(a.capPerInstitute)}`} />
+        <KpiCard label="Public chat tokens today" value={numIn(a.publicToday)} to="/super-admin/demo-requests" meaning="Tokens used by the front page help chat today" sub={`of ${numIn(a.publicCap)} a day`} />
+        <KpiCard label="Received this month" value={inrCompact(b.collectedThisMonth)} full={inr0(b.collectedThisMonth)} to="/super-admin/billing" meaning="Subscription payments received this month" sub={`${inr0(b.receivables.overdue)} overdue`} />
+      </KpiGrid>
+
+      <HealthBoard rows={o.institutes} />
+
+      <div className="grid-2">
+        <SetupProgress rows={o.institutes} />
+        <Card title="Demo requests by stage" icon={Filter}>
+          <Funnel
+            stages={[{ stage: 'new', label: 'New', count: o.demoRequests.new }, { stage: 'contacted', label: 'Contacted', count: o.demoRequests.contacted }, { stage: 'closed', label: 'Closed', count: o.demoRequests.closed }]}
+            caption="Demo requests at each stage"
+            empty={{ title: 'No demo requests yet', hint: 'Requests from the front page form and chat show here.' }}
+          />
+        </Card>
       </div>
+      <Card title="New institutes, 12 months" icon={BarChart3}>
+        <BarChart data={o.newByMonth.map((m) => ({ label: MONTHS[Number(m.month.slice(5)) - 1], full: `${MONTHS[Number(m.month.slice(5)) - 1]} ${m.month.slice(0, 4)}`, value: m.count }))} format={String} caption="Institutes added in each of the last 12 months" height={170} />
+      </Card>
 
       <div className="grid-2">
         <Card title={`Needs your attention${items.length ? ` (${items.length})` : ''}`} icon={ListTodo}>

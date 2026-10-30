@@ -16,6 +16,7 @@ router.param('orderId', uuidParam);
 
 router.get('/presets', sa.presets);
 router.get('/dashboard', sa.dashboard);
+router.get('/dashboard/overview', sa.dashboardOverview);
 router.get('/tenants', sa.listTenants);
 router.post('/tenants', sa.createTenant);
 router.get('/tenants/:id', sa.getTenant);

@@ -334,7 +334,8 @@ export const HELP = [
   {
     id: 'platform', who: ['super_admin'], title: 'Look after the institutes', to: '/super-admin/dashboard',
     steps: [
-      'The dashboard shows money received, overdue invoices, trials ending and institutes nobody has signed in to.',
+      'The dashboard opens with the figures across every institute, in counts only, and the Client health board: one row per institute with a green, amber or red flag and the reason.',
+      'Red means suspended, an overdue invoice or two weeks with no activity. Amber means a quiet week, setup stuck, a check-in due or close to the assistant limit. The dashboard also shows money received and demo requests.',
       'Open Institutes. The Setup column shows how far each new client is in its seven setup steps, and when its 30, 60 or 90-day check-in is due.',
       'Help the one furthest behind first. Open Billing for plans, invoices and payments, and Demo requests for people who asked for a demo.',
     ],

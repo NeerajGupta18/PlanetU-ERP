@@ -32,3 +32,10 @@ The help chat on the public page
 
 Configure or pause a client
 Institutes, Configure: change modules or plan, reset the admin's password. Suspend stops sign-ins without deleting anything.
+
+The dashboard and the Client health board
+The dashboard shows counts across every institute: never a student's or an employee's record.
+The Client health board has one row per institute, most urgent first:
+- Act now (red): suspended, an invoice overdue, or no activity for 14 days.
+- Watch (amber): no activity for 7 days, setup stuck for over a week, a 30, 60 or 90-day check-in due, or near the daily assistant limit.
+- Healthy (green): nothing waiting.
