@@ -326,6 +326,7 @@ export const HELP = [
       'The orange button at the top is the one thing to do next, for example "Pay ₹2,500" or "Read the new notice".',
       'To pay, tap Pay, check the amount and pay by UPI, card or netbanking. The receipt appears straight away. If online payment is off, pay at the fee counter.',
       'If you have more than one child linked, tap their name above the page to switch.',
+      'The Attendance card has a What-if slider: move it to see what attendance becomes if your child misses more classes. It changes nothing.',
     ],
   },
 

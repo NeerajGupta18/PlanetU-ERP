@@ -25,3 +25,6 @@ Results and notices
 
 Need help?
 Menu, "Help and feedback" sends a question to the institute office.
+
+The What-if meter
+On your home page, the Attendance card has a slider. Move it to see what happens if your child misses more classes: "If Aarav misses 3 more classes, attendance becomes 82.1%". It uses your child's real counts and the institute's minimum, and it changes nothing.
