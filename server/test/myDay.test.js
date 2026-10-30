@@ -48,11 +48,12 @@ describe('My day', () => {
     assert.ok(['today', 'pay', 'notices'].includes(p.body.next.step));
   });
 
-  it('the other child answers for that child, and an unlinked child is refused (falls back to a linked one)', async () => {
+  it('the other child answers for that child, and an unlinked child is refused with no data', async () => {
     const two = await json('GET', '/api/student/my-day', { cookie: withChild(parent, ids.STU2026002) });
     assert.equal(two.body.student.studentCode, 'STU2026002');
     const other = await json('GET', '/api/student/my-day', { cookie: withChild(parent, ids.STU2026003) });
-    assert.notEqual(other.body.student.studentCode, 'STU2026003');
+    assert.equal(other.status, 403);
+    assert.equal(other.body.student, undefined);
   });
 
   it('fees owed make Pay the one next thing, with the amount on the button', async () => {

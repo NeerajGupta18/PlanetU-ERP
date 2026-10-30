@@ -1,0 +1,112 @@
+Route access audit: who can read what by id
+
+Every API route that takes a student, employee or institute id, and how it is protected.
+
+Three protections apply everywhere:
+- Institute wall. Every signed-in request runs in one database transaction scoped to the institute in the signed
+  session, with forced row-level security. An id from another institute simply finds nothing (404).
+- Role wall. Each route group checks the role: /api/student (student, parent), /api/parent (parent),
+  /api/employee (employee), /api/admin (institute admin, or staff with a role granting that area),
+  /api/super-admin (platform owner), /api/assistants (admin, staff role or class teacher).
+- A bad id format answers 404 before any query runs (uuidParam).
+
+STUDENT AND PARENT ROUTES (/api/student/...)
+These take no student id at all. The student comes from the session. For a parent it comes from middleware/parent.js:
+the chosen child must be one of that parent's parent_links rows, otherwise the answer is 403 with no data.
+
+Route                                        Own-record check
+/dashboard /my-day /profile /attendance      Student from session or checked link
+/timetable /calendar /institute /notices     Same; timetable is always the student's own class
+/results                                     Same
+/results/:id/report-card.pdf                 Marks read for the session's student only; 404 if they have none in that exam
+/fees /fees/payments                         Same
+/fees/payments/:id/receipt.pdf               Payment must belong to the student, else 404
+/fees/online/orders                          Order is created for the session's student
+/fees/online/verify                          Order must belong to the student, else 404
+/grievances /grievances/:id (reply, close)   raised_by must be the signed-in user, else 404 (a child cannot read a parent's ticket, or the reverse)
+/hostel /transport                           Student from session or checked link
+/id-card.pdf /certificates /quizzes          Students only; a parent gets 403
+/learning /library /feedback /internal-marks Students only; a parent gets 403
+/certificates/:id/pdf                        Request must belong to the student
+/assignments/:id /quizzes/:id/result         Scoped to the session's student
+/learning/:enrollmentId                      Scoped to the session's student
+/placement/:id/apply, withdraw               Scoped to the session's student
+
+PARENT ROUTES (/api/parent/...)
+/children                                    Only the signed-in parent's parent_links rows, active students only
+/child (choose a child)                      Must be in that list, else 404
+
+SHARED ROUTES
+/api/me/notifications, /:id/read             user_id must be the signed-in user; a parent's fee reminders come from their own links
+/api/me/consent                              The signed-in user's own record
+/api/files/:id                               Institute admin, the uploader, a parent of the student in the photo, a student or
+                                             teacher of that assignment, or staff in admissions, students, certificates or placement
+                                             with institute-wide scope; otherwise 404
+
+EMPLOYEE ROUTES (/api/employee/...)
+/attendance/lecture?slotId, /checkin         Only the lecture's own teacher (others get 404)
+/exams/papers/:paperId/marks                 Only the teacher assigned to the paper (others get 404)
+/payslips/:id/pdf                            Payslip must be the employee's own
+/leave/:id/cancel                            Request must be the employee's own
+/visitors/:id/cancel                         Only the host of the visit
+/assignments/:id, /submissions/:studentId    Owner, or a teacher of that subject and class
+/quizzes/:id, /results, /extra-attempts      Owner, or a teacher of that subject and class
+/quizzes/internal-marks                      assertCanTeach for the class and subject
+/learning/courses/:id, assignments/:id       Owner or a teacher of that subject and class
+/learning/enrollments/:id/review             Same; checked against the assignment
+/grievances/:id, /feedback/:id               raised_by must be the signed-in user; forms only for their audience
+
+ASSISTANT ROUTES (/api/assistants/...)
+/attendance/overview?courseId                A class teacher only gets their own classes; another class answers 403
+/fees/overview?courseId                      Needs the fees area
+/admissions/check/:id                        Needs the admissions area
+/proposals/:id, /decide                      Kind must be one the person may decide; class teachers only their own class's notes, else 404
+
+OFFICE ROUTES (/api/admin/...)
+All pass middleware/office.js. The institute admin has all of it. Staff only get the areas their roles grant, and a head
+of department only reads their own department's attendance and leave.
+
+/students (list), /students/:id              Staff with the student office area: whole record. Any other staff role (lookup
+                                             for pickers): name, code, roll number, class, section, status only. CHANGED IN 12A.
+/students/:id/overview                       Student office only
+/students/:id/parents                        Student office only. CHANGED IN 12A.
+/students/:id/id-card.pdf                    Student office only. CHANGED IN 12A.
+/students/:id (update, photo, add parent)    Student office only; writes are refused for a lookup
+/employees (list)                            Work directory for pickers: code, name, work email, shift, department, designation. No salary, phone or address.
+/employees/:id (update, delete)              Staff area only
+/fees/students/:id, /fees/payments/:id       Fees area
+/exams/:id/students/:studentId/report-card   Exams area
+/payroll/...:id                              Payroll area
+/admissions/:id, /enquiries/:id              Admissions area
+/assignments/:id/submissions/:studentId      Coursework area
+/leave/:id                                   Leave area; a head of department only their own department
+/attendance/*?courseId                       Attendance area; a head of department only their own department
+/staff-roles/:employeeId                     Institute admin only (never staff)
+/billing, /institute, /setup, /audit         Institute admin only (never staff)
+
+PLATFORM ROUTES (/api/super-admin/...)
+/tenants/:id, /billing/tenants/:id           Platform owner only. They are the one role meant to work across institutes.
+
+PUBLIC ROUTES
+/api/public/:code/admissions/applications/:id   Needs the application's secret access code as well as the id, and is rate limited
+/api/site/demo-requests, /api/site/chat/*        Take no ids; can only add a demo request or a message
+
+WHAT THE AUDIT FOUND AND FIXED IN 12A
+1. Demo data (the bug reported). The seed linked PAR001 to the first two students of each institute, who belong to
+   different families. The server was doing what the links said. Fixed in the seed.
+2. Wrong child choice was quietly swapped. A parent's chosen-child cookie naming someone else's child was answered with
+   their first child and a 200. No other child's data leaked, but it is now a plain 403 with no data.
+3. Chosen-child cookie outlived the session. Sign-out and sign-in now clear it. The browser's sign-out also drops all
+   data held in memory.
+4. API answers could be stored by the browser. All /api answers now say no-store, so a shared phone cannot show them again.
+5. "Invite all parents" linked a child to any account with the same guardian email, without the office looking at that
+   family. A typing mistake in an email could have joined two families. It now lists that student under skipped, and the
+   office links brothers and sisters from the student's record.
+6. Every staff role could read the full student record. A librarian or gate guard could open a student's address, phone,
+   date of birth, blood group, guardian details, parent logins and ID card through the lookup list. They now get only
+   what a picker needs.
+
+LEFT AS THEY ARE, FOR NEERAJ TO DECIDE
+- Staff with the admissions, students, certificates or placement area can open any uploaded file in the institute,
+  because those desks handle applicants' and students' documents. Narrowing this means tagging each file with its
+  owner, which is a migration, so it is reported and not changed here.
