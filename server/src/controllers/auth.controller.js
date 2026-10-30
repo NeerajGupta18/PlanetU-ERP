@@ -11,6 +11,7 @@ import { queueEmail, tenantInfo } from '../services/notifications.service.js';
 import { instituteBrief, loadNotices } from '../db/repo.js';
 import { audit } from '../db/audit.js';
 import { asksConsent, consentStatus } from '../services/consent.service.js';
+import { CHILD_COOKIE } from '../services/parents.service.js';
 import { DEMO_PASSWORDS, DEMO_TENANTS } from '../db/demo-data.js';
 import {
   answerChallenge, consumeCaptchaToken, createChallenge, issueCaptchaToken, looksHuman, verifyRecaptcha,
@@ -163,6 +164,7 @@ export async function login(req, res) {
   }
 
   failed.delete(key);
+  res.clearCookie(CHILD_COOKIE); // a choice left by whoever used this browser before never carries over
   const token = jwt.sign({ typ: 'session', role: user.role, tid: tenant?.id ?? null, ims: Date.now() }, env.JWT_SECRET, {
     subject: user.id, expiresIn: `${env.SESSION_HOURS}h`,
   });
@@ -186,6 +188,7 @@ export async function me(req, res) {
 
 export function logout(req, res) {
   res.clearCookie(env.COOKIE_NAME);
+  res.clearCookie(CHILD_COOKIE);
   res.json({ ok: true });
 }
 

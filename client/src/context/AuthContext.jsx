@@ -4,6 +4,16 @@ import { api } from '../api/http.js';
 const AuthContext = createContext(null);
 const EMPTY = { user: null, tenant: null, institute: null, notifications: [] };
 
+/**
+ * Sign-out leaves nothing of that person on the device: a full page load drops every fetched answer held in memory,
+ * and session storage goes too. The chosen child lives in an httpOnly cookie that the server clears. What stays in
+ * local storage is only about this device (institute code, sidebar layout).
+ */
+function forgetUser() {
+  try { sessionStorage.clear(); } catch { /* storage blocked */ }
+  window.location.replace('/login');
+}
+
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(EMPTY);
   const [loading, setLoading] = useState(true);
@@ -25,6 +35,7 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(async (credentials) => {
     const s = await api.post('/auth/login', credentials);
+    try { sessionStorage.clear(); } catch { /* storage blocked */ }
     setSession(s);
     return s.user;
   }, []);
@@ -35,6 +46,7 @@ export function AuthProvider({ children }) {
   const logout = useCallback(async () => {
     try { await api.post('/auth/logout'); } finally {
       setSession(EMPTY);
+      forgetUser();
     }
   }, []);
 
