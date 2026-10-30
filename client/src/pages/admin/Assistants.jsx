@@ -97,7 +97,8 @@ const AiText = ({ text }) => String(text).split(/\n{2,}/).map((para, i) => (
 /* ---------------- Ask PlanetU ---------------- */
 
 function AskTab({ connected }) {
-  const [question, setQuestion] = useState('');
+  // The dashboard's Ask box opens this page with the question filled in
+  const [question, setQuestion] = useState(() => new URLSearchParams(window.location.search).get('ask')?.slice(0, 300) || '');
   const [busy, setBusy] = useState(false);
   const [answer, setAnswer] = useState(null);
   const [err, setErr] = useState('');
