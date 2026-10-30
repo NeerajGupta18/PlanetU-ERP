@@ -120,3 +120,74 @@ Not in these days: scheduled morning runs (needs the paid always-on server), aut
 
 ## Day 11: reverted
 Day 11 (fingerprint login) was reverted; fingerprint login is not part of the product. Migration 033_trusted_devices.sql and its unused table stay as they are (already applied on the live database).
+
+## Day 12 (Sat 31 Oct): parent privacy fix, KPIs, best dashboards, 360-degree device viewer
+Day 11 fingerprint login is not part of the product (reverted).
+
+### How Day 12 runs (overrides the one-branch-per-day rule)
+Split Day 12 into SEPARATE branches and pull requests, in this order. For each one: branch, build, full tests, PR, merge, confirm the deploy, then start the next. Never bundle them, so any one can be reverted alone. The live site must be in a working state after every merge. If time runs short, stop after any merged PR and report what is left.
+- 12A parent privacy fix (do this FIRST and merge it before anything else)
+- 12B shared dashboard kit and the Institute Admin dashboard
+- 12C parent dashboard
+- 12D 360-degree device viewer on the landing page
+- 12E super admin dashboard
+- 12F employee dashboard (teacher and staff)
+- 12G student dashboard
+Standing rules still apply: stop for any migration (additive only; prefer NO migration and compute from existing tables), never touch Render settings, never skip or loosen tests.
+
+### 12A Parent privacy fix (security bug, highest priority)
+Bug reported by Neeraj's sir: signed in as a parent, an option appears to view another child who belongs to a different parent. A parent must see ONLY their own children.
+1. Diagnose first and say which it is, with evidence. Check all four: (a) wrong guardian-student links in the data or the seed (for example demo parent PAR001 linked to a child of another family); (b) the child switcher listing students by something other than the guardian link; (c) client state leaking between sessions (a selected-child id or cached data left in browser storage or memory after a different user signed out); (d) a server endpoint that returns another student's data when given their id.
+2. If the cause is seed data, fix the seed so every demo parent sees only their own children. Keep ONE demo family with two real siblings (same guardian record) so the child switcher can still be demonstrated, and name it in the summary.
+3. Fix the real cause on the server, not only on screen. Every parent-facing endpoint (dashboard, fees, receipts, attendance, results, report card and ID card PDFs, timetable, notices, notifications, payments, anything taking a student id) must check the guardian-student link for the signed-in user and return 404 or 403 for any other student, with no data in the error.
+4. Sibling links come only from explicit guardian-student link rows created or approved by the office. Never match parents and children by name, phone or email coincidence at read time.
+5. On sign-out and on sign-in, clear all per-user client state (selected child, cached queries, stored ids).
+6. Audit: list every API route that accepts a student, employee or institute id and state how each is protected. Fix any other route that lets one user read another user's data within the same role, and report each one found. If a finding needs a bigger change, report it instead of guessing.
+7. Tests: parent A can list and open only A's children; parent A requesting parent B's child on EVERY parent endpoint gets 403 or 404 and no data; the child switcher lists only linked children; two parents with the same surname or phone digits stay separate; student A cannot read student B; a class teacher sees only their own class; another institute's ids return nothing. These tests must fail on the old code.
+
+### 12B Shared dashboard kit and Institute Admin dashboard
+Principle: the dashboard is the best page of each role. Neeraj's sir could not see the most important facts on the admin dashboard. Build ONE shared kit first and use it for all five dashboards.
+Kit:
+- KpiCard: big value, label, change versus the previous period with an up or down arrow and a colour that says whether the change is good or bad (more absentees is bad), a small sparkline, a one-line meaning on hover, a click-through to the detail page, and loading, empty and error states (the error says how to fix it). Indian number grouping and the rupee sign (for example ₹33,07,500); on small cards a compact form (for example ₹33.1 L) with the full value in the title.
+- Lightweight custom SVG charts: sparkline, ring, bar, stacked bar, trend line, heatmap, funnel. No heavy chart library unless you measure it and can justify it. Every chart has an aria-label and a visually hidden data table, uses the institute colour and design tokens, and shows a helpful empty state when there is too little data.
+- A data freshness line ("Updated 10:42") and a refresh button.
+- One server endpoint per role, aggregated in few queries, scoped by institute and role, with a short cache (60 seconds at most, never shared between users or institutes). Report the response time and the bundle size change.
+Institute Admin dashboard, in this order (use the institute's own words: school = classes and divisions; college = programs, departments and divisions; university = faculties and departments):
+1. At a glance: total students (with new this month and active), total employees split into faculty and non-teaching staff, departments (or classes), divisions, programs or courses.
+2. Money: fees collected today, this month and this year; fees outstanding and overdue; collection rate (collected divided by billed); a 6-month collected-versus-billed chart.
+3. Attendance: students present today against last week; 14-day trend; lectures not marked today; students below 75%; staff attendance today if the data exists.
+4. Academics: exams awaiting marks or publishing; average and pass percentage for the latest published exam; department comparison.
+5. Decisions: leave and other approvals waiting, new enquiries, applications by stage as a funnel.
+6. Department heatmap: departments by attendance, fee collection and results, click to drill into the department.
+7. Unique feature (flagship): the Year Journey. A strip across the top showing the academic year from start to end with today marked and the stages Admissions, Fees, Timetable, Attendance, Exams, Results, Certificates, each with a status (not started, in progress, done), one number that matters and a button for the next action. Beside it an Institute Pulse score from 0 to 100 made from attendance, fee collection, pending approvals and exam completion, with the formula one click away and the biggest change since yesterday. Optional small extra: an "Ask PlanetU" box that opens the Assistants page with the question filled in.
+Every number must reconcile with its detail page: total students equals the Students page count, fees collected equals the Fees page and the day-end summary, attendance equals the Attendance page. Add reconciliation tests that compare the dashboard figures with the detail endpoints.
+
+### 12C Parent dashboard
+Only the signed-in parent's own children (see 12A). Per child: today's classes status, attendance percentage with a 30-day trend, fees due with a Pay button and the last receipt, latest result with a marks trend, upcoming exams, notices. Flagship: the What-if meter: "If my child misses N more classes, attendance becomes X%", with a slider, computed from the real counts and the institute's minimum percentage. The child switcher shows only if more than one linked child.
+
+### 12D 360-degree device viewer (landing page)
+Neeraj wants the laptop and phone mockups on the landing page to rotate a full 360 degrees for a premium feel.
+- One reusable DeviceViewer component with a laptop and a phone variant, used everywhere a device frame shows (hero, role tabs, the setup story and any other).
+- Pure CSS 3D transforms with pointer events, no WebGL and no 3D library. The device has a front (the real screenshot), sides and a back (the PlanetU mark on the laptop lid; a plain back with a camera block on the phone).
+- Drag or swipe to spin a full 360 degrees around the vertical axis, with a little inertia; tilt up and down limited to about 25 degrees. A "Drag to rotate" hint that disappears after the first drag. Double click or double tap resets. Arrow keys rotate it when focused, with an aria-label explaining that.
+- On phones use touch-action pan-y so vertical scrolling still works and a horizontal swipe spins the device. It must never trap the page scroll.
+- Gentle idle sway until the first interaction. For reduced-motion visitors there is no sway or inertia; manual rotation still works. Pause everything when off screen (IntersectionObserver).
+- It must not fight the pinned GSAP story. Reserve the size so nothing jumps (no layout shift).
+- Test in WebKit (Safari) as well as Chromium, because Neeraj uses Safari and preserve-3d and backface-visibility behave differently there. Report Lighthouse mobile performance and layout shift before and after.
+
+### 12E Super admin dashboard (platform owner)
+KPIs: institutes by type and status; total students and employees across all institutes (counts only); average setup completion; institutes stuck on a setup step; institutes with no activity in 7 days; 30, 60 and 90-day checks due; demo requests (new, contacted, closed) and chat messages waiting; assistant usage against the daily caps. Charts: setup progress per institute, new institutes over time, demo request funnel. Flagship: the Client health board, one row per institute with a green, amber or red flag and the reason.
+
+### 12F Employee dashboard (teacher and staff)
+Today's lectures as a timeline with a countdown to the next one and a one-tap Mark button; marks entry progress per paper; leave balance and status; my attendance if available; students who need a call (from Attendance watch); approvals if the role has them. Flagship: the My Day timeline. Class teachers see only their own class.
+
+### 12G Student dashboard
+Attendance ring with per-subject bars and the same What-if meter; fees due and paid; exam countdown; latest results with a marks trend; today's timetable; coursework due; notices.
+
+### Demo data, honesty and checks for all of Day 12
+- Charts need history. Check the local demo seed has about 30 to 60 days of attendance, monthly fee payments and exam results across several departments, and improve the seed if not. The live demo data does NOT reseed by itself, so live charts may look thin. In the summary tell Neeraj exactly what he would have to do on Render to refresh the live demo data and exactly what it would delete. Do NOT change Render settings. Make every chart look sensible with short history.
+- Never invent numbers on a dashboard. Every figure comes from the database.
+- For each of the five dashboards sign in as a real demo user of that role and take screenshots at 390, 768 and 1366 px. No sideways scrolling, targets at least 44 px, zero console errors or warnings, a sensible keyboard focus order, text contrast at least 4.5 to 1.
+- Use the ui-ux-pro-max skill for layout, colour, typography and chart rules, and keep to design-system/planetu-campus-erp/MASTER.md and the institute colour.
+- Update the user guides, the demo script and the in-app How to use pages for what changed.
+- Final summary per PR: what changed, tests, reconciliation results, timings and bundle sizes, anything still untested, and a short phone and laptop checklist for Neeraj.
