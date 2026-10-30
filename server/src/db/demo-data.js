@@ -78,7 +78,7 @@ const college = {
   place: { room: 'Room 112-A3 - Main Block', lab: 'Computer Lab 2 - Block C' },
   students: [
     { code: 'STU2026001', roll: 'BCA24-001', enroll: 'ENR2024BCA001', name: 'Aarav Sharma', email: 'aarav.sharma@student.horizon.example', phone: '+91 98123 45601', dob: '2005-03-14', gender: 'Male', blood: 'B+', semester: 3, section: 'A', batch: '2024 - 2027', admitted: '2024-07-15', address: '#214, Karve Nagar, Pune, Maharashtra - 411052', guardian: { name: 'Rajesh Sharma', relation: 'Father', phone: '+91 98123 45600', email: 'rajesh.sharma@example.com' }, att: [[34, 38], [30, 36], [28, 34], [26, 32], [20, 22], [24, 30]] },
-    { code: 'STU2026002', roll: 'BCA24-002', enroll: 'ENR2024BCA002', name: 'Simran Gill', email: 'simran.gill@student.horizon.example', phone: '+91 98123 45602', dob: '2005-08-02', gender: 'Female', blood: 'O+', semester: 3, section: 'A', batch: '2024 - 2027', admitted: '2024-07-15', address: '#12, Green Avenue, Wakad, Pune, Maharashtra - 411057', guardian: { name: 'Gurdeep Gill', relation: 'Father', phone: '+91 98123 45610', email: 'gurdeep.gill@example.com' }, att: [[36, 38], [33, 36], [31, 34], [30, 32], [21, 22], [27, 30]] },
+    { code: 'STU2026002', roll: 'BCA24-002', enroll: 'ENR2024BCA002', name: 'Simran Sharma', email: 'simran.sharma@student.horizon.example', phone: '+91 98123 45602', dob: '2006-08-02', gender: 'Female', blood: 'O+', semester: 3, section: 'A', batch: '2024 - 2027', admitted: '2024-07-15', address: '#214, Karve Nagar, Pune, Maharashtra - 411052', guardian: { name: 'Rajesh Sharma', relation: 'Father', phone: '+91 98123 45600', email: 'rajesh.sharma@example.com' }, att: [[36, 38], [33, 36], [31, 34], [30, 32], [21, 22], [27, 30]] },
     { code: 'STU2026003', roll: 'BCA24-003', enroll: 'ENR2024BCA003', name: 'Karan Mehta', email: 'karan.mehta@student.horizon.example', phone: '+91 98123 45603', dob: '2004-12-21', gender: 'Male', blood: 'A+', semester: 3, section: 'A', batch: '2024 - 2027', admitted: '2024-07-16', address: '#88, Sector 4, Pimpri, Pune, Maharashtra - 411018', guardian: { name: 'Anil Mehta', relation: 'Father', phone: '+91 98123 45620', email: 'anil.mehta@example.com' }, att: [[30, 38], [27, 36], [25, 34], [24, 32], [18, 22], [22, 30]] },
   ],
 };
@@ -221,6 +221,13 @@ const university = {
     { code: 'MIT2026003', roll: 'CSAI24-003', enroll: 'ENR2024CSAI003', name: 'Rohan Patil', email: 'rohan.patil@student.mitwpu.example', phone: '+91 98220 11003', dob: '2004-11-27', gender: 'Male', blood: 'A+', semester: 5, section: 'A', batch: '2024 - 2028', admitted: '2024-07-21', address: '#77, Hinjewadi, Pune, Maharashtra - 411057', guardian: { name: 'Mahesh Patil', relation: 'Father', phone: '+91 98220 11020', email: 'mahesh.patil@example.com' }, att: [[30, 38], [27, 36], [25, 34], [24, 32], [18, 22], [22, 30]] },
   ],
 };
+
+// Who may sign in as a parent, and whose parent they are. These links are the only thing that decides what a parent
+// sees, so each list holds one family: Aarav and Simran Sharma of the demo college are the one brother-and-sister pair
+// (same guardian record), and every other parent has a single child in another class.
+college.parents = [{ login: 'PAR001', children: ['STU2026001', 'STU2026002'] }, { login: 'PAR002', children: ['STU2026041'] }];
+school.parents = [{ login: 'PAR001', children: ['GPS2026001'] }, { login: 'PAR002', children: ['GPS2026041'] }];
+university.parents = [{ login: 'PAR001', children: ['MIT2026001'] }, { login: 'PAR002', children: ['MIT2026041'] }];
 
 export const DEMO_TENANTS = [college, school, university];
 

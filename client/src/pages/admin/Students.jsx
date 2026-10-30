@@ -34,7 +34,7 @@ export default function Students() {
     if (!(await confirm('Create a parent account for every active student who has a guardian email on record and no parent yet? Each parent gets an email to set a password.', { title: 'Invite all parents?', confirmLabel: 'Send invitations' }))) return;
     try {
       const r = await api.post('/admin/students/parents/invite-all');
-      toast.success(`${r.created} invited, ${r.linked} linked, ${r.skipped.length} skipped${r.skipped.length ? ` (e.g. ${r.skipped[0].studentCode}: ${r.skipped[0].reason})` : ''}.`);
+      toast.success(`${r.created} invited, ${r.skipped.length} skipped${r.skipped.length ? ` (e.g. ${r.skipped[0].studentCode}: ${r.skipped[0].reason})` : ''}.`);
     } catch (e) { toast.error(e); }
   };
 

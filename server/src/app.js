@@ -51,6 +51,8 @@ export function createApp() {
   app.use(cookieParser());
 
   app.get('/api/health', (req, res) => res.json({ ok: true }));
+  // Signed-in answers are never stored by the browser, so a shared phone cannot show the last person's data
+  app.use('/api', (req, res, next) => { res.set('Cache-Control', 'private, no-store'); next(); });
   app.use('/api/auth', authRoutes);
   app.use('/api/me', meRoutes);
   app.use('/api/student', studentRoutes);

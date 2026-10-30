@@ -20,7 +20,7 @@ async function loginRaw(tenantCode, role, identifier, password) {
 async function login(...a) { const r = await loginRaw(...a); assert.equal(r.status, 200); return r.cookie; }
 const withChild = (cookie, childId) => `${cookie}; erp_child=${childId}`;
 const cleanup = async () => withTx({ tenantId }, async () => {
-  await q("delete from users where role = 'parent' and login_id <> 'PAR001'");
+  await q("delete from users where role = 'parent' and login_id not in ('PAR001', 'PAR002')");
   await q("delete from parent_links where student_id in (select id from students where student_code in ('STU2026003')) ");
   await q("delete from grievances where subject like 'PT %'");
   await q("delete from notifications where template in ('accountSetup', 'grievanceUpdate')");
@@ -71,9 +71,11 @@ describe('The parent signs in and picks a child', () => {
   });
   it('a tampered cookie never reaches a student who is not linked', async () => {
     const r = await json('GET', '/api/student/profile', { cookie: withChild(parent, ids.STU2026003) });
-    assert.equal(r.status, 200);
+    assert.equal(r.status, 403, 'refused outright, not quietly swapped for another child');
     assert.equal(JSON.stringify(r.body).includes('STU2026003'), false);
-    assert.equal(JSON.stringify(r.body).includes('STU2026001'), true, 'falls back to the first linked child');
+    assert.match(r.headers.get('set-cookie'), /erp_child=;/, 'and the wrong choice is forgotten');
+    const next = await json('GET', '/api/student/profile', { cookie: parent });
+    assert.equal(JSON.stringify(next.body).includes('STU2026001'), true, 'with no choice left, the first linked child shows');
   });
 });
 

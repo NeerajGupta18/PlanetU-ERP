@@ -344,12 +344,13 @@ async function seedTenant(spec, hashes) {
     );
   }
 
-  // One parent account linked to the first two students, so the parent portal shows a switch between children
-  const { rows: kids } = await q('select id, name, guardian from students where tenant_id = app_tenant() order by student_code limit 2');
-  if (kids.length) {
+  // Parent accounts, each linked only to the children of that family (see `parents` in demo-data.js)
+  for (const [i, family] of (spec.parents || []).entries()) {
+    const { rows: kids } = await q('select id, guardian from students where tenant_id = app_tenant() and student_code = any($1) order by student_code', [family.children]);
+    if (!kids.length) continue;
     const { rows: [pu] } = await q(
-      `insert into users (role, login_id, email, name, password_hash) values ('parent', 'PAR001', $1, $2, $3) returning id`,
-      [`parent@${spec.code.replace('demo-', '')}.example`, kids[0].guardian?.name || 'Parent', hashes.parent],
+      `insert into users (role, login_id, email, name, password_hash) values ('parent', $1, $2, $3, $4) returning id`,
+      [family.login, `parent${i ? i + 1 : ''}@${spec.code.replace('demo-', '')}.example`, kids[0].guardian?.name || 'Parent', hashes.parent],
     );
     for (const k of kids) await q("insert into parent_links (user_id, student_id, relation) values ($1, $2, 'Parent')", [pu.id, k.id]);
   }
