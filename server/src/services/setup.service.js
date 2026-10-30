@@ -48,7 +48,7 @@ export const SAMPLE_COURSE = 'SAMPLE';
 const SAMPLE_PREFIX = 'SAMPLE-';
 const SAMPLE_LIKE = `${SAMPLE_PREFIX}%`;
 
-async function readSetup({ lock = false } = {}) {
+export async function readSetup({ lock = false } = {}) {
   const { rows: [r] } = await q(`select coalesce(details->'_setup', '{}'::jsonb) as s from institute_profiles${lock ? ' for update' : ''}`);
   if (!r) throw new HttpError(404, 'The institute profile is missing. Contact PlanetU support.');
   return r.s;

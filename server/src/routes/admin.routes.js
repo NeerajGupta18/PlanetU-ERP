@@ -98,6 +98,7 @@ router.param('invoiceId', uuidParam);
 router.param('enrollmentId', uuidParam);
 
 router.get('/dashboard', admin.dashboard);
+router.get('/dashboard/overview', admin.dashboardOverview);
 router.get('/audit', admin.listAudit);
 
 router.get('/institute', admin.getInstituteDetails);

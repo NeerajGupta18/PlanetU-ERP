@@ -1,3 +1,5 @@
+import { adminOverview } from '../services/adminDashboard.service.js';
+import { cachedDashboard } from '../services/dashCache.js';
 import { isUuid, q } from '../db/pool.js';
 import { HttpError } from '../middleware/error.js';
 import { audit } from '../db/audit.js';
@@ -31,7 +33,7 @@ async function guard(fn, { unique, foreign } = {}) {
 /* =========================================================
    Dashboard
    ========================================================= */
-export async function dashboard(req, res) {
+async function dashboardData(req) {
   const today = toISO(new Date());
   const { rows: [c] } = await q(`
     select (select count(*) from departments)::int as "totalDepartments",
@@ -69,7 +71,7 @@ export async function dashboard(req, res) {
     where a.status <> 'draft' order by a.submitted_at desc nulls last, a.created_at desc limit 5`);
   const lecturesToday = todayAhead.summary.lectures;
 
-  res.json({
+  return {
     institute: await getInstitute(),
     stats: { ...c, lecturesNext7Days: weekAhead.summary.lectures },
     today: {
@@ -90,7 +92,22 @@ export async function dashboard(req, res) {
     kpis: await kpi.institute(req.tenant.modules, { today }),
     recentApplications,
     upcomingEvents,
-  });
+  };
+}
+
+export async function dashboard(req, res) {
+  res.json(await dashboardData(req));
+}
+
+/** One answer for the whole Institute Admin dashboard. ?fresh=1 is the refresh button. */
+export async function dashboardOverview(req, res) {
+  res.json(await cachedDashboard(
+    { tenantId: req.tenant.id, userId: req.user.id, kind: 'admin', fresh: req.query.fresh !== undefined },
+    async () => {
+      const base = await dashboardData(req);
+      return { ...base, overview: await adminOverview(req.tenant.modules, req.tenant.type, base.today) };
+    },
+  ));
 }
 
 /* =========================================================
