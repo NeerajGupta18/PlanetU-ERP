@@ -9,16 +9,24 @@ import { studentOverview } from '../services/attendance.service.js';
 import { studentFees } from '../services/fees.service.js';
 import { studentResults } from '../services/exams.service.js';
 
-export const list = async (req, res) => res.json({ students: await svc.listStudents({ course: req.query.courseId, status: req.query.status, search: req.query.search }) });
-export const get = async (req, res) => res.json({ student: await svc.getStudent(req.params.id) });
+/**
+ * The student list is a lookup every office desk may read to fill its pickers. Only the student office sees the whole
+ * record: for anyone else it stops at who the student is and which class they are in.
+ */
+const deskOnly = (req) => Boolean(req.office && !req.office.full && req.office.areas?.students?.scope !== 'all');
+const PICKER_FIELDS = ['id', 'studentCode', 'rollNo', 'name', 'courseId', 'course', 'semester', 'section', 'batch', 'status'];
+const forDesk = (req, s) => (deskOnly(req) ? Object.fromEntries(PICKER_FIELDS.map((k) => [k, s[k]])) : s);
+
+export const list = async (req, res) => res.json({ students: (await svc.listStudents({ course: req.query.courseId, status: req.query.status, search: req.query.search })).map((s) => forDesk(req, s)) });
+export const get = async (req, res) => res.json({ student: forDesk(req, await svc.getStudent(req.params.id)) });
 export const update = async (req, res) => res.json({ student: await svc.updateStudent(req.params.id, req.body || {}, req.user) });
 /**
  * One student's record at a glance for the office: attendance, fees and published results, so whoever answers a
  * parent's call does not have to open three pages. Each part is null when its module is off.
  */
 export async function overview(req, res) {
-  // The student list is a lookup every office desk may read; this summary (fees, marks) is for the student office only
-  if (req.office && !req.office.full && req.office.areas?.students?.scope !== 'all') throw new HttpError(403, 'Your staff role does not include this.');
+  // This summary (fees, marks) is for the student office only
+  if (deskOnly(req)) throw new HttpError(403, 'Your staff role does not include this.');
   const has = (m) => req.tenant.modules.includes(m);
   const { rows: [st] } = await q('select id, attendance from students where id = $1', [req.params.id]);
   if (!st) throw new HttpError(404, 'Student not found.');
@@ -57,7 +65,10 @@ export async function issueIdCard(res, tenant, studentId, req) {
   await streamIdCard(res, { institute, student, term: tenant.terminology, photoStorageKey, brand });
 }
 
-export const idCard = (req, res) => issueIdCard(res, req.tenant, req.params.id, req);
+export const idCard = (req, res) => {
+  if (deskOnly(req)) throw new HttpError(403, 'Your staff role does not include this.');
+  return issueIdCard(res, req.tenant, req.params.id, req);
+};
 
 /* ---------- bulk import (CSV) ---------- */
 // Multipart text fields arrive as strings: anything but the literal "false" keeps the default of true
