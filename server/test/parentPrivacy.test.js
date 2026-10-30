@@ -9,6 +9,7 @@ import { createApp } from '../src/app.js';
 import { closePool, q, withTx } from '../src/db/pool.js';
 import { issueCaptchaToken } from '../src/services/captcha.service.js';
 import { DEMO_TENANTS } from '../src/db/demo-data.js';
+import { whatIfAttendance } from '../../client/src/utils/kpi.js';
 
 let server; let base; let tenantId; let schoolId;
 const cookies = {}; const ids = {};
@@ -283,5 +284,34 @@ describe('Another institute\'s ids return nothing', () => {
       noTraceOfB(a, p);
     }
     assert.ok(schoolId);
+  });
+});
+
+describe('The parent dashboard (12C)', () => {
+  it('answers only for the chosen, linked child, with counts behind the What-if meter', async () => {
+    const asChild = await json('GET', '/api/student/my-day', { cookie: asA(ids.Asibling) });
+    assert.equal(asChild.status, 200);
+    assert.equal(asChild.body.student.studentCode, 'STU2026002');
+    const a = asChild.body.attendance;
+    assert.equal(a.overall, Math.round((a.attended / a.total) * 1000) / 10, 'the percentage comes from the counts');
+    assert.equal(a.trend.length, 30);
+    assert.equal(a.trend.at(-1).pct, a.overall, 'the trend ends on the headline figure');
+    assert.equal(asChild.body.latestResult.trend.length >= 2, true, 'the demo has a marks trend');
+    assert.equal(whatIfAttendance(a.attended, a.total, 0), a.overall, 'missing nothing changes nothing');
+    assert.equal(whatIfAttendance(30, 40, 10), 60);
+    assert.equal(whatIfAttendance(0, 0, 0), null);
+    assert.ok(whatIfAttendance(a.attended, a.total, 5) < a.overall);
+    assert.equal((await json('GET', '/api/student/my-day', { cookie: asA(ids.B) })).status, 403);
+  });
+  it('its figures equal the child\'s own attendance, fees and results pages', async () => {
+    const c = asA(ids.A);
+    const d = (await json('GET', '/api/student/my-day', { cookie: c })).body;
+    const att = (await json('GET', '/api/student/attendance', { cookie: c })).body;
+    assert.equal(d.attendance.overall, att.overall);
+    const fees = (await json('GET', '/api/student/fees', { cookie: c })).body;
+    assert.equal(d.fees.outstanding, fees.summary.outstanding);
+    const res = (await json('GET', '/api/student/results', { cookie: c })).body;
+    assert.equal(d.latestResult.pct, res.exams[0].pct);
+    assert.equal(d.latestResult.trend.length, res.exams.filter((e) => e.pct !== null).length);
   });
 });

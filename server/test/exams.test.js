@@ -474,7 +474,7 @@ describe('Demo data', () => {
   it('the seeded published exam gives a demo student results with a CGPA; the failed paper shows for another', async () => {
     const aarav = await login('demo-college', 'student', 'STU2026001', 'Student@123');
     const a = await json('GET', '/api/student/results', { cookie: aarav });
-    assert.equal(a.body.exams.length, 1);
+    assert.equal(a.body.exams.length, 2, 'the end-semester exam and an earlier unit test');
     assert.equal(a.body.exams[0].name, 'End-Semester Examination');
     assert.equal(a.body.exams[0].result, 'pass');
     assert.ok(a.body.cgpa > 0);

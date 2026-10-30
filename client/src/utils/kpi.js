@@ -47,3 +47,9 @@ export function changeOf(now, before, period, { points = false, goodWhen = 'up' 
   const dir = diff > 0 ? 'up' : 'down';
   return { dir, tone: dir === goodWhen ? 'good' : 'bad', text: `${dir === 'up' ? 'Up' : 'Down'} ${Math.abs(diff)}${points ? ' points' : '%'} on ${period}` };
 }
+
+/** What-if: the attendance percentage after missing `missed` more classes. Attended stays, the classes held go up. */
+export function whatIfAttendance(attended, total, missed) {
+  const held = (Number(total) || 0) + (Number(missed) || 0);
+  return held ? Math.round(((Number(attended) || 0) / held) * 1000) / 10 : null;
+}

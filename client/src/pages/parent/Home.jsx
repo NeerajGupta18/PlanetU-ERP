@@ -1,13 +1,17 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Award, CalendarCheck, Clock, FileText, MapPin, Megaphone, Sun, Video, Wallet } from 'lucide-react';
+import { Award, CalendarCheck, CalendarClock, Clock, FileText, MapPin, Megaphone, Sun, Video, Wallet } from 'lucide-react';
 import { useFetch } from '../../hooks/useFetch.js';
 import { useTenantConfig } from '../../hooks/useTenantConfig.js';
 import { api } from '../../api/http.js';
 import { Badge, Card, PageHeader } from '../../components/ui/Ui.jsx';
 import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
+import { LineChart } from '../../components/ui/Charts.jsx';
+import { Ring } from '../../components/dash/Charts.jsx';
+import { Freshness } from '../../components/dash/KpiCard.jsx';
+import WhatIfMeter from '../../components/dash/WhatIfMeter.jsx';
 import PayOnlineModal from '../../components/fees/PayOnlineModal.jsx';
-import { firstName, fmtDate, fmtTime } from '../../utils/dates.js';
+import { firstName, fmtDate, fmtEventDates, fmtTime } from '../../utils/dates.js';
 import { inr0, plural } from '../../utils/kpi.js';
 
 // A class's mark, in words and a colour (the word is always shown, never only the colour)
@@ -40,6 +44,7 @@ export default function ParentHome() {
 
   return (
     <DataBoundary loading={kids.loading && !kids.data} error={kids.error} data={kids.data} reload={kids.reload}>
+      <div className="dash-page">
       {kids.data && (kids.data.children.length === 0 ? (
         <>
           <PageHeader icon={Sun} title="My child today" subtitle="Attendance, fees, results and notices for your child" />
@@ -52,6 +57,7 @@ export default function ParentHome() {
           )}
         </DataBoundary>
       ))}
+      </div>
     </DataBoundary>
   );
 }
@@ -89,6 +95,7 @@ function MyChildToday({ d, kids, selected, onPick, busy, reload }) {
         subtitle={`${d.student.course || ''}${d.student.semester ? `, Sem ${d.student.semester}` : ''}${d.student.section ? ` / ${d.student.section}` : ''}  |  ${d.student.studentCode}`}
         steps={{ process: 'family', current: d.next.step, done: ['invite', 'signin', ...(d.next.step === 'today' ? [] : ['today'])], next }}
       />
+      <Freshness at={d.generatedAt} loading={busy} onRefresh={reload} />
 
       <div className="myday">
         <Card title="Today's classes" icon={Clock} action={hasModule('timetable') ? <Link to="/student/timetable" className="btn btn--outline btn--sm">Timetable</Link> : null}>
@@ -135,13 +142,7 @@ function MyChildToday({ d, kids, selected, onPick, busy, reload }) {
 
         {d.attendance && (
           <Card title="Attendance" icon={CalendarCheck} action={<Link to="/student/attendance" className="btn btn--outline btn--sm">By subject</Link>}>
-            <strong className={`myday__big ${d.attendance.overall < d.attendance.threshold ? 'is-bad' : ''}`}>{d.attendance.overall}%</strong>
-            <span className="muted"> overall, minimum {d.attendance.threshold}%</span>
-            <p className="myday__hint">
-              {d.attendance.overall >= d.attendance.threshold
-                ? (d.attendance.canMiss > 0 ? `${name} can miss ${plural(d.attendance.canMiss, 'more class', 'more classes')} and stay above the minimum.` : `${name} should not miss the next class.`)
-                : d.attendance.needToReach ? `${name} needs to attend the next ${plural(d.attendance.needToReach, 'class', 'classes')} to reach ${d.attendance.threshold}%.` : `Below the ${d.attendance.threshold}% minimum. Please speak to the class teacher.`}
-            </p>
+            <AttendanceBody a={d.attendance} name={name} />
           </Card>
         )}
 
@@ -153,10 +154,19 @@ function MyChildToday({ d, kids, selected, onPick, busy, reload }) {
                   {d.latestResult.gpa !== null && d.latestResult.gpa !== undefined ? `GPA ${d.latestResult.gpa.toFixed(2)}` : `${d.latestResult.pct ?? '-'}%`}
                 </strong>
                 <span className="muted"> {d.latestResult.name}</span>
+                <MarksTrend r={d.latestResult} />
               </>
             ) : (
               <EmptyState compact title="No results yet" hint="Results show here as soon as the institute publishes them." />
             )}
+          </Card>
+        )}
+
+        {d.upcomingExams?.length > 0 && (
+          <Card title="Upcoming exams" icon={CalendarClock} action={hasModule('calendar') ? <Link to="/student/calendar" className="btn btn--outline btn--sm">Calendar</Link> : null}>
+            <ul className="myday__notices">
+              {d.upcomingExams.map((x) => <li key={x.id}><strong>{x.title}</strong><small className="muted">{fmtEventDates(x.start, x.end)}</small></li>)}
+            </ul>
           </Card>
         )}
 
@@ -185,4 +195,53 @@ function MyChildToday({ d, kids, selected, onPick, busy, reload }) {
       {paying && <PayOnlineModal scope={paying} onClose={() => setPaying(null)} onDone={() => { setPaying(null); reload(); }} />}
     </>
   );
+}
+
+/** The attendance figure with its ring, the last 30 days, and the What-if meter. */
+function AttendanceBody({ a, name }) {
+  const low = a.overall < a.threshold;
+  const days = a.trend || [];
+  const marked = days.filter((x) => x.pct !== null);
+  return (
+    <>
+      <div className="myday__ring">
+        <Ring value={a.total ? a.overall : null} label="Attendance overall" text={`${a.overall}%`} size={84} />
+        <div>
+          <strong className={low ? 'is-bad' : ''}>{low ? 'Below' : 'Above'} the {a.threshold}% minimum</strong>
+          <p className="myday__hint" style={{ margin: '2px 0 0' }}>
+            {a.overall >= a.threshold
+              ? (a.canMiss > 0 ? `${name} can miss ${plural(a.canMiss, 'more class', 'more classes')} and stay above the minimum.` : `${name} should not miss the next class.`)
+              : a.needToReach ? `${name} needs to attend the next ${plural(a.needToReach, 'class', 'classes')} to reach ${a.threshold}%.` : `Below the ${a.threshold}% minimum.`}
+          </p>
+        </div>
+      </div>
+      <h3 className="dash-h3" style={{ marginTop: 12 }}>Overall attendance, last 30 days</h3>
+      {marked.length < 2 ? (
+        <p className="muted" style={{ margin: 0, fontSize: 13 }}>The trend appears after two days of marking.</p>
+      ) : (
+        <>
+          <LineChart
+            data={days.map((x) => ({ label: fmtDate(x.day).split(' ').slice(0, 2).join(' '), value: x.pct }))} format={(v) => `${v}%`}
+            min={Math.max(0, Math.min(a.threshold, ...marked.map((x) => x.pct)) - 10)} max={100} target={a.threshold} caption={`${name}'s overall attendance at the end of each of the last 30 days`} height={140}
+          />
+          <p className="chart-note">The dashed line is the {a.threshold}% minimum.</p>
+        </>
+      )}
+      <WhatIfMeter attended={a.attended} total={a.total} threshold={a.threshold} name={name} />
+    </>
+  );
+}
+
+/** Marks exam by exam, or subject by subject while there is only one result. */
+function MarksTrend({ r }) {
+  const trend = r.trend || [];
+  if (trend.length >= 2) {
+    return (
+      <div style={{ marginTop: 10 }}>
+        <h3 className="dash-h3">Marks trend</h3>
+        <LineChart data={trend.map((t, i) => ({ label: `Exam ${i + 1}`, full: t.name, value: t.pct }))} format={(v) => `${v}%`} min={0} max={100} caption="Percentage in each published exam, oldest first" height={130} />
+      </div>
+    );
+  }
+  return <p className="muted" style={{ margin: '8px 0 0', fontSize: 13 }}>The marks trend appears after the next published exam.</p>;
 }
