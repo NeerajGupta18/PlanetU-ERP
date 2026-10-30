@@ -2,7 +2,7 @@ import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import ErrorBoundary from '../ui/ErrorBoundary.jsx';
 import { Loader } from '../ui/Feedback.jsx';
-import { Bell, BookOpenCheck, ChevronDown, Fingerprint, KeyRound, LogOut, MapPin, Menu, Phone, Search } from 'lucide-react';
+import { Bell, BookOpenCheck, ChevronDown, KeyRound, LogOut, MapPin, Menu, Phone, Search } from 'lucide-react';
 import { useBell } from '../../hooks/useBell.js';
 import BellPanel from './BellPanel.jsx';
 import BottomNav from './BottomNav.jsx';
@@ -23,7 +23,6 @@ import Breadcrumbs from './Breadcrumbs.jsx';
 import SearchPalette from './SearchPalette.jsx';
 import { startAutoScroll } from '../../lib/autoScroll.js';
 import { applyBrandColor, logoUrl } from '../../lib/brandTheme.js';
-import { accountKey, fingerprintPossible, isSaved } from '../../lib/fingerprint.js';
 
 function Dropdown({ button, children, align = 'right' }) {
   const [open, setOpen] = useState(false);
@@ -114,13 +113,10 @@ export default function AppShell() {
     }
   };
 
-  const onLogout = async (forgetKey) => {
-    await logout({ forgetKey });
+  const onLogout = async () => {
+    await logout();
     navigate('/login', { replace: true });
   };
-  // Android app with fingerprint on for this account: also offer to sign out and forget this phone
-  const fpKey = tenant && fingerprintPossible() ? accountKey(tenant.code, user) : null;
-  const fpSaved = Boolean(fpKey && isSaved(fpKey));
 
   // useNav() already hides switched-off modules, applies the institute's own words and the billing lock
   const locked = Boolean(tenant?.billingLocked);
@@ -190,10 +186,8 @@ export default function AppShell() {
                 <div className="menu__who"><strong>{user.name}</strong><small>{user.loginId}</small></div>
                 <button type="button" className="menu__item" onClick={() => navigate(`/${user.role === 'super_admin' ? 'super-admin' : user.role}/help`)}><BookOpenCheck size={15} /> How to use</button>
                 <button type="button" className="menu__item" onClick={() => navigate('/change-password')}><KeyRound size={15} /> Change password</button>
-                {user.role !== 'super_admin' && <button type="button" className="menu__item" onClick={() => navigate('/devices')}><Fingerprint size={15} /> Fingerprint and phones</button>}
                 <InstallPrompt className="menu__item" />
-                <button type="button" className="menu__item" onClick={() => onLogout()}><LogOut size={15} /> Sign out</button>
-                {fpSaved && <button type="button" className="menu__item" onClick={() => onLogout(fpKey)}><LogOut size={15} /> Sign out and forget this phone</button>}
+                <button type="button" className="menu__item" onClick={onLogout}><LogOut size={15} /> Sign out</button>
               </div>
             </Dropdown>
           </div>

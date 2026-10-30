@@ -8,12 +8,6 @@ You see only the pages of your role. The admin gives roles under Staff, then Sta
 Signing in
 Institute code, choose Employee, your employee ID and password, tick "I'm not a robot".
 
-Fingerprint sign-in (Android app only)
-1. In the Android app, after you sign in with your password, the app asks "Use fingerprint next time?". Choose Use fingerprint, or Not now.
-2. Next time, tap your name and touch the sensor. "Use password instead" and "Switch account" are always there. Up to five accounts can be saved on one phone.
-3. Your password is not saved on the phone. After 30 days, or when your password changes, the app asks for the password again.
-4. Menu, then "Fingerprint and phones" lists your phones; Remove one you no longer use. "Sign out and forget this phone" turns it off on that phone.
-
 Accountant: a normal day
 1. Open Fees & Payments. The step bar says what is next.
 2. Collect: type the student's name or ID, choose "Record payment", check the amount, pick cash, UPI, card or cheque, save.

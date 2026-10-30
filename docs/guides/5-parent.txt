@@ -7,12 +7,6 @@ Getting in
 3. The first time, the app asks for your consent. The first box is needed to see your child's records.
    The second, email reminders, is your choice. Your answer is saved with the date and time.
 
-Fingerprint sign-in (Android app only)
-1. In the Android app, after you sign in with your password, the app asks "Use fingerprint next time?". Choose Use fingerprint, or Not now.
-2. Next time, tap your name and touch the sensor. "Use password instead" and "Switch account" are always there. Up to five accounts can be saved on one phone.
-3. Your password is not saved on the phone. After 30 days, or when your password changes, the app asks for the password again.
-4. Menu, then "Fingerprint and phones" lists your phones; Remove one you no longer use. "Sign out and forget this phone" turns it off on that phone.
-
 My child today (your home page)
 - Each class today, with Present, Absent or Late once the teacher submits the register.
 - Fees due, attendance, the latest result and new notices.

@@ -170,27 +170,6 @@ a { color: var(--link); }
 .roles__item:hover { border-color: var(--brand-100); color: var(--brand-600); }
 .roles__item.is-active { border-color: var(--brand-500); background: var(--brand-50); color: var(--brand-700); box-shadow: 0 0 0 3px var(--brand-100); }
 
-/* Fingerprint sign-in (Android app): saved accounts and the "Use fingerprint next time?" offer */
-.fp h2 { font-size: 24px; letter-spacing: -0.01em; }
-.fp__list { display: grid; gap: 10px; }
-.fp__row { display: flex; align-items: stretch; gap: 8px; }
-.fp__account { flex: 1; min-width: 0; min-height: 64px; display: flex; align-items: center; gap: 12px; padding: 10px 14px; text-align: left;
-  background: var(--surface); border: 1.5px solid var(--border); border-radius: 12px; color: var(--text); transition: border-color 0.15s, background 0.15s; }
-.fp__account:hover:not(:disabled) { border-color: var(--brand-500); background: var(--brand-50); }
-.fp__avatar { flex: none; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: var(--grad); color: #fff; font-family: var(--font-head); font-weight: 600; font-size: 14px; }
-.fp__who { flex: 1; min-width: 0; display: grid; }
-.fp__who strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.fp__who small { color: var(--muted); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.fp__icon { flex: none; color: var(--brand); }
-.fp__forget { flex: none; width: 44px; display: grid; place-items: center; background: none; border: 1px solid var(--border); border-radius: 12px; color: var(--muted); }
-.fp__forget:hover:not(:disabled) { color: var(--danger); border-color: var(--danger-line); }
-.fp__actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 18px; }
-.fp__actions .btn { min-height: 44px; justify-content: center; }
-.fp--offer { text-align: center; }
-.fp__badge { display: inline-grid; place-items: center; width: 60px; height: 60px; margin-bottom: 12px; border-radius: 50%; background: var(--brand-50); color: var(--brand); }
-.fp__offer-actions { justify-content: center; }
-@media (max-width: 420px) { .fp__actions { grid-template-columns: 1fr; } }
-
 /* "I'm not a robot" */
 .robot { position: relative; margin-top: 18px; }
 .robot__box { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1px solid #d3d6e4; border-radius: 10px; background: #f9faff; transition: border-color 0.2s, background 0.2s; }

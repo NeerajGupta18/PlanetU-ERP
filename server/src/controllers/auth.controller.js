@@ -10,9 +10,6 @@ import { checkPassword, sendResetLink, sha } from '../services/accounts.service.
 import { queueEmail, tenantInfo } from '../services/notifications.service.js';
 import { instituteBrief, loadNotices } from '../db/repo.js';
 import { audit } from '../db/audit.js';
-import {
-  findByToken, forgetByToken, issueDevice, listAll, listMine, looksLikeDeviceToken, removeDevice, revokeAllFor, touchDevice,
-} from '../services/devices.service.js';
 import { asksConsent, consentStatus } from '../services/consent.service.js';
 import { DEMO_PASSWORDS, DEMO_TENANTS } from '../db/demo-data.js';
 import {
@@ -58,27 +55,6 @@ async function sessionExtras(user, tenant) {
   const classTeacher = user.role === 'employee' ? (await classesOf(user.employeeId ?? user.employee_id)).length > 0 : false;
   return { institute: await instituteBrief(), notifications, billing, office, consentNeeded, classTeacher };
 }
-
-/** Signs the session cookie. amr says how the person proved who they are: 'password' or 'device' (fingerprint). */
-function startSession(res, user, tenantId, amr = 'password') {
-  const token = jwt.sign({ typ: 'session', role: user.role, tid: tenantId ?? null, ims: Date.now(), amr }, env.JWT_SECRET, {
-    subject: user.id, expiresIn: `${env.SESSION_HOURS}h`,
-  });
-  res.cookie(env.COOKIE_NAME, token, {
-    httpOnly: true, sameSite: 'lax', secure: env.COOKIE_SECURE, maxAge: env.SESSION_HOURS * 3600 * 1000,
-  });
-}
-
-/** A suspended institute keeps everyone out, except that its admin may still sign in to pay an unpaid subscription. */
-function tenantBlock(tenant, user) {
-  if (!tenant || tenant.status === 'active') return null;
-  const billingLocked = tenant.suspensionReason === 'billing';
-  if (billingLocked && user.role === 'admin') { tenant.billingLocked = true; return null; }
-  return billingLocked ? "Your institute's access is temporarily paused. Please contact your institute's administrator."
-    : "This institute's account is suspended. Please contact PlanetU support.";
-}
-
-const TENANT_COLS = 'id, code, name, type, status, plan, modules, terminology, suspension_reason as "suspensionReason"';
 
 /* ---------- captcha ---------- */
 
@@ -148,7 +124,9 @@ export async function login(req, res) {
   const { tenant, user } = await withTx({ platform: true }, async () => {
     let t = null;
     if (!isPlatform) {
-      ({ rows: [t] } = await q(`select ${TENANT_COLS} from tenants where code = $1`, [code]));
+      ({ rows: [t] } = await q(
+        'select id, code, name, type, status, plan, modules, terminology, suspension_reason as "suspensionReason" from tenants where code = $1', [code],
+      ));
       if (!t) return { tenant: null, user: null };
     }
     const { rows: [u] } = await q(
@@ -172,11 +150,25 @@ export async function login(req, res) {
       message: isPlatform ? 'Incorrect ID, password or role.' : 'Incorrect institute code, ID, password or role.',
     });
   }
-  const blocked = tenantBlock(tenant, user);
-  if (blocked) return res.status(403).json({ message: blocked });
+  if (tenant && tenant.status !== 'active') {
+    const billingLocked = tenant.suspensionReason === 'billing';
+    // An unpaid subscription locks everyone out except the admin, who must be able to sign in to pay
+    if (!(billingLocked && user.role === 'admin')) {
+      return res.status(403).json({
+        message: billingLocked ? "Your institute's access is temporarily paused. Please contact your institute's administrator."
+          : "This institute's account is suspended. Please contact PlanetU support.",
+      });
+    }
+    tenant.billingLocked = true;
+  }
 
   failed.delete(key);
-  startSession(res, user, tenant?.id);
+  const token = jwt.sign({ typ: 'session', role: user.role, tid: tenant?.id ?? null, ims: Date.now() }, env.JWT_SECRET, {
+    subject: user.id, expiresIn: `${env.SESSION_HOURS}h`,
+  });
+  res.cookie(env.COOKIE_NAME, token, {
+    httpOnly: true, sameSite: 'lax', secure: env.COOKIE_SECURE, maxAge: env.SESSION_HOURS * 3600 * 1000,
+  });
 
   const extras = await withTx({ tenantId: tenant?.id ?? null, platform: !tenant }, async () => {
     await audit(user, 'auth.login', 'user', user.id);
@@ -194,90 +186,6 @@ export async function me(req, res) {
 
 export function logout(req, res) {
   res.clearCookie(env.COOKIE_NAME);
-  res.json({ ok: true });
-}
-
-/* ---------- fingerprint sign-in (Android app) ---------- */
-
-const DEVICE_INVALID = { code: 'DEVICE_INVALID', message: 'Fingerprint sign-in is not set up for this account any more. Please sign in with your password.' };
-const DEVICE_EXPIRED = { code: 'DEVICE_EXPIRED', message: 'For your safety, please sign in with your password once every 30 days.' };
-const FRESH_SIGN_IN_MS = 15 * 60 * 1000;
-
-const tenantByCode = async (tenantCode) => {
-  if (typeof tenantCode !== 'string' || !tenantCode.trim() || tenantCode.length > 60) return null;
-  return withTx({ platform: true }, async () => (
-    (await q(`select ${TENANT_COLS} from tenants where code = $1`, [tenantCode.trim().toLowerCase()])).rows[0]
-  ));
-};
-
-/**
- * Right after a password sign-in on the Android app, the person chose "Use fingerprint next time": the phone gets a
- * random token for its secure storage. Never from a fingerprint session (so 30 days cannot be stretched by itself),
- * never for the vendor's own owner account.
- */
-export async function trustDevice(req, res) {
-  if (!req.tenant) throw new HttpError(400, 'Fingerprint sign-in is for institute accounts.');
-  if (req.auth?.amr !== 'password' || Date.now() - req.auth.mintedAt > FRESH_SIGN_IN_MS) {
-    throw new HttpError(403, 'Sign in with your password first, then turn on fingerprint.');
-  }
-  const d = await issueDevice(req.user, req.body?.label);
-  await audit(req.user, 'auth.device_trusted', 'trusted_device', d.id, { label: d.label });
-  res.status(201).json({ id: d.id, token: d.token, label: d.label, expiresAt: d.expiresAt });
-}
-
-/** Fingerprint sign-in: the phone sends the token it unlocked with a fingerprint, with the institute code. */
-export async function deviceLogin(req, res) {
-  const { tenantCode, token } = req.body || {};
-  const tenant = looksLikeDeviceToken(token) ? await tenantByCode(tenantCode) : null;
-  if (!tenant) return res.status(401).json(DEVICE_INVALID);
-
-  // Looked up INSIDE the institute named by the code: another institute's token is simply not found
-  const found = await withTx({ tenantId: tenant.id }, async () => {
-    const f = await findByToken(token);
-    if (f.reason === 'inactive') await revokeAllFor(f.userId, 'deactivated');
-    if (f.user) await touchDevice(f.device.id);
-    await audit(f.user ?? null, f.user ? 'auth.device_login' : 'auth.device_login_failed', 'trusted_device', f.device?.id ?? f.deviceId ?? null,
-      f.user ? {} : { reason: f.reason });
-    return f;
-  });
-  if (!found.user) return res.status(401).json(found.reason === 'expired' ? DEVICE_EXPIRED : DEVICE_INVALID);
-  const blocked = tenantBlock(tenant, found.user);
-  if (blocked) return res.status(403).json({ message: blocked });
-
-  startSession(res, found.user, tenant.id, 'device');
-  const extras = await withTx({ tenantId: tenant.id }, () => sessionExtras(found.user, tenant));
-  return res.json({ user: toPublicUser(found.user), tenant: publicTenant(tenant), ...extras });
-}
-
-/** "Forget this device" (on sign-out, or removing a saved account): holding the token is the proof. */
-export async function forgetDevice(req, res) {
-  const { tenantCode, token } = req.body || {};
-  const tenant = looksLikeDeviceToken(token) ? await tenantByCode(tenantCode) : null;
-  if (tenant) {
-    await withTx({ tenantId: tenant.id }, async () => {
-      if (await forgetByToken(token)) await audit(null, 'auth.device_forgotten', 'trusted_device', null);
-    });
-  }
-  res.json({ ok: true });
-}
-
-export async function myDevices(req, res) {
-  res.json({ devices: req.tenant ? await listMine(req.user.id) : [] });
-}
-
-export async function removeMyDevice(req, res) {
-  const d = await removeDevice(req.params.id, { userId: req.user.id, reason: 'removed' });
-  await audit(req.user, 'auth.device_removed', 'trusted_device', d.id, { label: d.label });
-  res.json({ ok: true });
-}
-
-export async function allDevices(req, res) {
-  res.json({ devices: await listAll() });
-}
-
-export async function removeAnyDevice(req, res) {
-  const d = await removeDevice(req.params.id, { reason: 'removed_by_admin' });
-  await audit(req.user, 'auth.device_removed_by_admin', 'trusted_device', d.id, { label: d.label, userId: d.userId });
   res.json({ ok: true });
 }
 
@@ -343,10 +251,7 @@ export async function resetPassword(req, res) {
       [await bcrypt.hash(password, 10), r.userId, new Date()],
     );
     await q('update password_resets set used_at = now() where user_id = $1 and used_at is null', [r.userId]);
-    if (r.tenantId) {
-      await switchTenant(r.tenantId);
-      await revokeAllFor(r.userId, 'password'); // a new password ends fingerprint sign-in on every phone
-    }
+    if (r.tenantId) await switchTenant(r.tenantId);
     const info = await tenantInfo();
     await queueEmail(r.email, 'passwordChanged', { institute: info.name, name: r.name });
     await audit({ id: r.userId, role: r.role }, 'auth.password_reset', 'user', r.userId);
@@ -402,8 +307,12 @@ export async function changePassword(req, res) {
   const info = await tenantInfo();
   await queueEmail(req.user.email, 'passwordChanged', { institute: info.name, name: req.user.name });
   await audit(req.user, 'auth.password_change', 'user', req.user.id);
-  if (req.tenant) await revokeAllFor(req.user.id, 'password'); // a new password ends fingerprint sign-in on every phone
 
-  startSession(res, req.user, req.tenant?.id);
+  const token = jwt.sign({ typ: 'session', role: req.user.role, tid: req.tenant?.id ?? null, ims: Date.now() }, env.JWT_SECRET, {
+    subject: req.user.id, expiresIn: `${env.SESSION_HOURS}h`,
+  });
+  res.cookie(env.COOKIE_NAME, token, {
+    httpOnly: true, sameSite: 'lax', secure: env.COOKIE_SECURE, maxAge: env.SESSION_HOURS * 3600 * 1000,
+  });
   res.json({ message: 'Password changed.' });
 }

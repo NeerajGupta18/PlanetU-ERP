@@ -102,8 +102,6 @@ export async function requireAuth(req, res, next) {
         }
       }
       req.user = { ...u, profileId: u.studentId || u.employeeId };
-      // How this session began ('password' or 'device', i.e. fingerprint on a trusted phone) and when
-      req.auth = { amr: claims.amr === 'device' ? 'device' : 'password', mintedAt };
       // Accounts on a temporary password can do nothing except change it (or sign out / see who they are)
       if (u.mustChangePassword && req.baseUrl !== '/api/auth') {
         return res.status(403).json({ message: 'Please choose a new password before continuing.', code: 'PASSWORD_CHANGE_REQUIRED' });
