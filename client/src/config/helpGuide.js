@@ -281,8 +281,9 @@ export const HELP = [
   {
     id: 'student-home', who: ['student'], title: 'Your home page', to: '/student/dashboard',
     steps: [
-      'The cards show your attendance, next class, work due this week, fees due, next exam and latest result.',
-      'The attendance card tells you how many classes you can still miss, or how many you must attend to reach 75%.',
+      'The cards show your next class, days until your next exam, fees due and paid, latest result, work due this week and notices.',
+      'The Attendance card shows your overall figure and each subject, and how many classes you can still miss or must attend to reach the minimum.',
+      'Move the What-if slider to see what your attendance becomes if you miss more classes. It changes nothing.',
       '"To do" lists what to do next, most urgent first.',
     ],
   },
