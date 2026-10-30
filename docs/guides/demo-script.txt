@@ -50,6 +50,8 @@ Before the demo
      "Before you publish" shows what is missing. Publish is locked until every mark is in.
    - End-Semester Examination, Division A: already published. Open the Results tab, then "Print report cards". The cards carry the logo.
 
+   The dashboard: back on the admin home, show the Year Journey, then tap Institute Pulse's "How is this worked out?". Tap "Collected this month" and show the same figure on the Fees page.
+
 7. The parent (2 minutes, on the phone)
    Sign in as Parent: demo-college, PAR001.
    - The first time: the consent screen. Tick the first box and continue.

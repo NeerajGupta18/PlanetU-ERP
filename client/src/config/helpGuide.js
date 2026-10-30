@@ -28,10 +28,10 @@ export const HELP = [
   {
     id: 'admin-dashboard', who: ['admin', 'area:dashboard'], title: 'Read the dashboard', to: '/admin/dashboard',
     steps: [
-      'The six cards at the top are the day\'s key numbers. Green means fine, amber means something to do, red means urgent.',
-      'Each card compares with last week or last month, so you can see if things are getting better or worse.',
-      '"Needs your attention" lists everything waiting, most urgent first. Tap a line to deal with it.',
-      'The two charts show fees collected each month and student attendance each week.',
+      'The Year Journey at the top shows the academic year with today marked, and each stage with its status, one number and its next step.',
+      'Institute Pulse is a score from 0 to 100. Tap "How is this worked out?" to see its parts.',
+      'Tap any card to open the page behind it. The card and the page show the same figure.',
+      '"Needs your attention" lists what is waiting, most urgent first. "Updated" shows when the figures were read, and Refresh reads them again.',
     ],
   },
   {

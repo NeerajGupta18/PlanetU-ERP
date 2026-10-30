@@ -71,3 +71,11 @@ When something goes wrong
 - Every error message says how to fix it. Read it first.
 - Forgot password: use "Forgot password" on the sign-in page.
 - Still stuck: contact PlanetU support.
+
+The dashboard
+The dashboard is your first screen. From the top down:
+- Year Journey: the academic year with today marked, and seven stages (Admissions, Fees, Timetable, Attendance, Exams, Results, Certificates). Each shows its status, one number and a link to the next thing to do.
+- Institute Pulse: a score from 0 to 100 made from attendance, fee collection, pending approvals and exam completion. Tap "How is this worked out?" to see each part.
+- At a glance, Money, Attendance, Academics and Decisions: tap any card to open the page behind it. The card's number matches that page.
+- Departments compared: attendance, fees and results side by side. Open a row to go deeper.
+The figures can be up to a minute old. "Updated" shows when they were read, and Refresh reads them again.

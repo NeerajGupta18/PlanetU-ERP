@@ -1,27 +1,29 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
-  AlertTriangle, BarChart3, CalendarCheck, CalendarDays, ClipboardCheck, Inbox, LayoutDashboard, ListTodo, Megaphone, Percent, Receipt, TrendingUp, Upload, UserPlus, Users2, Wallet, Zap,
+  CalendarDays, ClipboardCheck, GraduationCap, Inbox, LayoutDashboard, LayoutGrid, ListTodo, Megaphone, MessageSquareText, Percent, Receipt, Upload, UserPlus, Users2, Wallet, Zap,
 } from 'lucide-react';
 import { useFetch } from '../../hooks/useFetch.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useTenantConfig } from '../../hooks/useTenantConfig.js';
-import { Badge, Card, PageHeader, StatCard, pending, CollapsibleCards } from '../../components/ui/Ui.jsx';
+import { Badge, Card, PageHeader, CollapsibleCards } from '../../components/ui/Ui.jsx';
 import DataTable from '../../components/ui/DataTable.jsx';
-import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
-import { BarChart, LineChart } from '../../components/ui/Charts.jsx';
+import Modal from '../../components/ui/Modal.jsx';
+import { EmptyState, ErrorState } from '../../components/ui/Feedback.jsx';
+import { LineChart } from '../../components/ui/Charts.jsx';
+import { Funnel, Heatmap, PairedBars, Ring, StackedBar } from '../../components/dash/Charts.jsx';
+import { Freshness, KpiCard, KpiGrid, KpiLoading, useDashboard } from '../../components/dash/KpiCard.jsx';
 import AttentionList from '../../components/campus/AttentionList.jsx';
 import SetupChecklist from '../../components/campus/SetupChecklist.jsx';
 import { EVENT_TYPES } from '../../utils/eventTypes.js';
 import { fmtEventDates, fmtLong, todayISO } from '../../utils/dates.js';
-import { compare, inr0, inrShort, plural } from '../../utils/kpi.js';
+import { changeOf, inr0, inrCompact, inrShort, numIn, plural } from '../../utils/kpi.js';
 
 export default function Dashboard() {
-  const { data, loading, error, reload } = useFetch('/admin/dashboard');
-  return (
-    <DataBoundary loading={loading} error={error} data={data} reload={reload}>
-      {data && <DashboardView d={data} />}
-    </DataBoundary>
-  );
+  const { data, loading, error, reload, refresh } = useDashboard('/admin/dashboard/overview');
+  if (error && !data) return <ErrorState error={error} onRetry={reload} />;
+  if (!data) return <KpiLoading />;
+  return <div className="dash-page"><DashboardView d={data} loading={loading} onRefresh={refresh} /></div>;
 }
 
 function QuickAction({ to, icon: Icon, label }) {
@@ -51,13 +53,10 @@ function attentionItems(d, has, t) {
   return items;
 }
 
-function DashboardView({ d }) {
+function DashboardView({ d, loading, onRefresh }) {
   const { office } = useAuth();
-  const { hasModule, t } = useTenantConfig();
-  const w = d.today; const k = d.kpis;
-  const att = hasModule('attendance') && hasModule('timetable');
-  const fees = hasModule('fees') && k.fees;
-  const attK = hasModule('attendance') && k.attendance;
+  const { hasModule, t, tenant } = useTenantConfig();
+  const o = d.overview;
   const items = attentionItems(d, hasModule, t);
   // The header's "Next:" line is the most urgent thing waiting (an overdue problem first), so the answer to "what next?" is always on top
   const top = items.find((i) => i.tone === 'bad') || items[0];
@@ -66,111 +65,267 @@ function DashboardView({ d }) {
   const setupNext = setup && !setup.complete
     ? { text: `finish setting up your institute (${setup.done} of ${setup.total} steps done)`, to: `/admin/setup?tab=${setup.current}` } : null;
 
-  // Attendance: today's figure once lectures are marked, otherwise this week so far; both against the same day/week before
-  const weeks = attK ? k.attendance.weeks : [];
-  const thisWeek = weeks[weeks.length - 1]?.pct ?? null;
-  const lastWeek = weeks[weeks.length - 2]?.pct ?? null;
-  const attNow = attK ? (k.attendance.today ?? thisWeek) : null;
-  const attStatus = attNow === null ? { status: 'neutral' } : attNow < 75 ? { status: 'bad', hint: 'Below the 75% minimum' } : { status: 'good', hint: 'Above the 75% minimum' };
-
   return (
     <CollapsibleCards>
       <PageHeader
         icon={LayoutDashboard} title={office ? 'Institute overview' : 'Dashboard'} subtitle={`${d.institute.name}  |  ${fmtLong(todayISO())}`}
         next={top ? { text: top.title, to: top.link } : setupNext || 'nothing is waiting, all clear for today'}
       />
-
+      <Freshness at={d.generatedAt} loading={loading} onRefresh={onRefresh} />
       {setup && <SetupChecklist wizard={setup} />}
 
-      <div className="stats stats--3">
-        {attK && (
-          <StatCard
-            value={attNow === null ? null : `${attNow}%`} icon={Percent} to="/admin/attendance"
-            label={k.attendance.today !== null ? 'Students present today' : 'Attendance this week'}
-            sub={k.attendance.today !== null ? compare(k.attendance.today, k.attendance.lastWeek, 'last week', { points: true }) : compare(thisWeek, lastWeek, 'last week', { points: true })}
-            {...attStatus}
-          />
-        )}
-        {att && (
-          <StatCard
-            value={w.lecturesToday ? <>{w.lecturesNotMarked}<small>of {w.lecturesToday}</small></> : 0} label="Lectures not marked today" icon={CalendarCheck} to="/admin/attendance"
-            {...(w.lecturesToday === 0 ? { status: 'clear', hint: 'No lectures today' } : pending(w.lecturesNotMarked, { act: 'Remind faculty', clear: 'All lectures marked' }))}
-          />
-        )}
-        {fees && (
-          <StatCard value={inr0(k.fees.thisMonth)} label="Fees collected this month" icon={TrendingUp} to="/admin/fees" status="info"
-            sub={compare(k.fees.thisMonth, k.fees.lastMonthToDate, 'last month') || 'First collections this month'}
-            hint={k.fees.collectedToday ? `${inr0(k.fees.collectedToday)} today` : undefined}
-          />
-        )}
-        {fees && (
-          <StatCard value={inr0(k.fees.overdue)} label="Fees overdue" icon={Wallet} to="/admin/fees"
-            sub={`${inr0(k.fees.outstanding)} still to collect in all`}
-            {...pending(k.fees.studentsOverdue, { level: 'bad', act: `${plural(k.fees.studentsOverdue, t('student', 'Student').toLowerCase())} to follow up`, clear: 'Nothing overdue' })}
-          />
-        )}
-        <StatCard value={k.approvals.approvals} label="Waiting for approval" icon={Inbox} to="/admin/approvals"
-          sub={[k.approvals.leave && plural(k.approvals.leave, 'leave'), k.approvals.application && plural(k.approvals.application, 'application'), k.approvals.certificate && plural(k.approvals.certificate, 'certificate'), k.approvals.grievance && plural(k.approvals.grievance, 'grievance')].filter(Boolean).join(', ') || undefined}
-          {...pending(k.approvals.approvals, { act: 'Decide now' })}
-        />
-        {attK ? (
-          <StatCard value={k.attendance.below.count} label={`${t('students', 'Students')} below ${k.attendance.below.threshold}%`} icon={AlertTriangle} to="/admin/reports"
-            sub={k.attendance.below.students[0] ? `Lowest: ${k.attendance.below.students[0].name}, ${k.attendance.below.students[0].pct}%` : undefined}
-            {...pending(k.attendance.below.count, { act: 'Talk to them', clear: 'Everyone above' })}
-          />
-        ) : (
-          <StatCard value={d.stats.totalStudents} label={t('students', 'Students')} icon={Users2} to="/admin/students" />
-        )}
-      </div>
+      <YearJourney journey={o.journey} pulse={o.pulse} canSetYear={!office} />
+      <AtAGlance g={o.glance} type={tenant?.type} t={t} />
+      {o.money && <Money m={o.money} />}
+      {o.attendance && <Attendance a={o.attendance} t={t} />}
+      {o.academics && <Academics a={o.academics} />}
+      <Decisions d={o.decisions} items={items} events={d.upcomingEvents} hasModule={hasModule} t={t} />
+      <Departments rows={o.departments} type={tenant?.type} t={t} />
 
       <div className="grid-2">
-        <Card title={`Needs your attention${items.length ? ` (${items.length})` : ''}`} icon={ListTodo}>
-          <AttentionList items={items} />
+        <AskBox />
+        <Card title="Shortcuts" icon={Zap}>
+          <div className="quicks">
+            {hasModule('admissions') && <QuickAction to="/admin/admissions" icon={ClipboardCheck} label={`Review ${t('admission', 'Admissions').toLowerCase()}`} />}
+            {hasModule('students') && !office && <QuickAction to="/admin/students/import" icon={Upload} label={`Import ${t('students', 'Students').toLowerCase()}`} />}
+            {!office && <QuickAction to="/admin/employees" icon={UserPlus} label={`Add ${t('employee', 'Employee').toLowerCase()}`} />}
+            {hasModule('fees') && <QuickAction to="/admin/fees?tab=students" icon={Receipt} label="Record a payment" />}
+            <QuickAction to="/admin/calendar" icon={CalendarDays} label="Add an event" />
+            {hasModule('notices') && <QuickAction to="/admin/notices" icon={Megaphone} label="Post a notice" />}
+          </div>
         </Card>
-        <UpcomingEvents events={d.upcomingEvents} />
       </div>
-
-      {(fees || attK) && (
-        <div className="grid-2">
-          {fees && (
-            <Card title="Fees collected by month" icon={BarChart3} action={<Link to="/admin/fees" className="btn btn--outline btn--sm">Fees</Link>}>
-              <BarChart
-                data={k.fees.months.map((m, i) => ({ label: m.label, full: monthName(m.month), value: m.amount, note: i === k.fees.months.length - 1 ? 'so far' : undefined }))}
-                format={inr0} axisFormat={inrShort} caption="Fees collected in each of the last six months"
-              />
-              <p className="chart-note">Last six months. {monthName(k.fees.months[k.fees.months.length - 1].month)} is this month so far.</p>
-            </Card>
-          )}
-          {attK && (
-            <Card title="Student attendance by week" icon={Percent} action={<Link to="/admin/reports" className="btn btn--outline btn--sm">Reports</Link>}>
-              {weeks.every((x) => x.pct === null) ? (
-                <EmptyState compact title="No attendance marked yet" hint="The trend appears here once faculty start marking lectures." action={{ label: 'Open attendance', to: '/admin/attendance' }} />
-              ) : (
-                <>
-                  <LineChart
-                    data={weeks.map((x) => ({ label: x.label, full: `Week of ${x.label}`, value: x.pct }))}
-                    format={(v) => `${v}%`} min={Math.max(0, Math.min(60, ...weeks.filter((x) => x.pct !== null).map((x) => Math.floor(x.pct / 10) * 10)))} max={100}
-                    target={75} targetLabel="75% minimum" caption="Share of students present in each of the last six weeks"
-                  />
-                  <p className="chart-note">Share of students present, week by week (Monday to Sunday).</p>
-                </>
-              )}
-            </Card>
-          )}
-        </div>
-      )}
-
-      <Card title="Shortcuts" icon={Zap}>
-        <div className="quicks">
-          {hasModule('admissions') && <QuickAction to="/admin/admissions" icon={ClipboardCheck} label={`Review ${t('admission', 'Admissions').toLowerCase()}`} />}
-          {hasModule('students') && !office && <QuickAction to="/admin/students/import" icon={Upload} label={`Import ${t('students', 'Students').toLowerCase()}`} />}
-          {!office && <QuickAction to="/admin/employees" icon={UserPlus} label={`Add ${t('employee', 'Employee').toLowerCase()}`} />}
-          {hasModule('fees') && <QuickAction to="/admin/fees?tab=students" icon={Receipt} label="Record a payment" />}
-          <QuickAction to="/admin/calendar" icon={CalendarDays} label="Add an event" />
-          {hasModule('notices') && <QuickAction to="/admin/notices" icon={Megaphone} label="Post a notice" />}
-        </div>
-      </Card>
     </CollapsibleCards>
+  );
+}
+
+const STAGE_WORD = { not_started: ['Not started', 'gray'], in_progress: ['In progress', 'amber'], done: ['Done', 'green'] };
+const PART_WORD = { attendance: 'Attendance', fees: 'Fee collection', approvals: 'Pending approvals', exams: 'Exam completion' };
+const PART_HOW = {
+  attendance: 'Students present over the last 7 days',
+  fees: 'Fees collected out of fees billed',
+  approvals: '100, less 5 for each item waiting',
+  exams: 'Exam papers with their marks in',
+};
+
+/** The flagship strip: the academic year with today marked, each stage's status and next action, and the Pulse score. */
+function YearJourney({ journey, pulse, canSetYear }) {
+  const [how, setHow] = useState(false);
+  const b = pulse.biggest;
+  return (
+    <section className="journey" aria-label="The academic year and how the institute is doing">
+      <div className="journey__main">
+        <div className="journey__head">
+          <h2>Year Journey {journey.year.name}</h2>
+          <span className="muted" style={{ fontSize: 13 }}>
+            {fmtLong(journey.year.start)} to {fmtLong(journey.year.end)}
+            {journey.year.assumed && canSetYear && <> (usual dates. <Link to="/admin/setup?tab=year">Set yours</Link>)</>}
+          </span>
+        </div>
+        <div className="journey__line" role="img" aria-label={`${journey.progress}% of the academic year has passed`}>
+          <span className="journey__gone" style={{ width: `${journey.progress}%` }} />
+          <span className="journey__today" style={{ left: `${journey.progress}%` }}><span>Today</span></span>
+        </div>
+        <ol className="journey__stages">
+          {journey.stages.map((s) => (
+            <li key={s.key} className="journey__stage">
+              <strong>{s.label}</strong>
+              <Badge tone={STAGE_WORD[s.status][1]} className="badge--wide">{STAGE_WORD[s.status][0]}</Badge>
+              <span className="journey__num">{s.number}</span>
+              <Link to={s.to}>{s.next}</Link>
+            </li>
+          ))}
+        </ol>
+      </div>
+      <div className="pulse">
+        <h2>Institute Pulse</h2>
+        <Ring value={pulse.score} label="Institute Pulse out of 100" size={104} />
+        <p className="pulse__change" style={{ margin: 0 }}>
+          {pulse.score === null ? 'Appears once there is data to score.'
+            : b ? `Biggest change since yesterday: ${PART_WORD[b.part].toLowerCase()} ${b.change > 0 ? 'up' : 'down'} ${Math.abs(b.change)} points`
+              : 'No change since yesterday'}
+        </p>
+        <button type="button" className="pulse__link" onClick={() => setHow(true)}>How is this worked out?</button>
+      </div>
+      <Modal open={how} title="How Institute Pulse is worked out" onClose={() => setHow(false)} width={520}>
+        <p style={{ marginTop: 0 }}>A score from 0 to 100, weighted as below. A part with no data yet is left out, and the others share its weight.</p>
+        <DataTable
+          caption="The parts of the Pulse score" rows={pulse.parts}
+          columns={[
+            { key: 'part', label: 'Part', render: (p) => <><strong>{PART_WORD[p.key]}</strong><div className="muted" style={{ fontSize: 12.5 }}>{PART_HOW[p.key]}</div></> },
+            { key: 'weight', label: 'Weight', num: true, render: (p) => `${p.weight}%` },
+            { key: 'value', label: 'Today', num: true, render: (p) => (p.value === null ? 'No data' : p.value) },
+            { key: 'yesterday', label: 'Yesterday', num: true, render: (p) => (p.yesterday === null ? 'No data' : p.yesterday) },
+          ]}
+        />
+        <p className="note">Score today: <strong>{pulse.score ?? 'no data'}</strong>. Yesterday: <strong>{pulse.yesterday ?? 'no data'}</strong>.</p>
+      </Modal>
+    </section>
+  );
+}
+
+function AtAGlance({ g, type, t }) {
+  const students = t('students', 'Students');
+  const school = type === 'school';
+  const university = type === 'university';
+  return (
+    <Card title="At a glance" icon={Users2}>
+      <KpiGrid narrow>
+        <KpiCard label={`Total ${students.toLowerCase()}`} value={numIn(g.students)} to="/admin/students" meaning={`Everyone on the ${students} page, active or not`}
+          sub={`${numIn(g.active)} active, ${numIn(g.newThisMonth)} new this month`} change={changeOf(g.newThisMonth, g.newLastMonth, 'last month')} />
+        <KpiCard label={`Total ${t('employees', 'Employees').toLowerCase()}`} value={numIn(g.employees)} to="/admin/employees" meaning="Everyone on the staff list"
+          sub={`${numIn(g.faculty)} teaching, ${numIn(g.nonTeaching)} non-teaching`} />
+        {!school && <KpiCard label={university ? 'Faculties and departments' : t('departments', 'Departments')} value={numIn(g.departments)} to="/admin/departments" meaning="Departments set up for your institute" />}
+        <KpiCard label={school ? 'Classes' : 'Programmes'} value={numIn(g.programmes)} to="/admin/courses" meaning="Distinct classes or programmes, counting all divisions of one as one" />
+        <KpiCard label="Divisions" value={numIn(g.divisions)} to="/admin/courses" meaning="Divisions or sections across all classes" />
+      </KpiGrid>
+    </Card>
+  );
+}
+
+function Money({ m }) {
+  const notDue = Math.max(0, m.outstanding - m.overdue);
+  return (
+    <Card title="Money" icon={Wallet} action={<Link to="/admin/fees" className="btn btn--outline btn--sm">Fees</Link>}>
+      <KpiGrid three>
+        <KpiCard label="Collected today" value={inrCompact(m.collectedToday)} full={inr0(m.collectedToday)} to="/admin/fees?tab=dayend" meaning="Receipts recorded today. Matches the day-end summary."
+          change={m.collectedToday ? changeOf(m.collectedToday, m.sameDayLastWeek, 'this day last week') : null} sub={m.collectedToday ? undefined : 'Nothing yet today'} spark={m.last14.map((x) => x.amount)} sparkLabel="Fees collected each day for the last 14 days" />
+        <KpiCard label="Collected this month" value={inrCompact(m.thisMonth)} full={inr0(m.thisMonth)} to="/admin/fees" meaning="Receipts recorded since the 1st of this month"
+          change={changeOf(m.thisMonth, m.lastMonthToDate, 'last month')} spark={m.months.map((x) => x.collected)} sparkLabel="Fees collected each month for the last 6 months" />
+        <KpiCard label="Collected this year" value={inrCompact(m.year)} full={inr0(m.year)} to="/admin/fees?tab=payments" meaning="Receipts recorded in this financial year" sub={`Since ${fmtLong(m.yearStart)}`} />
+        <KpiCard label="Outstanding" value={inrCompact(m.outstanding)} full={inr0(m.outstanding)} to="/admin/fees" meaning="Everything billed and not yet paid, due or not" />
+        <KpiCard label="Overdue" value={inrCompact(m.overdue)} full={inr0(m.overdue)} to="/admin/fees" meaning="Part of outstanding whose due date has passed"
+          change={changeOf(m.overdue, m.overdueLastWeek, 'a week ago', { goodWhen: 'down' })} sub={`${numIn(m.studentsOverdue)} to follow up`} />
+        <KpiCard label="Collection rate" value={m.collectionRate === null ? null : `${m.collectionRate}%`} to="/admin/fees" meaning="Fees collected divided by fees billed" emptyHint="Appears once fees are billed." sub={`of ${inrCompact(m.billed)} billed`} />
+      </KpiGrid>
+      <div className="grid-2" style={{ marginTop: 16 }}>
+        <div>
+          <h3 className="dash-h3">Collected against billed, 6 months</h3>
+          <PairedBars
+            data={m.months.map((x) => ({ label: x.label, full: monthName(x.month), collected: x.collected, billed: x.billed }))}
+            series={[{ key: 'collected', label: 'Collected', tone: 'brand' }, { key: 'billed', label: 'Billed (by due date)', tone: 'pale' }]}
+            format={inr0} axisFormat={inrShort} caption="Fees collected against fees billed in each of the last six months"
+          />
+        </div>
+        <div>
+          <h3 className="dash-h3">Where the billed money stands</h3>
+          <StackedBar
+            caption="Fees billed, split by where they stand" format={inr0}
+            parts={[{ label: 'Collected', value: m.allocated, tone: 'brand' }, { label: 'Overdue', value: m.overdue, tone: 'bad' }, { label: 'Not due yet', value: notDue, tone: 'none' }]}
+            empty={{ title: 'No fees billed yet', hint: 'This fills in once a fee plan is assigned to students.', action: { label: 'Set up fees', to: '/admin/fees' } }}
+          />
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function Attendance({ a, t }) {
+  const marked = a.days.filter((x) => x.pct !== null);
+  const now = a.today ?? a.latest?.pct ?? null;
+  const students = t('students', 'Students').toLowerCase();
+  return (
+    <Card title="Attendance" icon={Percent} action={<Link to="/admin/attendance" className="btn btn--outline btn--sm">Attendance</Link>}>
+      <KpiGrid>
+        <KpiCard label={a.today !== null ? 'Present today' : `Present on ${a.latest?.label || 'the last marked day'}`} value={now === null ? null : `${now}%`} to="/admin/attendance"
+          meaning="Share of marked students who were present or late" emptyHint="Appears once lectures are marked."
+          change={a.today !== null ? changeOf(a.today, a.lastWeek, 'this day last week', { points: true }) : null}
+          sub={a.today === null && now !== null ? 'Nothing marked yet today' : undefined} spark={a.days.map((x) => x.pct)} sparkLabel="Attendance each day for the last 14 days" />
+        <KpiCard label="Lectures not marked today" value={a.lecturesToday ? <>{a.lecturesNotMarked}<small>of {a.lecturesToday}</small></> : 0} to="/admin/attendance" meaning="Lectures on today's timetable with no register yet"
+          sub={a.lecturesToday ? undefined : 'No lectures today'} />
+        <KpiCard label={`${t('students', 'Students')} below ${a.below.threshold}%`} value={numIn(a.below.count)} to="/admin/reports" meaning={`Active ${students} under the ${a.below.threshold}% minimum over all marked classes`}
+          sub={a.below.students[0] ? `Lowest: ${a.below.students[0].name}, ${a.below.students[0].pct}%` : 'Everyone is above'} />
+      </KpiGrid>
+      <h3 className="dash-h3" style={{ marginTop: 16 }}>Last 14 days</h3>
+      {marked.length < 2 ? (
+        <EmptyState compact title="Not enough marked days yet" hint="The trend appears after two days of marking." action={{ label: 'Open attendance', to: '/admin/attendance' }} />
+      ) : (
+        <LineChart data={a.days.map((x) => ({ label: x.label, value: x.pct }))} format={(v) => `${v}%`} min={Math.min(60, ...marked.map((x) => Math.floor(x.pct / 10) * 10))} max={100} target={a.below.threshold} targetLabel={`${a.below.threshold}% minimum`} caption="Share of students present each day for the last 14 days" height={180} />
+      )}
+    </Card>
+  );
+}
+
+function Academics({ a }) {
+  const l = a.latest; const p = a.previous;
+  return (
+    <Card title="Academics" icon={GraduationCap} action={<Link to="/admin/exams" className="btn btn--outline btn--sm">Exams</Link>}>
+      <KpiGrid>
+        <KpiCard label="Exams awaiting marks" value={numIn(a.examsAwaitingMarks)} to="/admin/exams" meaning="Draft exams with at least one paper whose marks are not in" sub={a.papersPending ? `${numIn(a.papersPending)} papers to finish` : 'All marks in'} />
+        <KpiCard label="Ready to publish" value={numIn(a.readyToPublish)} to="/admin/exams" meaning="Draft exams with every paper's marks in" />
+        <KpiCard label="Average, latest exam" value={l?.average === null || !l ? null : `${l.average}%`} to={l ? `/admin/exams/${l.id}` : '/admin/exams'} meaning="Average percentage in the most recently published exam"
+          emptyHint="Appears once an exam is published." sub={l?.name} change={l && p ? changeOf(l.average, p.average, 'the exam before', { points: true }) : null} />
+        <KpiCard label="Pass rate, latest exam" value={l?.passRate === null || !l ? null : `${l.passRate}%`} to={l ? `/admin/exams/${l.id}` : '/admin/exams'} meaning="Share of students who passed every paper in the most recently published exam"
+          emptyHint="Appears once an exam is published." change={l && p ? changeOf(l.passRate, p.passRate, 'the exam before', { points: true }) : null} />
+      </KpiGrid>
+    </Card>
+  );
+}
+
+const FUNNEL_WORD = { enquiry: 'Enquiry', application: 'Application', documents: 'Documents checked', decision: 'Decision', offer: 'Offer', fee: 'Fee', enrolled: 'Enrolled' };
+
+function Decisions({ d, items, events, hasModule, t }) {
+  const w = d.waiting;
+  return (
+    <>
+      <Card title={`Decisions${w.approvals ? ` (${w.approvals} waiting)` : ''}`} icon={Inbox} action={<Link to="/admin/approvals" className="btn btn--outline btn--sm">Approvals</Link>}>
+        <KpiGrid narrow>
+          <KpiCard label="Waiting for approval" value={numIn(w.approvals)} to="/admin/approvals" meaning="Leave, certificates, applications and new tickets, all in one list" />
+          {hasModule('leave') && <KpiCard label="Leave requests" value={numIn(w.leave ?? 0)} to="/admin/leave" meaning="Leave requests to approve or reject" />}
+          {hasModule('admissions') && <KpiCard label="New enquiries" value={numIn(d.enquiries ?? 0)} to="/admin/admissions" meaning="Started and not yet submitted" />}
+          {hasModule('admissions') && <KpiCard label="Applications to review" value={numIn(w.application ?? 0)} to="/admin/admissions" meaning="Submitted and waiting for a decision" />}
+        </KpiGrid>
+      </Card>
+      <div className="grid-2">
+        {hasModule('admissions') ? (
+          <Card title={`${t('admission', 'Admissions')} by stage`} icon={ClipboardCheck}>
+            <Funnel
+              stages={d.funnel.map((s) => ({ ...s, label: FUNNEL_WORD[s.stage] }))} caption="Applications at each stage, in order" to="/admin/admissions"
+              empty={{ title: 'No applications yet', hint: 'Add an enquiry or share your application link to start.', action: { label: 'Open admissions', to: '/admin/admissions' } }}
+            />
+          </Card>
+        ) : <UpcomingEvents events={events} />}
+        <Card title={`Needs your attention${items.length ? ` (${items.length})` : ''}`} icon={ListTodo}><AttentionList items={items} /></Card>
+      </div>
+      {hasModule('admissions') && <UpcomingEvents events={events} />}
+    </>
+  );
+}
+
+function Departments({ rows, type, t }) {
+  const school = type === 'school';
+  const groupWord = type === 'university' ? 'Faculty or department' : t('department', 'Department');
+  const childWord = school ? 'Class' : t('course', 'Programme');
+  const toRow = (c) => ({ key: c.id, name: c.name, attendance: c.attendance, fees: c.fees, results: c.results, to: `/admin/students?courseId=${c.id}` });
+  return (
+    <Card title={`${school ? 'Classes' : t('departments', 'Departments')} compared`} icon={LayoutGrid}>
+      <p className="dash-section-note">Attendance over the last 30 days, fees collected out of billed, and the pass rate in the latest published exam. Open a row to go deeper.</p>
+      <Heatmap
+        title={groupWord} caption="Departments compared by attendance, fee collection and results"
+        rows={rows.map((g) => ({ key: g.name, name: g.name, childTitle: childWord, attendance: g.attendance, fees: g.fees, results: g.results, rows: g.classes.map(toRow) }))}
+        columns={[
+          { key: 'attendance', label: 'Attendance', low: 75, meaning: 'Share of marked students present in the last 30 days' },
+          { key: 'fees', label: 'Fees', meaning: 'Fees collected out of fees billed' },
+          { key: 'results', label: 'Results', meaning: 'Share who passed the latest published exam' },
+        ]}
+        empty={{ title: 'Nothing to compare yet', hint: 'Add classes and link them to departments to see them side by side.', action: { label: 'Open classes', to: '/admin/courses' } }}
+      />
+    </Card>
+  );
+}
+
+/** Opens the Assistants page with the question filled in. */
+function AskBox() {
+  const [text, setText] = useState('');
+  const navigate = useNavigate();
+  const go = (e) => { e.preventDefault(); if (text.trim()) navigate(`/admin/assistants?ask=${encodeURIComponent(text.trim())}`); };
+  return (
+    <Card title="Ask PlanetU" icon={MessageSquareText}>
+      <form className="ask-box" onSubmit={go}>
+        <input className="input" value={text} onChange={(e) => setText(e.target.value)} maxLength={300} aria-label="Your question" placeholder="Which classes had the lowest attendance this week?" />
+        <button type="submit" className="btn btn--outline" disabled={!text.trim()}>Ask</button>
+      </form>
+    </Card>
   );
 }
 
