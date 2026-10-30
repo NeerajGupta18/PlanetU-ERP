@@ -5,6 +5,7 @@ Before the demo
 - Use the college demo: institute code demo-college. It has 120 students in three divisions of BCA.
 - Hold the demo on a weekday. On Sundays and holidays there are no lectures to mark.
 - Open the live site once, a few minutes early. The free hosting sleeps when idle and takes about a minute to wake.
+- On the front page, the laptop and phone can be dragged all the way round. Double-click or double-tap puts them back.
 - Keep two windows: a laptop browser for the office, and a phone (or the browser at phone size) for teacher and parent.
 - Demo passwords: Admin@123, Employee@123, Student@123, Parent@123.
 - Vendor login: on the live site use your own owner login. SA001 / SuperAdmin@123 exists only on a local copy.
