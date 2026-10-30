@@ -53,8 +53,9 @@ async function uniqueLogin(studentCode) {
 /**
  * Creates the parent account (or links an existing parent with the same email, e.g. for a brother or sister) and
  * emails a link to set a password. `showPassword` also returns a one-time password for the office to hand over.
+ * `linkExisting: false` refuses instead of linking, for when nobody at the office has looked at this one family.
  */
-export async function addParent(studentId, body = {}, admin, { showPassword = true } = {}) {
+export async function addParent(studentId, body = {}, admin, { showPassword = true, linkExisting = true } = {}) {
   const { rows: [st] } = await q('select id, student_code as code, name, status from students where id = $1', [studentId]);
   if (!st) throw new HttpError(404, 'Student not found.');
   const name = str(body.name, 100, 'Name', true);
@@ -65,6 +66,7 @@ export async function addParent(studentId, body = {}, admin, { showPassword = tr
   const { rows: [existing] } = await q('select id, role, name from users where lower(email) = $1', [email]);
   if (existing) {
     if (existing.role !== 'parent') throw new HttpError(409, 'This email already belongs to another account at this institute. Use a different email for the parent.');
+    if (!linkExisting) throw new HttpError(409, 'This guardian email already has a parent account. If they are brothers or sisters, open the student and add the parent.');
     const { rowCount } = await q('insert into parent_links (user_id, student_id, relation) values ($1, $2, $3) on conflict do nothing', [existing.id, studentId, relation]);
     if (!rowCount) throw new HttpError(409, 'This parent is already linked to the student.');
     await audit(admin, 'parent.link', 'student', studentId, { parent: existing.id });
@@ -96,7 +98,8 @@ export async function removeLink(studentId, userId, admin) {
 
 /**
  * Creates a parent account for every active student that has none and has a guardian email on record, and emails each
- * a link to set a password. Students whose guardian email is missing or already used by another kind of account are listed.
+ * a link to set a password. Students whose guardian email is missing or already used by any account are listed: a
+ * matching email alone never links a child to someone's account, the office does that from the student's record.
  */
 export async function inviteAll(admin) {
   const { rows } = await q(
@@ -104,14 +107,14 @@ export async function inviteAll(admin) {
      from students s where s.status = 'Active' and not exists (select 1 from parent_links l where l.student_id = s.id)
      order by s.student_code limit ${MAX_BULK}`,
   );
-  const out = { created: 0, linked: 0, skipped: [] };
+  const out = { created: 0, skipped: [] };
   for (const r of rows) {
     if (!r.gemail || !EMAIL_RE.test(r.gemail)) { out.skipped.push({ studentCode: r.code, reason: 'No guardian email on record' }); continue; }
     await q('savepoint invite');
     try {
-      const res = await addParent(r.id, { name: r.gname || 'Parent', email: r.gemail, relation: r.grelation || 'Guardian' }, admin, { showPassword: false });
+      const res = await addParent(r.id, { name: r.gname || 'Parent', email: r.gemail, relation: r.grelation || 'Guardian' }, admin, { showPassword: false, linkExisting: false });
       await q('release savepoint invite');
-      if (res.created) out.created += 1; else out.linked += 1;
+      if (res.created) out.created += 1;
     } catch (err) {
       await q('rollback to savepoint invite');
       if (!(err instanceof HttpError)) throw err;
