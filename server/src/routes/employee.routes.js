@@ -1,6 +1,7 @@
 import { asyncHandler } from '../utils/asyncHandler.js';
 import * as todo from '../services/todo.service.js';
 import { officeSummary } from '../services/kpi.service.js';
+import { employeeOverview } from '../services/employeeDashboard.service.js';
 import { officeOf } from '../services/staff.service.js';
 import { Router } from 'express';
 import { requireAuth, requireModule, requireRole } from '../middleware/auth.js';
@@ -34,6 +35,7 @@ router.param('paperId', uuidParam);
 router.param('id', uuidParam);
 router.param('enrollmentId', uuidParam);
 
+router.get('/dashboard', asyncHandler(async (req, res) => res.json(await employeeOverview(req.user, req.tenant.modules))));
 router.get('/office-summary', asyncHandler(async (req, res) => res.json(await officeSummary(await officeOf(req.user), req.tenant.modules))));
 router.get('/todo', asyncHandler(async (req, res) => res.json(await todo.forEmployee(req.user, req.tenant.modules))));
 router.get('/notices', requireModule('notices'), notices.mine);

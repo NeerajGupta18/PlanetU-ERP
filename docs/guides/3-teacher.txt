@@ -39,3 +39,6 @@ If you are the class teacher of a class, the menu has "Attendance watch".
 Leave and payslips
 - My leave: your balance is at the top. "Apply for leave", pick type and dates, give a reason.
 - My payslips: choose the month once the office finalises payroll.
+
+My Day
+Your home page shows today's lectures as a timeline, with a countdown to the next one and a Mark button on each lecture that is not marked yet. Below it are your marks entry for each paper and your leave. If you are a class teacher, it also lists the students in your class who need a call.

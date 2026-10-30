@@ -1453,3 +1453,14 @@ a.banner__next:hover { text-decoration: underline; }
 .setup-bars small { color: var(--muted); font-size: 12.5px; }
 .setup-bars .progress { display: block; margin: 0; }
 .setup-bars .progress__fill { display: block; }
+.myday-line { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; font-size: 14.5px; }
+.timeline { list-style: none; margin: 0; padding: 0; }
+.timeline__item { position: relative; display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; align-items: start; gap: 12px; padding: 10px 0 10px 16px; border-left: 2px solid var(--border-strong); }
+.timeline__item::before { content: ''; position: absolute; left: -7px; top: 18px; width: 12px; height: 12px; border-radius: 50%; background: var(--surface); border: 2px solid var(--border-strong); }
+.timeline__item.is-done::before { background: var(--brand); border-color: var(--brand); }
+.timeline__item.is-now::before { background: var(--accent); border-color: var(--accent); }
+.timeline__time { white-space: nowrap; font-weight: 600; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+.timeline__what { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; }
+.timeline__mark { min-height: 44px; min-width: 72px; justify-content: center; }
+@media (max-width: 480px) { .timeline__item { grid-template-columns: 66px minmax(0, 1fr) auto; gap: 8px; } .timeline__time { font-size: 12.5px; } }
+@media (max-width: 1024px) { .dash-page .setup-bars a.setup-bars__name { display: inline-flex; align-items: center; min-height: 44px; } }
