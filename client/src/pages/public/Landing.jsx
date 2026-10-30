@@ -182,7 +182,7 @@ export default function Landing() {
             </div>
           </div>
           <figure className="lp-hero__devices">
-            <Laptop><Shot eager name="admin-dashboard" alt="The admin dashboard: students present today, fees collected and overdue, and what needs attention" /></Laptop>
+            <Laptop hint><Shot eager name="admin-dashboard" alt="The admin dashboard: students present today, fees collected and overdue, and what needs attention" /></Laptop>
             <Phone className="lp-phone--over"><Shot phone eager name="phone-parent" alt="A parent's phone showing Aarav today" /></Phone>
             <figcaption>Real screens from our demo college, a sample institute with made-up students.</figcaption>
           </figure>

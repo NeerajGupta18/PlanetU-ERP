@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import DeviceViewer from './DeviceViewer.jsx';
 
 // Small pieces shared by the front page sections. Screens are real captures from the demo college (client/public/landing).
 
@@ -45,25 +46,16 @@ export function Shot({ name, alt, phone = false, eager = false, className = '' }
       className={`lp-shot ${className}`} src={`/landing/${name}.webp`} alt={alt}
       srcSet={`/landing/${name}-sm.webp ${small}w, /landing/${name}.webp ${big}w`}
       sizes={phone ? '(max-width: 640px) 150px, (max-width: 1023px) 220px, 270px' : '(max-width: 640px) 240px, (max-width: 1023px) 92vw, 640px'}
-      width={big} height={phone ? 1688 : 800}
+      width={big} height={phone ? 1688 : 800} draggable="false"
       loading={eager ? 'eager' : 'lazy'} decoding="async" fetchpriority={eager ? 'high' : undefined}
     />
   );
 }
 
-export function Laptop({ children, className = '' }) {
-  return (
-    <div className={`lp-laptop ${className}`}>
-      <div className="lp-laptop__lid"><div className="lp-laptop__screen">{children}</div></div>
-      <div className="lp-laptop__base" aria-hidden="true" />
-    </div>
-  );
+export function Laptop({ children, className = '', hint = false, label = 'A laptop showing a real screen of PlanetU' }) {
+  return <DeviceViewer variant="laptop" label={label} hint={hint} className={className}>{children}</DeviceViewer>;
 }
 
-export function Phone({ children, className = '' }) {
-  return (
-    <div className={`lp-phone ${className}`}>
-      <div className="lp-phone__screen">{children}</div>
-    </div>
-  );
+export function Phone({ children, className = '', hint = false, label = 'A phone showing a real screen of PlanetU' }) {
+  return <DeviceViewer variant="phone" label={label} hint={hint} className={className}>{children}</DeviceViewer>;
 }
