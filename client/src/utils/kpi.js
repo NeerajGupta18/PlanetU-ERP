@@ -23,3 +23,27 @@ export function compare(now, before, period, { points = false } = {}) {
 }
 
 export const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+
+/** Indian digit grouping: 3307500 -> 33,07,500. */
+export const numIn = (n) => Math.round(Number(n) || 0).toLocaleString('en-IN');
+
+/** Compact rupees for small cards: ₹33.1 L, ₹1.2 Cr. Pair it with inr0 as the title, so the full figure is one hover away. */
+export const inrCompact = (n) => {
+  const v = Number(n) || 0;
+  if (Math.abs(v) >= 1e7) return `₹${+(v / 1e7).toFixed(2)} Cr`;
+  if (Math.abs(v) >= 1e5) return `₹${+(v / 1e5).toFixed(1)} L`;
+  return inr0(v);
+};
+
+/**
+ * A change against an earlier figure, ready for a KPI card. `goodWhen` says which way is good, because more absentees
+ * is bad and more fees collected is good. With `points` the figures are percentages and the change is in points.
+ */
+export function changeOf(now, before, period, { points = false, goodWhen = 'up' } = {}) {
+  if (now === null || now === undefined || before === null || before === undefined) return null;
+  const diff = points ? Math.round((now - before) * 10) / 10 : before ? Math.round(((now - before) / before) * 100) : null;
+  if (diff === null) return now ? { dir: 'up', tone: goodWhen === 'up' ? 'good' : 'bad', text: `New since ${period}` } : null;
+  if (diff === 0) return { dir: 'same', tone: 'flat', text: `Same as ${period}` };
+  const dir = diff > 0 ? 'up' : 'down';
+  return { dir, tone: dir === goodWhen ? 'good' : 'bad', text: `${dir === 'up' ? 'Up' : 'Down'} ${Math.abs(diff)}${points ? ' points' : '%'} on ${period}` };
+}
