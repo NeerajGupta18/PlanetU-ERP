@@ -1,3 +1,4 @@
+import * as storage from '../storage/index.js';
 /**
  * Demo data. Everything here is FICTIONAL sample data.
  *
@@ -198,6 +199,53 @@ export async function refreshDemoTenants() {
 }
 
 /* ---------- seeding ---------- */
+
+// A one-pixel picture, so a sample applicant's checked documents open on screen like real ones
+const SAMPLE_DOC = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
+
+/** Sample applicants at every stage of admissions, so the board and the dashboard's funnel show a real picture. */
+async function seedApplicants(courseId) {
+  const { rows: admin } = await q("select id from users where role = 'admin' and tenant_id = app_tenant() limit 1");
+  const { rows: enrolled } = await q('select id, name, email from students where tenant_id = app_tenant() and course_id = $1 order by student_code desc limit 3', [courseId]);
+  const people = [
+    ['Nikhil Bhosale', 'draft'], ['Tanya Rao', 'draft'], ['Farah Shaikh', 'draft'], ['Ishan Pawar', 'draft'], ['Meghna Iyer', 'draft'], ['Sahil Verma', 'draft'],
+    ['Aditi Nair', 'submitted'], ['Rohit Kale', 'submitted'], ['Kritika Joshi', 'submitted'],
+    ['Vedant More', 'checked'], ['Sana Kapoor', 'checked'],
+    ['Pranali Shinde', 'waitlisted'], ['Harsh Gupta', 'accepted'],
+  ];
+  for (const [name, stage] of people) {
+    const email = `${name.toLowerCase().replace(' ', '.')}@applicant.example`;
+    const status = stage === 'checked' ? 'submitted' : stage;
+    const decided = ['waitlisted', 'accepted'].includes(stage);
+    const no = await nextNumber('application', { prefix: `APP${new Date().getFullYear()}-`, padding: 5 });
+    const { rows: [a] } = await q(
+      `insert into applications (application_no, course_id, name, email, phone, access_hash, source, step, status, fee_status, submitted_at, decided_at)
+       values ($1, $2, $3, $4, '+91 98000 00000', $5, 'walk_in', $6, $7, 'none', $8, $9) returning id`,
+      [no, courseId, name, email, crypto.randomBytes(32).toString('hex'), status === 'draft' ? 1 : 6, status,
+        status === 'draft' ? null : new Date(Date.now() - 5 * 86400000), decided ? new Date(Date.now() - 2 * 86400000) : null],
+    );
+    if (stage !== 'checked') continue;
+    for (const docType of ['photo', 'id_proof', 'marksheet']) {
+      const { rows: [{ t }] } = await q("select current_setting('app.tenant_id') as t");
+      const key = `${t}/${crypto.randomUUID()}`;
+      await storage.put(key, SAMPLE_DOC);
+      const { rows: [f] } = await q(
+        `insert into files (created_by, purpose, original_name, mime, size_bytes, sha256, storage_key)
+         values ($1, 'admission', $2, 'image/png', $3, $4, $5) returning id`,
+        [admin[0]?.id ?? null, `${docType}.png`, SAMPLE_DOC.length, crypto.createHash('sha256').update(SAMPLE_DOC).digest('hex'), key],
+      );
+      await q("insert into application_documents (application_id, doc_type, file_id, status) values ($1, $2, $3, 'verified')", [a.id, docType, f.id]);
+    }
+  }
+  for (const st of enrolled) {
+    const no = await nextNumber('application', { prefix: `APP${new Date().getFullYear()}-`, padding: 5 });
+    await q(
+      `insert into applications (application_no, course_id, name, email, access_hash, source, step, status, fee_status, submitted_at, decided_at, student_id)
+       values ($1, $2, $3, $4, $5, 'walk_in', 6, 'enrolled', 'none', now() - interval '20 days', now() - interval '10 days', $6)`,
+      [no, courseId, st.name, st.email, crypto.randomBytes(32).toString('hex'), st.id],
+    );
+  }
+}
 
 async function seedTenant(spec, hashes) {
   const { tenantId } = await provisionTenant({
@@ -437,6 +485,7 @@ async function seedTenant(spec, hashes) {
   await seedLearningAndQuizzes(spec, course.id, emp);
   await seedVisitors(emp);
   if (['college', 'university'].includes(spec.type)) await seedPlacement(courses.map((c) => c.id));
+  if (spec.type === 'college') await seedApplicants(courses[0].id);
   await seedLibrary(spec, emp);
   await refreshRollingData();
 }
