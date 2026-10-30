@@ -8,12 +8,31 @@ import { HttpError } from '../middleware/error.js';
 import { env } from '../config/env.js';
 import { feed as noticeFeed } from './notices.service.js';
 import { buildTimetable } from './timetable.service.js';
-import { guidance, studentOverview } from './attendance.service.js';
+import { guidance, pct, studentOverview } from './attendance.service.js';
 import { studentResults } from './exams.service.js';
-import { toISO } from '../utils/dates.js';
+import { loadEvents } from '../db/repo.js';
+import { addDays, parseISO, toISO } from '../utils/dates.js';
 
 const inr0 = (n) => `₹${Math.round(Number(n) || 0).toLocaleString('en-IN')}`;
 const hhmm = (d) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+
+/**
+ * The child's overall attendance percentage as it stood at the end of each of the last 30 days, oldest first: the same
+ * figure as the headline, so the line ends on it. A day with nothing marked yet before it is null.
+ */
+async function attendanceTrend(studentId, today) {
+  const { rows } = await q(
+    `select to_char(a.on_date, 'YYYY-MM-DD') as day, count(*)::int as total, count(*) filter (where r.status in ('present', 'late'))::int as attended
+     from attendance_records r join attendance_sessions a on a.id = r.session_id
+     where r.student_id = $1 and a.status = 'submitted' and a.on_date <= $2::date group by 1 order by 1`, [studentId, today],
+  );
+  let attended = 0; let total = 0; let at = 0;
+  return Array.from({ length: 30 }, (_, i) => {
+    const day = toISO(addDays(parseISO(today), i - 29));
+    while (at < rows.length && rows[at].day <= day) { attended += rows[at].attended; total += rows[at].total; at += 1; }
+    return { day, pct: total ? pct(attended, total) : null };
+  });
+}
 
 /** Each lecture today, with the child's mark once the teacher has submitted the register. */
 async function todaysClasses(studentId, courseId, today, now) {
@@ -55,7 +74,11 @@ export async function myDay(user, modules) {
   let attendance = null;
   if (has('attendance')) {
     const o = await studentOverview(studentId, s.attendance || []);
-    attendance = { overall: o.overall, threshold: o.threshold, ...guidance(o.attended, o.total, o.threshold), attended: o.attended, total: o.total };
+    attendance = {
+      overall: o.overall, threshold: o.threshold, ...guidance(o.attended, o.total, o.threshold), attended: o.attended, total: o.total,
+      trend: await attendanceTrend(studentId, today),
+      subjects: o.subjects.map((x) => ({ subject: x.subject, pct: x.pct, attended: x.attended, total: x.total })),
+    };
   }
 
   let fees = null;
@@ -82,9 +105,22 @@ export async function myDay(user, modules) {
 
   let latestResult = null;
   if (has('exams')) {
-    const r = (await studentResults(studentId)).exams[0];
-    if (r) latestResult = { id: r.id, name: r.name, gpa: r.gpa, pct: r.pct, result: r.result };
+    const { exams } = await studentResults(studentId);
+    const r = exams[0];
+    if (r) {
+      latestResult = {
+        id: r.id, name: r.name, gpa: r.gpa, pct: r.pct, result: r.result,
+        subjects: (r.subjects || []).map((x) => ({ subject: x.subject, marks: x.marks, maxMarks: x.maxMarks, absent: Boolean(x.absent) })),
+        // Oldest first, so it reads left to right as a marks trend
+        trend: [...exams].reverse().filter((e) => e.pct !== null && e.pct !== undefined).map((e) => ({ name: e.name, semester: e.semester, pct: e.pct })),
+      };
+    }
   }
+
+  // Exams on the institute calendar in the next 60 days
+  const upcomingExams = has('calendar') || has('exams')
+    ? (await loadEvents({ audiences: ['all', 'student'], from: today, to: toISO(addDays(now, 60)) })).filter((e) => e.type === 'exam').slice(0, 3).map((e) => ({ id: e.id, title: e.title, start: e.start, end: e.end }))
+    : [];
 
   const notices = has('notices') ? await noticeFeed(user, { limit: 3 }) : null;
 
@@ -103,9 +139,9 @@ export async function myDay(user, modules) {
 
   return {
     student: { name: s.name, studentCode: s.studentCode, course: s.course, semester: s.semester, section: s.section },
-    date: today,
+    date: today, generatedAt: now.toISOString(),
     today: { classes, marked: marked.length, absent: absentToday, late: marked.filter((c) => c.status === 'late').length },
-    attendance, fees, latestResult,
+    attendance, fees, latestResult, upcomingExams,
     notices: notices && { unread: notices.unread, latest: notices.notices.map((n) => ({ id: n.id, title: n.title, date: n.date, read: n.read, priority: n.priority })) },
     next,
   };

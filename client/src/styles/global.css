@@ -1427,7 +1427,7 @@ a.banner__next:hover { text-decoration: underline; }
 @media (max-width: 1000px) { .journey { grid-template-columns: 1fr; } }
 /* Fingers, not a mouse: every target on a dashboard is at least 44 px at phone and tablet widths */
 @media (max-width: 1024px) {
-  .dash-page .btn--sm, .dash-page .card__toggle, .dash-page .card__head button, .dash-page .funnel a, .dash-page .journey__stage a, .dash-page .banner a { min-height: 44px; min-width: 44px; display: inline-flex; align-items: center; justify-content: center; }
+  .dash-page .btn--sm, .dash-page .card__toggle, .dash-page .card__head button, .dash-page .funnel a, .dash-page .journey__stage a, .dash-page .banner a, .dash-page .btn { min-height: 44px; min-width: 44px; display: inline-flex; align-items: center; justify-content: center; }
   .dash-page .card__toggle, .dash-page .journey__stage a, .dash-page .banner a { justify-content: flex-start; }
 }
 @media (max-width: 640px) {
@@ -1440,3 +1440,9 @@ a.banner__next:hover { text-decoration: underline; }
   .heat__table { font-size: 12.5px; }
 }
 @media (prefers-reduced-motion: reduce) { .fresh__btn svg.is-spinning { animation: none; } }
+.myday__ring { display: flex; align-items: center; gap: 14px; }
+.myday__ring .is-bad, .whatif .is-bad { color: var(--danger); }
+.whatif .is-good { color: var(--success); }
+.whatif { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+.whatif__range { display: block; width: 100%; height: 44px; margin: 2px 0; accent-color: var(--brand); cursor: pointer; }
+.whatif__line { margin: 0; font-size: 14px; }

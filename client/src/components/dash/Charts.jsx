@@ -59,7 +59,7 @@ export function Ring({ value, max = 100, label, size = 96, text, tone = 'brand' 
         <circle cx={size / 2} cy={size / 2} r={r} className="ring__track" strokeWidth={stroke} />
         {has && <circle cx={size / 2} cy={size / 2} r={r} className={`ring__value ring__value--${tone}`} strokeWidth={stroke} strokeDasharray={`${share * c} ${c}`} transform={`rotate(-90 ${size / 2} ${size / 2})`} />}
       </svg>
-      <div className="ring__text" aria-hidden="true">{has ? (text || value) : '-'}</div>
+      <div className="ring__text" style={{ fontSize: Math.round(size / 5.2) }} aria-hidden="true">{has ? (text || value) : '-'}</div>
     </div>
   );
 }
