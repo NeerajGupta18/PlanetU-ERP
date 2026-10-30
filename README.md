@@ -132,7 +132,7 @@ The admin can view and correct any register.
 | Admin       | `Admin@123`      |
 | Student     | `Student@123`    |
 | Employee    | `Employee@123`   |
-| Parent (`PAR001`) | `Parent@123` |
+| Parent (`PAR001`: two children, Aarav and Simran Sharma; `PAR002`: one child in another class) | `Parent@123` |
 | Office staff: principal `EMP007`, accountant `EMP008`, librarian `EMP009`, gate security `EMP010`, head of department `EMP011` *(they sign in as Employee)* | `Employee@123` |
 
 Notice that `ADM001` exists in all three institutes but is a different person in each — the institute code

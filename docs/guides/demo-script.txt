@@ -56,7 +56,7 @@ Before the demo
    - "Aarav today": today's classes with Present or Absent, fees due, attendance, latest result, notices.
    - The orange button is the one next thing. Tap it to reach the fees. If online payment is switched on, pay by UPI and show the receipt.
      If not, the page says "pay at the fee counter".
-   - Results: the report card to download. Tap Simran at the top to switch child.
+   - Results: the report card to download. Tap Simran at the top to switch child (Aarav and Simran Sharma are brother and sister; PAR002 is a different family with one child).
 
 8. The assistants (4 minutes)
    Needs the model key on the server. Without it the page says "Not connected": show the morning brief figures and say the rest is ready.

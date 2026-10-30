@@ -82,15 +82,15 @@ describe('Mail delivery', () => {
   it('retries a failed send with growing delays, then gives up', async () => {
     const good = process.env.SMTP_URL;
     process.env.SMTP_URL = 'smtp://127.0.0.1:1'; // nothing listens here
-    await forgot('demo-college', 'simran.gill@student.horizon.example');
+    await forgot('demo-college', 'simran.sharma@student.horizon.example');
     await processQueue();
-    let m = (await mails('demo-college', 'simran.gill@student.horizon.example')).at(-1);
+    let m = (await mails('demo-college', 'simran.sharma@student.horizon.example')).at(-1);
     assert.equal(m.status, 'queued'); assert.equal(m.attempts, 1);
     await processQueue(); // not due yet -> not retried
-    assert.equal((await mails('demo-college', 'simran.gill@student.horizon.example')).at(-1).attempts, 1);
-    await withTx({ tenantId: tenants['demo-college'] }, () => q("update notifications set attempts = 4, next_attempt_at = now() where to_email = 'simran.gill@student.horizon.example'"));
+    assert.equal((await mails('demo-college', 'simran.sharma@student.horizon.example')).at(-1).attempts, 1);
+    await withTx({ tenantId: tenants['demo-college'] }, () => q("update notifications set attempts = 4, next_attempt_at = now() where to_email = 'simran.sharma@student.horizon.example'"));
     await processQueue();
-    m = (await mails('demo-college', 'simran.gill@student.horizon.example')).at(-1);
+    m = (await mails('demo-college', 'simran.sharma@student.horizon.example')).at(-1);
     assert.equal(m.status, 'failed');
     process.env.SMTP_URL = good;
   });
@@ -119,8 +119,8 @@ describe('Forgot / reset password', () => {
   it('a reset link works once: weak passwords refused, sessions ended, old password dead', async () => {
     const before = await login('demo-college', 'student', 'STU2026002', 'Student@123');
     assert.equal(before.status, 200);
-    await forgot('demo-college', 'simran.gill@student.horizon.example');
-    const link = (await mails('demo-college', 'simran.gill@student.horizon.example')).filter((m) => m.template === 'passwordReset').at(-1);
+    await forgot('demo-college', 'simran.sharma@student.horizon.example');
+    const link = (await mails('demo-college', 'simran.sharma@student.horizon.example')).filter((m) => m.template === 'passwordReset').at(-1);
     const token = tokenIn(link.text_body);
     assert.ok(token);
     assert.match(link.text_body, /reset-password\?token=.+&institute=demo-college/);
@@ -137,8 +137,8 @@ describe('Forgot / reset password', () => {
     assert.equal((await login('demo-college', 'student', 'STU2026002', 'Student@123')).status, 401);
     assert.equal((await login('demo-college', 'student', 'STU2026002', 'Fresh@Pass99')).status, 200);
     // put the demo password back for other tests
-    await forgot('demo-college', 'simran.gill@student.horizon.example');
-    const t2 = tokenIn((await mails('demo-college', 'simran.gill@student.horizon.example')).filter((m) => m.template === 'passwordReset').at(-1).text_body);
+    await forgot('demo-college', 'simran.sharma@student.horizon.example');
+    const t2 = tokenIn((await mails('demo-college', 'simran.sharma@student.horizon.example')).filter((m) => m.template === 'passwordReset').at(-1).text_body);
     await post('/api/auth/reset-password', { token: t2, password: 'Student@123' });
   });
 
