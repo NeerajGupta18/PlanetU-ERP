@@ -722,10 +722,10 @@ async function seedExams(spec, courseId, emp) {
   const sem = spec.students[0].semester;
   const credits = [4, 4, 3, 3, 2, 2];
   const { rows: students } = await q('select id, student_code from students where course_id = $1 order by student_code', [courseId]);
-  const mkExam = async (name, kind, semester, start, end, published) => (await q(
+  const mkExam = async (name, kind, semester, start, end, published, daysAgo = 60) => (await q(
     `insert into exams (course_id, semester, name, kind, start_date, end_date, status, published_at)
      values ($1, $2, $3, $4, $5, $6, $7, $8) returning id`,
-    [courseId, semester, name, kind, start, end, published ? 'published' : 'draft', published ? new Date(Date.now() - 60 * 86400000) : null],
+    [courseId, semester, name, kind, start, end, published ? 'published' : 'draft', published ? new Date(Date.now() - daysAgo * 86400000) : null],
   )).rows[0].id;
   const mkPapers = async (examId, max, pass, status) => {
     const ids = [];
@@ -738,6 +738,18 @@ async function seedExams(spec, courseId, emp) {
     }
     return ids;
   };
+
+  // An earlier internal exam, so each student has a marks trend to look at (it does not count towards the CGPA)
+  const earlier = await mkExam('Unit Test', 'unit', Math.max(1, sem - 1), day(-240), day(-235), true, 120);
+  const earlierPapers = await mkPapers(earlier, 100, 40, 'submitted');
+  const earlierCols = [[], [], []];
+  for (const [i, st] of students.entries()) {
+    for (const [k, paperId] of earlierPapers.entries()) {
+      earlierCols[0].push(paperId); earlierCols[1].push(st.id);
+      earlierCols[2].push(Math.max(41, Math.min(100, [78, 72, 66, 64, 70, 61][i % 6] + [3, -2, 5, -4, 1, -6][(k + i) % 6])));
+    }
+  }
+  if (earlierCols[0].length) await q('insert into exam_marks (paper_id, student_id, marks, absent) select x.p, x.s, x.m, false from unnest($1::uuid[], $2::uuid[], $3::numeric[]) as x(p, s, m)', earlierCols);
 
   const past = await mkExam('End-Semester Examination', 'term', Math.max(1, sem - 1), day(-170), day(-158), true);
   const pastPapers = await mkPapers(past, 100, 40, 'submitted');
