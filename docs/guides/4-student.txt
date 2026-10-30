@@ -26,3 +26,6 @@ Results shows each published exam with marks, grade and GPA. Download the report
 
 Certificates
 Certificates, Request next to the one you need, say what it is for. Download it once the office issues it.
+
+The What-if meter
+The Attendance card on your home page has a slider. Move it to see what your attendance becomes if you miss more classes. It uses your real counts and changes nothing.

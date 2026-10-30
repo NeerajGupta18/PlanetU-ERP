@@ -53,6 +53,7 @@ export async function dashboard(req, res) {
     [req.user.studentId],
   );
   const outstanding = Math.round(openItems.reduce((a, i) => a + i.balance, 0) * 100) / 100;
+  const { rows: [{ paid: paidTotal }] } = await q('select coalesce(sum(amount), 0)::float8 as paid from payments where student_id = $1', [req.user.studentId]);
   const next = openItems[0] || null;
 
   // Most recent published exam, for the "latest result" card
@@ -61,9 +62,11 @@ export async function dashboard(req, res) {
 
   // Assignments still to hand in that fall due in the next 7 days
   const weekAhead = addDays(new Date(), 7).toISOString();
-  const assignmentsDue = req.tenant.modules.includes('assignments')
-    ? (await myAssignments(req.user.studentId)).assignments.filter((a) => ['pending', 'returned'].includes(a.state) && a.dueAt && new Date(a.dueAt).toISOString() <= weekAhead).length
+  const dueThisWeek = req.tenant.modules.includes('assignments')
+    ? (await myAssignments(req.user.studentId)).assignments.filter((a) => ['pending', 'returned'].includes(a.state) && a.dueAt && new Date(a.dueAt).toISOString() <= weekAhead)
     : null;
+  const assignmentsDue = dueThisWeek && dueThisWeek.length;
+  const coursework = dueThisWeek && dueThisWeek.slice(0, 4).map((a) => ({ id: a.id, title: a.title, subject: a.subject, dueAt: a.dueAt, state: a.state }));
 
   // The next exam: a scheduled exam for this class, otherwise an exam on the calendar
   let nextExam = null;
@@ -77,11 +80,13 @@ export async function dashboard(req, res) {
   }
 
   res.json({
-    fees: { outstanding, next: next && { label: next.label, dueDate: next.dueDate, balance: next.balance } },
+    fees: { outstanding, paid: paidTotal, next: next && { label: next.label, dueDate: next.dueDate, balance: next.balance } },
+    coursework,
+    generatedAt: new Date().toISOString(),
     attendanceGuide: { ...guidance(overview.attended, overview.total, overview.threshold), attended: overview.attended, total: overview.total },
     assignmentsDue,
     nextExam,
-    latestResult: latest && { id: latest.id, name: latest.name, semester: latest.semester, gpa: latest.gpa, pct: latest.pct, result: latest.result, cgpa: results.cgpa },
+    latestResult: latest && { id: latest.id, name: latest.name, semester: latest.semester, gpa: latest.gpa, pct: latest.pct, result: latest.result, cgpa: results.cgpa, trend: [...results.exams].reverse().filter((e) => e.pct !== null && e.pct !== undefined).map((e) => ({ name: e.name, pct: e.pct })) },
     student: {
       name: student.name, rollNo: student.rollNo, course: student.course, semester: student.semester, section: student.section,
     },

@@ -1,13 +1,17 @@
 import { Link } from 'react-router-dom';
-import { AlertTriangle, Award, BookOpen, CalendarDays, Clock, FileText, GraduationCap, LayoutDashboard, MapPin, Megaphone, Percent, ScanLine, Video, Wallet } from 'lucide-react';
+import { AlertTriangle, Award, CalendarDays, Clock, FileText, LayoutDashboard, MapPin, Megaphone, Percent, ScanLine, Video } from 'lucide-react';
 import { useFetch } from '../../hooks/useFetch.js';
 import { useTenantConfig } from '../../hooks/useTenantConfig.js';
-import { Badge, Card, PageBanner, StatCard, pending, CollapsibleCards } from '../../components/ui/Ui.jsx';
-import { DataBoundary, EmptyState } from '../../components/ui/Feedback.jsx';
+import { Badge, Card, PageBanner, CollapsibleCards } from '../../components/ui/Ui.jsx';
+import { EmptyState, ErrorState } from '../../components/ui/Feedback.jsx';
+import { LineChart } from '../../components/ui/Charts.jsx';
+import { Ring } from '../../components/dash/Charts.jsx';
+import { Freshness, KpiCard, KpiGrid, KpiLoading } from '../../components/dash/KpiCard.jsx';
+import WhatIfMeter from '../../components/dash/WhatIfMeter.jsx';
 import { EVENT_TYPES } from '../../utils/eventTypes.js';
 import TodoCard from '../../components/campus/TodoCard.jsx';
 import { daysBetween, firstName, todayISO, fmtDate, fmtEventDates, fmtRange, fmtTime, greeting, MONTHS, parseISO } from '../../utils/dates.js';
-import { inr0, plural } from '../../utils/kpi.js';
+import { inr0, inrCompact, numIn, plural } from '../../utils/kpi.js';
 
 const nowHHMM = () => {
   const d = new Date();
@@ -19,16 +23,13 @@ const attendanceTone = (pct, t = 75) => (pct >= t + 5 ? 'good' : pct >= t ? 'war
 
 export default function Dashboard() {
   const { data, loading, error, reload } = useFetch('/student/dashboard');
-
-  return (
-    <DataBoundary loading={loading} error={error} data={data} reload={reload}>
-      {data && <DashboardView d={data} />}
-    </DataBoundary>
-  );
+  if (error && !data) return <ErrorState error={error} onRetry={reload} />;
+  if (!data) return <KpiLoading />;
+  return <div className="dash-page"><DashboardView d={data} loading={loading} reload={reload} /></div>;
 }
 
 
-function DashboardView({ d }) {
+function DashboardView({ d, loading, reload }) {
   const { hasModule } = useTenantConfig();
   const now = nowHHMM();
   const first = firstName(d.student.name);
@@ -58,43 +59,82 @@ function DashboardView({ d }) {
         actions={hasModule('qr_checkin') && hasModule('attendance') ? <Link to="/student/checkin" className="btn btn--primary btn--sm"><ScanLine size={15} /> Scan attendance</Link> : null}
       />
 
-      <div className="stats stats--3">
-        <StatCard
-          value={`${d.stats.attendance}%`} label="Overall attendance" icon={Percent} to="/student/attendance"
-          status={attOk ? (g.canMiss <= 2 ? 'warn' : 'good') : 'bad'}
-          hint={attOk ? (g.canMiss > 0 ? `You can miss ${plural(g.canMiss, 'more class', 'more classes')}` : 'Do not miss the next class') : g.needToReach ? `Attend the next ${plural(g.needToReach, 'class', 'classes')} to reach ${threshold}%` : `Below ${threshold}%`}
-          sub={`${g.attended} of ${g.total} classes, minimum ${threshold}%`}
-        />
-        <StatCard
-          value={nextClass ? fmtTime(nextClass.start) : d.today.length ? 'Done' : '-'} icon={Clock} to="/student/timetable"
+      <Freshness at={d.generatedAt} loading={loading} onRefresh={reload} />
+
+      <KpiGrid>
+        <KpiCard
+          value={nextClass ? fmtTime(nextClass.start) : d.today.length ? 'Done' : 'None'} to="/student/timetable" meaning="The lecture going on now, or your next one today"
           label={nextClass ? `${nextClass.live ? 'Now' : 'Next class'}: ${nextClass.title}` : d.today.length ? 'No more classes today' : 'No classes today'}
-          status={nextClass?.live ? 'good' : nextClass ? 'info' : 'clear'}
-          hint={nextClass ? `${nextClass.reassignedTo || nextClass.employee?.name || ''}${nextClass.location ? `, ${nextClass.location}` : ''}` : undefined}
+          sub={nextClass ? `${nextClass.reassignedTo || nextClass.employee?.name || ''}${nextClass.location ? `, ${nextClass.location}` : ''}` : undefined}
         />
-        {hasModule('assignments') && d.assignmentsDue !== null && (
-          <StatCard value={d.assignmentsDue} label="Assignments due this week" icon={FileText} to="/student/assignments" {...pending(d.assignmentsDue, { act: 'Hand them in', clear: 'Nothing due' })} />
+        {hasModule('exams') && (
+          <KpiCard
+            value={examIn === null ? null : examIn === 0 ? 'Today' : plural(examIn, 'day')} to="/student/calendar" meaning="Days until your next exam" emptyHint="No exam scheduled yet."
+            label={d.nextExam ? `Until ${d.nextExam.name}` : 'Next exam'} sub={d.nextExam ? fmtDate(d.nextExam.date) : undefined}
+          />
         )}
         {showFees && (
-          <StatCard
-            value={inr0(d.fees.outstanding)} label="Fees due" icon={Wallet} to="/student/fees"
-            {...(d.fees.outstanding <= 0 ? { status: 'clear', hint: 'All paid up' } : feeOverdue ? { status: 'bad', hint: `Overdue since ${fmtDate(d.fees.next.dueDate)} - pay now` } : { status: 'warn', hint: d.fees.next?.dueDate ? `Next due ${fmtDate(d.fees.next.dueDate)} - pay now` : 'Pay now' })}
-            sub={d.fees.next ? `${d.fees.next.label}: ${inr0(d.fees.next.balance)}` : undefined}
+          <KpiCard
+            value={inrCompact(d.fees.outstanding)} full={inr0(d.fees.outstanding)} label={feeOverdue ? 'Fees overdue' : 'Fees due'} to="/student/fees" meaning="Fees still to pay"
+            sub={`${inr0(d.fees.paid)} paid so far${d.fees.next ? `. ${d.fees.next.label}: ${inr0(d.fees.next.balance)}` : ''}`}
           />
         )}
-        {hasModule('exams') && (
-          <StatCard
-            value={d.nextExam ? fmtDate(d.nextExam.date) : '-'} label={d.nextExam ? `Next exam: ${d.nextExam.name}` : 'No exam scheduled'} icon={GraduationCap} to="/student/calendar"
-            {...(examIn === null ? { status: 'clear' } : examIn <= 7 ? { status: 'warn', hint: examIn === 0 ? 'Today' : `In ${plural(examIn, 'day')}` } : { status: 'info', hint: `In ${examIn} days` })}
+        {showResult && (
+          <KpiCard
+            value={d.latestResult.gpa === null ? `${d.latestResult.pct ?? '-'}%` : `GPA ${d.latestResult.gpa.toFixed(2)}`} label={`Latest result: ${d.latestResult.name}`} to="/student/results" meaning="Your most recently published exam"
+            spark={d.latestResult.trend.map((t) => t.pct)} sparkLabel="Your percentage in each published exam, oldest first"
+            sub={d.latestResult.cgpa !== null && d.latestResult.cgpa !== undefined ? `CGPA ${d.latestResult.cgpa.toFixed(2)}` : undefined}
           />
         )}
-        {showResult ? (
-          <StatCard
-            value={d.latestResult.gpa === null ? `${d.latestResult.pct ?? '-'}%` : `GPA ${d.latestResult.gpa.toFixed(2)}`} label={`Latest result: ${d.latestResult.name}`} icon={Award} to="/student/results"
-            status={d.latestResult.result === 'fail' ? 'bad' : 'neutral'} sub={d.latestResult.cgpa !== null && d.latestResult.cgpa !== undefined ? `CGPA ${d.latestResult.cgpa.toFixed(2)}` : undefined}
-          />
-        ) : (
-          <StatCard value={d.stats.notices} label="Unread notices" icon={Megaphone} to="/student/notices" {...(d.stats.notices > 0 ? { status: 'info', hint: 'New' } : { status: 'clear', hint: 'All read' })} />
-        )}
+        {hasModule('assignments') && d.assignmentsDue !== null && <KpiCard value={numIn(d.assignmentsDue)} label="Coursework due this week" to="/student/assignments" meaning="Work still to hand in within the next 7 days" />}
+        {hasModule('notices') && <KpiCard value={numIn(d.stats.notices)} label="Unread notices" to="/student/notices" meaning="Notices you have not opened yet" />}
+      </KpiGrid>
+
+      <div className="grid-2">
+        <Card title="Attendance" icon={Percent} action={hasModule('attendance') ? <Link to="/student/attendance" className="btn btn--outline btn--sm">Details</Link> : null}>
+          <div className="myday__ring">
+            <Ring value={g.total ? d.stats.attendance : null} label="Overall attendance" text={`${d.stats.attendance}%`} size={88} />
+            <div>
+              <strong className={attOk ? '' : 'is-bad'}>{attOk ? 'Above' : 'Below'} the {threshold}% minimum</strong>
+              <p className="myday__hint" style={{ margin: '2px 0 0' }}>
+                {g.attended} of {g.total} classes. {attOk ? (g.canMiss > 0 ? `You can miss ${plural(g.canMiss, 'more class', 'more classes')}.` : 'Do not miss the next class.') : g.needToReach ? `Attend the next ${plural(g.needToReach, 'class', 'classes')} to reach ${threshold}%.` : ''}
+              </p>
+            </div>
+          </div>
+          <ul className="bars" style={{ marginTop: 12 }}>
+            {d.attendance.map((a) => (
+              <li key={a.subject}>
+                <div className="bars__row">
+                  <span>{a.subject}</span>
+                  <span className={`bars__pct bars__pct--${attendanceTone(a.pct, d.attendanceThreshold)}`}>{a.pct}%</span>
+                </div>
+                <div className="bars__track" role="img" aria-label={`${a.subject}: ${a.attended} of ${a.total} classes attended`}>
+                  <div className={`bars__fill bars__fill--${attendanceTone(a.pct, d.attendanceThreshold)}`} style={{ width: `${a.pct}%` }} />
+                </div>
+              </li>
+            ))}
+          </ul>
+          <p className="note">Red: below the {d.attendanceThreshold}% minimum. Amber: within 5% of it.</p>
+          <WhatIfMeter attended={g.attended} total={g.total} threshold={threshold} you />
+        </Card>
+        <div style={{ display: 'grid', gap: 18 }}>
+          {showResult && (
+            <Card title="Marks trend" icon={Award} action={<Link to="/student/results" className="btn btn--outline btn--sm">All results</Link>}>
+              {d.latestResult.trend.length < 2
+                ? <p className="muted" style={{ margin: 0, fontSize: 13 }}>The trend appears after your next published exam.</p>
+                : <LineChart data={d.latestResult.trend.map((t, i) => ({ label: `Exam ${i + 1}`, full: t.name, value: t.pct }))} format={(v) => `${v}%`} min={0} max={100} caption="Your percentage in each published exam, oldest first" height={140} />}
+            </Card>
+          )}
+          {hasModule('assignments') && d.coursework && (
+            <Card title="Coursework due" icon={FileText} action={<Link to="/student/assignments" className="btn btn--outline btn--sm">All work</Link>}>
+              {d.coursework.length === 0 ? <EmptyState compact title="Nothing due this week" hint="Work your teachers set shows here." /> : (
+                <ul className="myday__notices">
+                  {d.coursework.map((c) => <li key={c.id}><Link to={`/student/assignments/${c.id}`}><strong>{c.title}</strong></Link><small className="muted">{c.subject}, due {fmtDate(String(c.dueAt).slice(0, 10))}</small></li>)}
+                </ul>
+              )}
+            </Card>
+          )}
+        </div>
       </div>
 
       <TodoCard path="/student/todo" />
@@ -171,25 +211,7 @@ function DashboardView({ d }) {
         </Card>
       </div>
 
-      <div className="grid-2">
-        <Card title="Attendance by subject" icon={Percent}>
-          <ul className="bars">
-            {d.attendance.map((a) => (
-              <li key={a.subject}>
-                <div className="bars__row">
-                  <span>{a.subject}</span>
-                  <span className={`bars__pct bars__pct--${attendanceTone(a.pct, d.attendanceThreshold)}`}>{a.pct}%</span>
-                </div>
-                <div className="bars__track" role="img" aria-label={`${a.subject}: ${a.attended} of ${a.total} classes attended`}>
-                  <div className={`bars__fill bars__fill--${attendanceTone(a.pct, d.attendanceThreshold)}`} style={{ width: `${a.pct}%` }} />
-                </div>
-                <small className="muted">{a.attended} of {a.total} classes</small>
-              </li>
-            ))}
-          </ul>
-          <p className="note">Red: below the {d.attendanceThreshold}% minimum. Amber: within 5% of it.</p>
-        </Card>
-
+      <div>
         <Card title="Notices" icon={Megaphone} action={hasModule('notices') ? <Link to="/student/notices" className="btn btn--outline btn--sm">All notices</Link> : null}>
           <ul className="notices">
             {d.notices.map((n) => (

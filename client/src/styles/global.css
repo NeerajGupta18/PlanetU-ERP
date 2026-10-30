@@ -1464,3 +1464,6 @@ a.banner__next:hover { text-decoration: underline; }
 .timeline__mark { min-height: 44px; min-width: 72px; justify-content: center; }
 @media (max-width: 480px) { .timeline__item { grid-template-columns: 66px minmax(0, 1fr) auto; gap: 8px; } .timeline__time { font-size: 12.5px; } }
 @media (max-width: 1024px) { .dash-page .setup-bars a.setup-bars__name { display: inline-flex; align-items: center; min-height: 44px; } }
+@media (max-width: 1024px) { .dash-page .alert a { display: inline-flex; align-items: center; min-height: 44px; } }
+.dash-page .myday__notices strong { white-space: normal; overflow-wrap: anywhere; }
+.dash-page .myday__notices a { flex-wrap: wrap; }
