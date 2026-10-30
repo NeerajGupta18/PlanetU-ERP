@@ -5,12 +5,6 @@ Signing in
 Institute code, choose Student, your student ID (PRN) and password, tick "I'm not a robot".
 The office gives you a one-time password when you are enrolled. The app asks you to change it the first time you sign in.
 
-Fingerprint sign-in (Android app only)
-1. In the Android app, after you sign in with your password, the app asks "Use fingerprint next time?". Choose Use fingerprint, or Not now.
-2. Next time, tap your name and touch the sensor. "Use password instead" and "Switch account" are always there. Up to five accounts can be saved on one phone.
-3. Your password is not saved on the phone. After 30 days, or when your password changes, the app asks for the password again.
-4. Menu, then "Fingerprint and phones" lists your phones; Remove one you no longer use. "Sign out and forget this phone" turns it off on that phone.
-
 Your home page
 - Cards for your attendance, next class, work due this week, fees due, next exam and latest result.
 - The attendance card says how many classes you can still miss, or how many you must attend to reach 75%.

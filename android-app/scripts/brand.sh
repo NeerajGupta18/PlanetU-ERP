@@ -31,7 +31,3 @@ add_perm 'android.permission.ACCESS_FINE_LOCATION' '    <uses-permission android
 add_perm 'android.permission.ACCESS_COARSE_LOCATION' '    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />'
 add_perm 'android.hardware.camera' '    <uses-feature android:name="android.hardware.camera" android:required="false" />'
 echo "Camera and location permissions set."
-
-# Fingerprint sign-in (@capgo/capacitor-native-biometric): the androidx biometric library asks for this too; said here so it is plain
-add_perm 'android.permission.USE_BIOMETRIC' '    <uses-permission android:name="android.permission.USE_BIOMETRIC" />'
-echo "Fingerprint permission set."

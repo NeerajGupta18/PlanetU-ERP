@@ -10,13 +10,6 @@ Signing in
 3. Tick "I'm not a robot" and sign in.
 On a phone, the bar at the bottom has your most used pages. "Menu" opens everything else.
 
-Fingerprint sign-in (Android app only)
-1. In the Android app, after you sign in with your password, the app asks "Use fingerprint next time?". Choose Use fingerprint, or Not now.
-2. Next time, tap your name and touch the sensor. "Use password instead" and "Switch account" are always there. Up to five accounts can be saved on one phone.
-3. Your password is not saved on the phone. After 30 days, or when your password changes, the app asks for the password again.
-4. Menu, then "Fingerprint and phones" lists your phones; Remove one you no longer use. "Sign out and forget this phone" turns it off on that phone.
-5. As admin you also see every phone in the institute there, and can remove any of them, for example a lost phone.
-
 Your home page
 - The cards at the top are today's key numbers. Green is fine, amber needs doing, red is urgent.
 - "Needs your attention" lists what is waiting, most urgent first. Tap a line to deal with it.

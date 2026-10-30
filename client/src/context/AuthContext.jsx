@@ -1,6 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { api } from '../api/http.js';
-import { forgetAccount, unlockWithFingerprint } from '../lib/fingerprint.js';
 
 const AuthContext = createContext(null);
 const EMPTY = { user: null, tenant: null, institute: null, notifications: [] };
@@ -30,29 +29,16 @@ export function AuthProvider({ children }) {
     return s.user;
   }, []);
 
-  // Android app: fingerprint unlocks a saved account's token, which the server swaps for a session
-  const loginWithFingerprint = useCallback(async (account) => {
-    const s = await unlockWithFingerprint(account);
-    setSession(s);
-    return s.user;
-  }, []);
-
   // Re-reads the session (e.g. after the password was changed and the 'must change' flag cleared)
   const refresh = useCallback(async () => { const s = await api.get('/auth/me'); setSession(s); return s; }, []);
 
-  // forgetKey: "Sign out and forget this phone" also ends fingerprint sign-in for this account here
-  const logout = useCallback(async ({ forgetKey } = {}) => {
-    try {
-      if (forgetKey) await forgetAccount(forgetKey);
-      await api.post('/auth/logout');
-    } finally {
+  const logout = useCallback(async () => {
+    try { await api.post('/auth/logout'); } finally {
       setSession(EMPTY);
     }
   }, []);
 
-  const value = useMemo(() => ({
-    ...session, loading, login, loginWithFingerprint, logout, refresh,
-  }), [session, loading, login, loginWithFingerprint, logout, refresh]);
+  const value = useMemo(() => ({ ...session, loading, login, logout, refresh }), [session, loading, login, logout, refresh]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
