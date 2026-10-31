@@ -19,7 +19,7 @@ export default function QrScanner({ onResult, paused }) {
     let stream; let raf = 0; let stopped = false; let last = 0; let detector = null; let jsQR = null;
 
     async function start() {
-      if (!navigator.mediaDevices?.getUserMedia) { setError('This browser cannot open the camera here. Open the PlanetU app or use Chrome or Safari over a secure link.'); return; }
+      if (!navigator.mediaDevices?.getUserMedia) { setError('This browser cannot open the camera here. Open the PlanetU app, or open this page over a secure link (https).'); return; }
       try {
         stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } }, audio: false });
       } catch (err) {

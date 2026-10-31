@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import {
   AlertCircle, Briefcase, Building2, Eye, EyeOff, GraduationCap, LockKeyhole, LogIn, ShieldCheck, UserCog, UserRound, Users,
@@ -9,7 +9,10 @@ import { ROLE_HOME } from '../config/menu.config.js';
 import { BRAND } from '../config/brand.js';
 import BrandMark from '../components/ui/BrandMark.jsx';
 import RobotCheck from '../components/auth/RobotCheck.jsx';
-import { GetTheAppBanner, GetTheAppCard } from '../components/campus/GetTheApp.jsx';
+
+// The install offer loads on its own, so it adds nothing to the landing page, which shares this bundle
+const GetTheAppBanner = lazy(() => import('../components/campus/GetTheApp.jsx').then((m) => ({ default: m.GetTheAppBanner })));
+const GetTheAppCard = lazy(() => import('../components/campus/GetTheApp.jsx').then((m) => ({ default: m.GetTheAppCard })));
 
 const ROLES = [
   { value: 'super_admin', label: 'Super Admin', icon: ShieldCheck, idLabel: 'Email or Super Admin ID' },
@@ -116,7 +119,7 @@ export default function Login() {
 
   return (
     <div className="login">
-      <GetTheAppBanner />
+      <Suspense fallback={null}><GetTheAppBanner /></Suspense>
       <aside className="login__aside">
         <div className="login__aside-inner">
           <span className="login__mark"><BrandMark size={34} /></span>
@@ -214,7 +217,7 @@ export default function Login() {
             </div>
           )}
         </form>
-        <GetTheAppCard />
+        <Suspense fallback={null}><GetTheAppCard /></Suspense>
         <p className="login__legal"><Link to="/privacy">Privacy notice</Link></p>
       </main>
     </div>

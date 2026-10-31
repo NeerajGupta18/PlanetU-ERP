@@ -7,7 +7,7 @@ import { useBell } from '../../hooks/useBell.js';
 import BellPanel from './BellPanel.jsx';
 import BottomNav from './BottomNav.jsx';
 import SectionTabs from './SectionTabs.jsx';
-import InstallPrompt from '../campus/InstallPrompt.jsx';
+import InstallPrompt, { InstallStepsSheet } from '../campus/InstallPrompt.jsx';
 import { api } from '../../api/http.js';
 import { useFetch } from '../../hooks/useFetch.js';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -85,6 +85,7 @@ export default function AppShell() {
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('erp.sidebar') === 'collapsed');
   const [drawer, setDrawer] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [installSteps, setInstallSteps] = useState(false);
   const mainRef = useRef(null);
   useEffect(() => startAutoScroll(mainRef.current), []);
   // The institute's own colour on every screen (back to the PlanetU navy when it has none, or on sign-out)
@@ -186,12 +187,13 @@ export default function AppShell() {
                 <div className="menu__who"><strong>{user.name}</strong><small>{user.loginId}</small></div>
                 <button type="button" className="menu__item" onClick={() => navigate(`/${user.role === 'super_admin' ? 'super-admin' : user.role}/help`)}><BookOpenCheck size={15} /> How to use</button>
                 <button type="button" className="menu__item" onClick={() => navigate('/change-password')}><KeyRound size={15} /> Change password</button>
-                <InstallPrompt className="menu__item" />
+                <InstallPrompt className="menu__item" onSteps={() => setInstallSteps(true)} />
                 <button type="button" className="menu__item" onClick={onLogout}><LogOut size={15} /> Sign out</button>
               </div>
             </Dropdown>
           </div>
         </header>
+        <InstallStepsSheet open={installSteps} onClose={() => setInstallSteps(false)} />
 
         <main className="content" id="main" tabIndex={-1} ref={mainRef}>
           <Breadcrumbs flat={flat} />
