@@ -28,7 +28,7 @@ function bindTxToResponse(res, tx) {
 const BILLING_LOCK_ALLOWED = ['/api/admin/billing', '/api/auth/me', '/api/auth/logout', '/api/auth/change-password'];
 
 const reject = (res, status, message) => {
-  res.clearCookie(env.COOKIE_NAME);
+  res.clearCookie(env.COOKIE_NAME, { httpOnly: true, sameSite: 'lax', secure: env.COOKIE_SECURE });
   return res.status(status).json({ message });
 };
 

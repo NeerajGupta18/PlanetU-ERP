@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { FileText, Plus, Search } from 'lucide-react';
+import { openDocument } from '../../lib/install.js';
 import { useFetch } from '../../hooks/useFetch.js';
 import { useTabParam } from '../../hooks/useTabParam.js';
 import { api } from '../../api/http.js';
@@ -55,7 +56,7 @@ function IssueModal({ request, types, onClose, onDone }) {
     try {
       const r = direct ? await api.post('/admin/certificates', body) : await api.put(`/admin/certificates/${request.id}`, body);
       toast.success(`Issued ${r.request.certificateNo}.`);
-      window.open(`/api/admin/certificates/${r.request.id}/pdf`, '_blank');
+      openDocument(`/api/admin/certificates/${r.request.id}/pdf`);
       onDone();
     } catch (x) {
       if (x.data?.code === 'HAS_DUES') {

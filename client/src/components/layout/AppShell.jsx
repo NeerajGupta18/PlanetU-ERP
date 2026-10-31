@@ -2,18 +2,19 @@ import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import ErrorBoundary from '../ui/ErrorBoundary.jsx';
 import { Loader } from '../ui/Feedback.jsx';
-import { Bell, BookOpenCheck, ChevronDown, KeyRound, LogOut, MapPin, Menu, Phone, Search } from 'lucide-react';
+import { Bell, BookOpenCheck, ChevronDown, ChevronLeft, KeyRound, LogOut, MapPin, Menu, Phone, Search } from 'lucide-react';
 import { useBell } from '../../hooks/useBell.js';
 import BellPanel from './BellPanel.jsx';
 import BottomNav from './BottomNav.jsx';
 import SectionTabs from './SectionTabs.jsx';
 import InstallPrompt, { InstallStepsSheet } from '../campus/InstallPrompt.jsx';
+import { installedOnIos } from '../../lib/install.js';
 import { api } from '../../api/http.js';
 import { useFetch } from '../../hooks/useFetch.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useTenantConfig } from '../../hooks/useTenantConfig.js';
 import { useNav } from '../../hooks/useNav.js';
-import { ROLE_LABEL } from '../../config/menu.config.js';
+import { ROLE_HOME, ROLE_LABEL } from '../../config/menu.config.js';
 import { useOutsideClick } from '../../hooks/useOutsideClick.js';
 import { fmtDate } from '../../utils/dates.js';
 import { BRAND } from '../../config/brand.js';
@@ -86,6 +87,10 @@ export default function AppShell() {
   const [drawer, setDrawer] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [installSteps, setInstallSteps] = useState(false);
+  // An installed iPhone app has no browser back button
+  const home = ROLE_HOME[user?.role];
+  const showBack = installedOnIos() && location.pathname !== home;
+  const goBack = () => (window.history.state?.idx > 0 ? navigate(-1) : navigate(home, { replace: true }));
   const mainRef = useRef(null);
   useEffect(() => startAutoScroll(mainRef.current), []);
   // The institute's own colour on every screen (back to the PlanetU navy when it has none, or on sign-out)
@@ -139,6 +144,7 @@ export default function AppShell() {
 
       <div className="shell__main">
         <header className="topbar">
+          {showBack && <button type="button" className="icon-btn topbar__back" onClick={goBack} aria-label="Back"><ChevronLeft size={22} /></button>}
           <button type="button" className="icon-btn" onClick={toggleSidebar} aria-label="Toggle sidebar"><Menu size={20} /></button>
           <div className="topbar__brand">
             <span className="topbar__name">{institute?.name || BRAND.name}</span>

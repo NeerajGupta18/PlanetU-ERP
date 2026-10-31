@@ -20,8 +20,8 @@ export function AuthProvider({ children }) {
 
   // Restore the session (httpOnly cookie) on first load
   useEffect(() => {
-    api.get('/auth/me')
-      .then((s) => setSession(s))
+    api.get('/auth/session')
+      .then((s) => setSession(s.user ? s : EMPTY))
       .catch(() => setSession(EMPTY))
       .finally(() => setLoading(false));
   }, []);

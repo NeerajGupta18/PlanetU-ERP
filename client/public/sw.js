@@ -1,7 +1,7 @@
 /* Service worker for the installable app. It keeps the app shell and the built assets so the app opens quickly and
    shows a friendly page when the phone is offline. It never stores anything from /api: signed-in data is always live. */
-const CACHE = 'campus-erp-shell-v2';
-const SHELL = ['/', '/offline.html', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/favicon.svg'];
+const CACHE = 'campus-erp-shell-v3';
+const SHELL = ['/', '/offline.html', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/apple-touch-icon.png', '/favicon.svg'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));

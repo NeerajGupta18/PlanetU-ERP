@@ -1,0 +1,7 @@
+{
+  "name": "planetu-e2e-webkit",
+  "private": true,
+  "description": "WebKit tests for iPhone and iPad. Kept out of the npm workspaces so that the server deploy never installs a browser.",
+  "scripts": { "test": "playwright test" },
+  "devDependencies": { "@playwright/test": "1.64.1" }
+}
