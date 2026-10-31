@@ -149,7 +149,8 @@ describe('Applying for leave (employee)', () => {
     assert.match(fifth.body.message, /only 0 left/);
   });
   it('refuses overlapping dates', async () => {
-    const d = await workday(100);
+    // Clear of the March dates the allowance test books: "100 days from today" lands on them in late November
+    const d = await workdayIn(NEXT, 60);
     assert.equal((await apply(emp, { typeId: typeIds.free, fromDate: d, reason: 'LT a' })).status, 201);
     const clash = await apply(emp, { typeId: typeIds.free, fromDate: d, reason: 'LT b' });
     assert.equal(clash.status, 409);
@@ -167,7 +168,7 @@ describe('Applying for leave (employee)', () => {
     assert.equal(other.body.requests.filter((r) => r.reason?.startsWith('LT ')).length, 0);
   });
   it('can be cancelled while waiting, but not by someone else', async () => {
-    const d = await workday(120);
+    const d = await workdayIn(NEXT, 70); // clear of the March dates above, whatever today is
     const r = await apply(emp, { typeId: typeIds.free, fromDate: d, reason: 'LT cancel me' });
     const notMine = await json('POST', `/api/employee/leave/${r.body.request.id}/cancel`, { cookie: emp2 });
     assert.equal(notMine.status, 404);
