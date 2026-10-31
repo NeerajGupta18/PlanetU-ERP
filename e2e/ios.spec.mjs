@@ -120,6 +120,40 @@ test('sign-in page: closing the banner holds after a reload', async ({ page }) =
   await expect(page.locator('.getapp')).toBeVisible();
 });
 
+test('install page: this device first with its steps open, and no other browser named', async ({ page }, info) => {
+  const errors = watch(page);
+  await open(page, '/install');
+  await noSideways(page);
+  await expect(page.locator('.install-card')).toHaveCount(3);
+  const first = page.locator('.install-card').first();
+  await expect(first).toHaveAttribute('id', 'iphone');
+  await expect(first).toHaveClass(/is-here/);
+  await expect(first).toContainText('This device');
+  await expect(first).toContainText('Add to Home Screen');
+  await expect(first.locator('.install-sheet__icon svg').first()).toBeVisible();
+  await expect(page.locator('.install-qr')).toHaveCount(0);
+  expect(/chrome/i.test(await page.locator('body').innerText())).toBe(false);
+  // The other two can still be opened
+  await page.locator('#computer summary').click();
+  await expect(page.locator('#computer')).toContainText('Install');
+  await noSideways(page);
+  const small = await page.evaluate(() => [...document.querySelectorAll('.install-page a, .install-page button, .install-page summary')]
+    .filter((el) => { const r = el.getBoundingClientRect(); return r.width && r.height < 44; }).map((el) => el.innerText.trim()));
+  expect(small, info.title).toEqual([]);
+  expect(errors).toEqual([]);
+});
+
+test('landing page: Get the app shows three cards, marks this device, and leads to the install page', async ({ page }) => {
+  await open(page, '/');
+  const cards = page.locator('.lp-grid--getapp .lp-card');
+  await expect(cards).toHaveCount(3);
+  await expect(page.locator('.lp-grid--getapp .is-here')).toContainText('iPhone and iPad');
+  expect(/chrome/i.test(await page.locator('#get-app').locator('..').innerText())).toBe(false);
+  await page.locator('.lp-grid--getapp .is-here').click();
+  await expect(page).toHaveURL(/\/install#iphone$/);
+  await expect(page.locator('#iphone')).toContainText('Add to Home Screen');
+});
+
 test('fields are at least 16 px, so iOS does not zoom on focus', async ({ page }) => {
   await open(page, '/login');
   const small = await page.evaluate(() => [...document.querySelectorAll('input:not([type=checkbox]):not([type=radio]):not([type=file]), select, textarea')]
@@ -189,6 +223,9 @@ test.describe('installed on the home screen', () => {
     await expect(page).toHaveURL(/\/login$/);
     await expect(page.locator('.getapp-banner')).toHaveCount(0);
     await expect(page.locator('.getapp')).toHaveCount(0);
+    await open(page, '/install');
+    await expect(page.locator('.install-page__main')).toContainText('already using the PlanetU app');
+    await expect(page.locator('.install-card')).toHaveCount(0);
   });
 
   test('signing in stays signed in after closing the app, and signing out works', async ({ page, context, baseURL }) => {

@@ -1022,6 +1022,8 @@ a.stepbar__btn:hover .stepbar__dot, button.stepbar__btn:not(:disabled):hover .st
 .getapp__text { min-width: 0; }
 .getapp__text strong { display: block; font-size: 14.5px; }
 .getapp__text p { margin: 2px 0 10px; font-size: 13px; color: var(--muted); }
+.getapp__text .getapp__all { margin: 4px 0 0; }
+.getapp__all a { display: inline-block; padding: 8px 0; }
 .getapp__actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .getapp__steps { margin: 0 0 16px; padding-left: 20px; display: grid; gap: 10px; font-size: 14px; line-height: 1.5; }
 .modal__actions { display: flex; justify-content: flex-end; }

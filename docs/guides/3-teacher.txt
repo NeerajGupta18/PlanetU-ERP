@@ -3,7 +3,7 @@ User guide: Teacher or faculty
 
 Signing in
 Institute code, choose Employee, your employee ID and password, tick "I'm not a robot".
-Install the app on your phone: Android app from the institute, or "Add to Home Screen" on iPhone.
+Install the app on your phone from the "Get the app" page (/install on the site). Android: download the app. iPhone or iPad: tap Share, choose Add to Home Screen, tap Add.
 
 Your home page
 - "Today's lectures" is at the top, with your next lecture first.

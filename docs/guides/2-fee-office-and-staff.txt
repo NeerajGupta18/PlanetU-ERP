@@ -8,6 +8,10 @@ You see only the pages of your role. The admin gives roles under Staff, then Sta
 Signing in
 Institute code, choose Employee, your employee ID and password, tick "I'm not a robot".
 
+Get the app
+Open the "Get the app" page (/install on the site). Your device is marked.
+Android: download the app and open the file. iPhone or iPad: tap Share, choose Add to Home Screen, tap Add. Computer: use the install icon in the address bar, or File then Add to Dock in Safari on a Mac.
+
 Accountant: a normal day
 1. Open Fees & Payments. The step bar says what is next.
 2. Collect: type the student's name or ID, choose "Record payment", check the amount, pick cash, UPI, card or cheque, save.

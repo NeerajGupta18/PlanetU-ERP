@@ -11,13 +11,20 @@ export function ShareIcon({ size = 20 }) {
   );
 }
 
+// Where Share sits differs by device and by browser, and newer iPhones fold it under the three dots
+const SHARE_WHERE = {
+  iPhone: ' at the bottom of the screen, or near the address bar. On a newer iPhone, tap the three dots first if you do not see it.',
+  iPad: ' at the top of the screen, near the address bar.',
+  any: ' near the address bar. It is at the bottom of the screen on most iPhones and at the top on an iPad. On a newer iPhone, tap the three dots first if you do not see it.',
+};
+
 /** The real steps for this way of installing (see lib/platform.js). No wording here may send an iPhone to another browser. */
 export default function InstallSteps({ route, device = 'iPhone' }) {
   if (route === 'ios-share') {
     return (
       <div className="install-sheet">
         <ol className="install-sheet__steps">
-          <li><span>Tap the <strong>Share</strong> button <span className="install-sheet__icon"><ShareIcon /></span> {device === 'iPad' ? 'at the top of the screen.' : 'at the bottom of the screen.'}</span></li>
+          <li><span>Tap the <strong>Share</strong> button <span className="install-sheet__icon"><ShareIcon /></span>{SHARE_WHERE[device] || SHARE_WHERE.any}</span></li>
           <li><span>Scroll down and choose <strong>Add to Home Screen</strong> <span className="install-sheet__icon"><SquarePlus size={18} aria-hidden="true" /></span></span></li>
           <li><span>Tap <strong>Add</strong>. PlanetU now opens from your home screen like any other app.</span></li>
         </ol>
