@@ -3,7 +3,7 @@ Hand-over note
 
 What it is
 One web app for schools, colleges and universities. Each institute has its own data, logo, colours and words.
-It runs in any browser, as an Android app, and can be added to the home screen on an iPhone.
+It runs in any browser, as an Android app, and can be added to the home screen on an iPhone or iPad. The "Get the app" page at /install has the steps for each device.
 Roles: PlanetU team (vendor), institute admin, office staff, teacher, student, parent.
 
 Where things are

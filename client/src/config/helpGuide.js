@@ -24,6 +24,17 @@ export const HELP = [
     ],
   },
 
+  {
+    id: 'install', who: ['admin', 'employee', 'student', 'parent', 'super_admin'], title: 'Install the app on your device', to: '/install',
+    steps: [
+      'Open the "Get the app" page. Your device is marked, and its steps are open.',
+      'Android: download the app and open the file. Android asks once to allow it.',
+      'iPhone or iPad: tap the Share button, choose Add to Home Screen, tap Add.',
+      'Computer: use the install icon in the address bar. In Safari on a Mac, choose File, then Add to Dock.',
+      'Once installed, open PlanetU from its icon. You stay signed in until your session ends.',
+    ],
+  },
+
   /* ---------------- institute admin and principal ---------------- */
   {
     id: 'admin-dashboard', who: ['admin', 'area:dashboard'], title: 'Read the dashboard', to: '/admin/dashboard',

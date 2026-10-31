@@ -1,11 +1,12 @@
 import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Bot, CalendarCheck, CheckCircle2, ChevronDown, FileCheck2, Fingerprint, KeyRound, Layers, ListChecks, MessageCircleQuestion, Palette, Rocket,
-  ShieldCheck, Smartphone, UsersRound,
+  Laptop as LaptopIcon, Bot, CalendarCheck, CheckCircle2, ChevronDown, FileCheck2, Fingerprint, KeyRound, Layers, ListChecks, MessageCircleQuestion, Palette, Rocket,
+  ShieldCheck, Smartphone, Tablet, UsersRound,
 } from 'lucide-react';
 import { api } from '../../api/http.js';
 import { BRAND } from '../../config/brand.js';
+import { detectPlatform } from '../../lib/platform.js';
 import BrandMark from '../../components/ui/BrandMark.jsx';
 import { FormError, FormField } from '../../components/ui/Ui.jsx';
 import { Laptop, MOTION_OK, Phone, Shot, useMedia, useReveal } from './landing/parts.jsx';
@@ -25,6 +26,13 @@ const PROOF = [
   { icon: FileCheck2, text: 'Your logo on receipts, ID cards and report cards' },
   { icon: ShieldCheck, text: "Each institute's data kept apart in the database" },
 ];
+
+const GET_APP = [
+  { id: 'android', os: 'android', icon: Smartphone, title: 'Android', text: 'Download the app and install it.' },
+  { id: 'iphone', os: 'ios', icon: Tablet, title: 'iPhone and iPad', text: 'Add it to your home screen from the browser.' },
+  { id: 'computer', os: 'desktop', icon: LaptopIcon, title: 'Computer', text: 'Install it from your browser. It opens in its own window.' },
+];
+const HERE = detectPlatform({ ua: navigator.userAgent, maxTouchPoints: navigator.maxTouchPoints }).os;
 
 // Each of these is live in the ERP today (and the last one is the chat bubble on this page)
 const ASSISTANTS = [
@@ -164,7 +172,7 @@ export default function Landing() {
       <header className="lp-nav">
         <Link to="/" className="lp-nav__brand"><BrandMark size={30} src="/landing/brand-mark.webp" /> <span>{BRAND.short} Campus ERP</span></Link>
         <nav aria-label="Page sections" className="lp-nav__links">
-          <a href="#year">The year</a><a href="#setup">Setup</a><a href="#roles">Roles</a><a href="#trust">Trust</a><a href="#pricing">Pricing</a>
+          <a href="#year">The year</a><a href="#setup">Setup</a><a href="#roles">Roles</a><a href="#trust">Trust</a><a href="#get-app">Get the app</a><a href="#pricing">Pricing</a>
         </nav>
         <Link to="/login" className="lp-nav__signin">Sign in</Link>
         <a href="#demo" className="btn btn--next lp-nav__cta">Book a demo</a>
@@ -245,6 +253,28 @@ export default function Landing() {
             ))}
           </div>
           <p className="lp-note lp-note--plain lp-reveal">Read our <Link to="/privacy">privacy notice</Link>.</p>
+        </section>
+
+        <section className="lp-section" aria-labelledby="get-app">
+          <SectionHead id="get-app" eyebrow={<><Smartphone size={15} aria-hidden="true" /> On every device</>} title="Get the app"
+            lead="Works in any browser. Install it for an icon that opens straight to your own screen." />
+          <div className="lp-getapp">
+            <div className="lp-grid lp-grid--getapp">
+              {GET_APP.map(({ id, os, icon: Icon, title, text }) => (
+                <Link key={id} to={`/install#${id}`} className={`lp-card lp-card--link lp-reveal ${HERE === os ? 'is-here' : ''}`}>
+                  <span className="lp-card__icon"><Icon size={20} aria-hidden="true" /></span>
+                  <h3>{title}</h3>
+                  <p>{text}</p>
+                  {HERE === os && <p className="lp-card__who">This device</p>}
+                  <span className="lp-card__go">How to install</span>
+                </Link>
+              ))}
+            </div>
+            <aside className="lp-getapp__qr" aria-label="Open the install page on your phone">
+              <img src="/install-qr.svg" width="132" height="132" loading="lazy" alt="QR code that opens the install page on your phone" />
+              <p>Point your phone's camera here.</p>
+            </aside>
+          </div>
         </section>
 
         <section className="lp-section" aria-labelledby="pricing">

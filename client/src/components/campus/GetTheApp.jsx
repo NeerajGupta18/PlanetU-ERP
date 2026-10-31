@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Download, MonitorSmartphone, SquarePlus, X } from 'lucide-react';
 import Modal from '../ui/Modal.jsx';
 import BrandMark from '../ui/BrandMark.jsx';
@@ -52,6 +53,7 @@ export function GetTheAppCard() {
         <strong>Get the PlanetU app</strong>
         <p>{line}</p>
         <Actions />
+        <p className="getapp__all"><Link to="/install">All the ways to install</Link></p>
       </div>
     </section>
   );

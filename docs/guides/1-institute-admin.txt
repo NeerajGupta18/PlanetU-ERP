@@ -10,6 +10,10 @@ Signing in
 3. Tick "I'm not a robot" and sign in.
 On a phone, the bar at the bottom has your most used pages. "Menu" opens everything else.
 
+Get the app
+Open the "Get the app" page (/install on the site). Your device is marked.
+Android: download the app and open the file. iPhone or iPad: tap Share, choose Add to Home Screen, tap Add. Computer: use the install icon in the address bar, or File then Add to Dock in Safari on a Mac.
+
 Your home page
 - The cards at the top are today's key numbers. Green is fine, amber needs doing, red is urgent.
 - "Needs your attention" lists what is waiting, most urgent first. Tap a line to deal with it.

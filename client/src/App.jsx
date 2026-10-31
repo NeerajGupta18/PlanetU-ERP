@@ -96,6 +96,7 @@ const InstalledDocs = lazy(() => import('./components/campus/InstalledDocs.jsx')
 const loadLanding = () => import('./pages/public/Landing.jsx');
 const Landing = lazy(loadLanding);
 const Privacy = lazy(() => import('./pages/public/Privacy.jsx'));
+const Install = lazy(() => import('./pages/public/Install.jsx'));
 const Consent = lazy(() => import('./pages/Consent.jsx'));
 const SuperAdminDemoRequests = lazy(() => import('./pages/superadmin/DemoRequests.jsx'));
 const SuperAdminDashboard = lazy(() => import('./pages/superadmin/Dashboard.jsx'));
@@ -136,6 +137,7 @@ export default function App() {
       <Route element={<ProtectedRoute />}><Route path="/change-password" element={<ChangePassword />} /></Route>
       <Route element={<ProtectedRoute />}><Route path="/consent" element={<Consent />} /></Route>
       <Route path="/privacy" element={<Privacy />} />
+      <Route path="/install" element={<Install />} />
 
       {/* Public admissions (no sign-in) */}
       <Route path="/apply/:code" element={<Apply />} />

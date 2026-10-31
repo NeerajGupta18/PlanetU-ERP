@@ -76,6 +76,12 @@ Before the demo
    On the public page, tap "Questions? AI help", tick "I'm not a robot", tap "Does it work on phones?".
    Then ask "How much does it cost?": it does not quote a price and offers a demo or a message to the team.
 
+10. Get the app (1 minute, on the phone)
+   On the front page, scroll to "Get the app" and tap your device. The page marks your device and opens its steps.
+   On a laptop, point the phone's camera at the QR code to open the same page on the phone.
+   iPhone: tap Share, choose Add to Home Screen, tap Add, then open PlanetU from its icon. Android: download the app.
+   "No App Store needed. It opens straight to your own screen."
+
 Closing line
 "Every job is a short process with a step bar, one clear next button, and your logo on everything a parent sees."
 

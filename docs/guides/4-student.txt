@@ -5,6 +5,10 @@ Signing in
 Institute code, choose Student, your student ID (PRN) and password, tick "I'm not a robot".
 The office gives you a one-time password when you are enrolled. The app asks you to change it the first time you sign in.
 
+Get the app
+Open the "Get the app" page (/install on the site). Your device is marked.
+Android: download the app and open the file. iPhone or iPad: tap Share, choose Add to Home Screen, tap Add. Computer: use the install icon in the address bar, or File then Add to Dock in Safari on a Mac.
+
 Your home page
 - Cards for your attendance, next class, work due this week, fees due, next exam and latest result.
 - The attendance card says how many classes you can still miss, or how many you must attend to reach 75%.

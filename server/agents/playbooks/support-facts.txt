@@ -7,7 +7,7 @@ What it is
 
 Phones
 - Every screen works on a phone.
-- There is an Android app. On an iPhone or a computer it can be added to the home screen from the browser.
+- There is an Android app. On an iPhone or iPad it can be added to the home screen from the browser, and on a computer it can be installed from the browser. The steps for each device are on the Get the app page at /install.
 
 Setting up
 - A seven-step setup guide: profile and logo, academic year, classes and divisions, subjects and teachers, fee heads and plans, import students and staff, invite people.

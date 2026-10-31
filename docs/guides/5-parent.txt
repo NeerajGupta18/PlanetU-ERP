@@ -1,6 +1,10 @@
 PlanetU Campus ERP
 User guide: Parent
 
+Get the app
+Open the "Get the app" page (/install on the site). Your device is marked.
+Android: download the app and open the file. iPhone or iPad: tap Share, choose Add to Home Screen, tap Add. Computer: use the install icon in the address bar, or File then Add to Dock in Safari on a Mac.
+
 Getting in
 1. The institute sends you an invite by email when your child is enrolled. Open the link and set a password.
 2. Sign in with the institute code, choose Parent, your login ID and password.
