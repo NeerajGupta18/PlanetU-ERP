@@ -1,0 +1,10 @@
+{
+  "name": "planetu-erp-ios",
+  "private": true,
+  "description": "iOS app wrapper for the PlanetU Campus ERP. Open and run it with Xcode: see docs/guides/ios-app.md",
+  "dependencies": {
+    "@capacitor/cli": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/ios": "^7.0.0"
+  }
+}

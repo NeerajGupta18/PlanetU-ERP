@@ -1,0 +1,14 @@
+{
+  "appId": "app.planetu.erp",
+  "appName": "PlanetU Campus ERP",
+  "webDir": "www",
+  "appendUserAgent": "PlanetUApp",
+  "server": {
+    "url": "https://planetu-erp.onrender.com",
+    "cleartext": false,
+    "allowNavigation": ["planetu-erp.onrender.com"]
+  },
+  "ios": {
+    "contentInset": "never"
+  }
+}
