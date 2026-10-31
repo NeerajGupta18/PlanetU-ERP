@@ -191,3 +191,57 @@ Attendance ring with per-subject bars and the same What-if meter; fees due and p
 - Use the ui-ux-pro-max skill for layout, colour, typography and chart rules, and keep to design-system/planetu-campus-erp/MASTER.md and the institute colour.
 - Update the user guides, the demo script and the in-app How to use pages for what changed.
 - Final summary per PR: what changed, tests, reconciliation results, timings and bundle sizes, anything still untested, and a short phone and laptop checklist for Neeraj.
+
+## Day 13 (Sat 31 Oct): iPhone and Safari support, install page, iOS app project
+Goal: the ERP must install and work properly on iPhone through Safari (free, no Apple account), and the repo must contain an iOS app project (Capacitor) that Neeraj can build on his Mac and run on his own iPhone. Today the install prompt asks iPhone users to open Chrome; that must go.
+
+### How Day 13 runs
+Three separate branches and pull requests, each with full tests, merge and a deploy check, in this order: 13A, 13B, 13C. Standing rules apply: no migrations, never touch Render settings, never skip tests, never ask for or store Apple ID, passwords or certificates, never spend money.
+Honest limits to keep in mind and to repeat in the final summary:
+- Real Safari "Add to Home Screen" cannot be automated. Test with Playwright WebKit using an iPhone device profile and say plainly that real-device checks are left to Neeraj.
+- A downloadable iOS app for other people needs the paid Apple Developer Program (about 99 USD a year). Do NOT try to work around this. The free route is: build on Neeraj's own Mac with Xcode and a free Apple ID and run on his own iPhone (the install expires after 7 days and must be re-run). Say this in the guide.
+
+### 13A Safari and iPhone install experience (web app)
+1. Find the current install prompt code (the one that asks to open Chrome). It likely depends on the beforeinstallprompt event, which Safari never fires. Replace it with a small platform-aware component:
+   - iPhone or iPad Safari (and Chrome, Edge or Firefox on iOS, which are also WebKit): show a clear "Install on iPhone" sheet with the real steps: tap the Share button, choose Add to Home Screen, tap Add. Include a simple drawing of the Share icon. No wording about Chrome.
+   - Android Chrome: keep the existing one-tap install.
+   - Desktop: keep what exists; Safari on Mac can use File, Add to Dock, so show that hint.
+   - Already running as an installed app (display-mode standalone, or navigator.standalone on iOS): show nothing.
+   - Dismissal remembered for 14 days in localStorage wrapped in try/catch. Never block the page.
+2. Detect the platform in one small tested helper (user-agent plus touch points, because iPadOS reports as Mac). Unit tests with real iPhone Safari, iPhone Chrome, iPad, Android Chrome, Mac Safari and desktop Chrome user-agent strings.
+3. The prompt must never appear on the login screen in a way that covers the form on a 390 px phone, and must not hurt the landing page Lighthouse score. Lazy-load it.
+
+### 13B iOS web app correctness (installed and in-browser)
+Check and fix each item, and report what was already fine:
+- index.html and manifest: apple-touch-icon 180x180 (PNG, no transparency), apple-mobile-web-app-capable, apple-mobile-web-app-title, apple-mobile-web-app-status-bar-style, theme-color, viewport-fit=cover, manifest name, short_name, start_url, scope, display standalone, 192 and 512 icons plus a maskable icon.
+- Safe areas: use env(safe-area-inset-top, bottom, left, right) for the header, bottom nav, floating buttons and chat bubble so nothing hides behind the notch or the home bar. Use 100dvh (with a fallback) instead of 100vh.
+- Inputs: font-size at least 16 px so iOS Safari does not zoom on focus; check date, select and file inputs.
+- Standalone mode has no browser back button: make sure every screen has an in-app way back, and the app does not leave the installed window for internal links. External links open in the system browser.
+- Sign-in: installed iPhone web apps have their own storage, separate from Safari. Confirm login, session refresh and sign-out all work inside the installed app, and that a session survives closing the app. Fix anything that depends on third-party cookies.
+- Service worker and offline: confirm it registers on Safari and the app shell loads without error; no feature may assume Chromium-only APIs. List any Chromium-only API found (for example the Badging API, background sync, beforeinstallprompt) and guard each one.
+- QR check-in scanner (camera) and file uploads: confirm they work in iOS Safari and installed mode, or show a clear message with what to do.
+- The 360-degree device viewer and dashboards: re-check in WebKit at iPhone sizes (390x844, 430x932) and iPad (820x1180). No sideways scroll, targets at least 44 px, zero console errors.
+- Add Playwright WebKit tests using the iPhone 14 and iPad device profiles that open the landing page, the login page and one dashboard per role, and assert: no horizontal overflow, the install sheet shows the iPhone steps (and no Chrome wording), nothing is hidden by safe-area padding (test by emulating insets), and zero console errors.
+
+### 13C iOS app project (Capacitor) for Neeraj's own iPhone
+1. Check the existing Capacitor 7 Android setup in android-app/ and reuse the same web build and config approach. Add the iOS platform the same way the repo already does Android, with @capacitor/ios at the same major version as the other Capacitor packages. Put it in ios-app/ (or the repo's convention; say which).
+2. Check what Neeraj's Mac has: Xcode, command line tools, and CocoaPods (or Swift Package Manager if the Capacitor version uses it). If something is missing, STOP that sub-step, list the exact commands Neeraj must run himself, and continue with the parts that do not need it. Do not install system-wide software without saying so first.
+3. Configure: app id matching the Android one, app name PlanetU Campus ERP, iPhone icon set and launch screen from the existing brand assets, status bar, safe areas, allowed navigation to the live site only, camera usage description text (needed for QR check-in) in Info.plist, and no tracking.
+4. Decide with evidence whether the app should bundle the web build or load the live site (the Android app's approach is the default to match). Say which and why.
+5. Do NOT add Face ID or fingerprint login (Day 11 was reverted).
+6. Do not commit signing certificates, provisioning profiles, Apple IDs or team ids. Add the right ignore entries (Pods, DerivedData, xcuserdata, build output).
+7. Optional GitHub Actions job on a macOS runner that only builds for the iOS simulator without signing, to catch breakage. If the free runner minutes are a concern, skip it and say so.
+8. Write docs/guides/ios-app.md in plain simple words, aimed at Neeraj: how to open the project in Xcode, choose his free Apple ID under Signing, plug in the iPhone, enable Developer Mode on the phone, press Run, trust the developer profile in Settings, and what to do when it expires after 7 days. Also a short section "Giving the app to other people" explaining that this needs the paid Apple Developer Program and TestFlight, and that until then clients use Add to Home Screen.
+
+### 13D Install page and landing links
+1. Add a public /install page and a "Get the app" section or button on the landing page with three clearly separated cards: Android (the APK download that already exists), iPhone and iPad (Add to Home Screen steps, same component as 13A), Computer (install from Chrome or Edge, or Add to Dock in Safari). Auto-highlight the card for the visitor's device.
+2. On wide screens show a QR code that opens /install on the phone. Generate it without a heavy library (a small inline generator, or a static SVG made at build time) and report the size added.
+3. Keep the landing page mobile Lighthouse performance no lower than before (it is 75 now) and layout shift near 0; report before and after.
+4. Update the user guide, the demo script and the in-app How to use page.
+
+### Done means for Day 13
+- Opening the site in iPhone Safari shows iPhone install steps, never "open Chrome".
+- After Add to Home Screen the app opens full screen with the right icon and name, nothing hidden by the notch or home bar, sign-in works and stays signed in.
+- ios-app/ exists, syncs with the web build, and the guide lets Neeraj run it on his own iPhone.
+- All tests pass, including the new WebKit iPhone tests. No migrations.
+- Final summary per PR: what changed, tests, what could NOT be tested without a real iPhone, and a short checklist for Neeraj on the iPhone: install from Safari, open from the home screen, sign in as each role, scan a QR check-in, upload a file, close and reopen the app.
