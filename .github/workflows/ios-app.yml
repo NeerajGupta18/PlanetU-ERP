@@ -1,0 +1,42 @@
+name: Build iOS app for the simulator
+
+# Only proves that the iOS project still compiles. No signing, no certificates, nothing is published.
+# Runs when the files in ios-app/ change, or by hand: Actions > Build iOS app for the simulator > Run workflow.
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'ios-app/**'
+      - '.github/workflows/ios-app.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'ios-app/**'
+      - '.github/workflows/ios-app.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  simulator:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Sync the iOS project
+        working-directory: ios-app
+        run: |
+          npm ci --no-audit --no-fund
+          npx cap sync ios
+
+      - name: Build for the simulator, without signing
+        working-directory: ios-app/ios/App
+        run: >
+          xcodebuild build -project App.xcodeproj -scheme App -configuration Debug
+          -sdk iphonesimulator -destination 'generic/platform=iOS Simulator'
+          CODE_SIGNING_ALLOWED=NO
