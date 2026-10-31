@@ -154,6 +154,14 @@ test('landing page: Get the app shows three cards, marks this device, and leads 
   await expect(page.locator('#iphone')).toContainText('Add to Home Screen');
 });
 
+test('sign-in page: a link can name the institute, and a plain visit starts with no code', async ({ page }) => {
+  await open(page, '/login?institute=Demo-College');
+  await expect(page.locator('.login__card input').first()).toHaveValue('demo-college');
+  await page.evaluate(() => localStorage.clear());
+  await open(page, '/login');
+  await expect(page.locator('.login__card input').first()).toHaveValue('');
+});
+
 test('fields are at least 16 px, so iOS does not zoom on focus', async ({ page }) => {
   await open(page, '/login');
   const small = await page.evaluate(() => [...document.querySelectorAll('input:not([type=checkbox]):not([type=radio]):not([type=file]), select, textarea')]

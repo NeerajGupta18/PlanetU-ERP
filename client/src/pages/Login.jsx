@@ -7,6 +7,7 @@ import { api } from '../api/http.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { ROLE_HOME } from '../config/menu.config.js';
 import { BRAND } from '../config/brand.js';
+import { initialInstituteCode } from '../lib/instituteCode.js';
 import BrandMark from '../components/ui/BrandMark.jsx';
 import RobotCheck from '../components/auth/RobotCheck.jsx';
 
@@ -37,9 +38,9 @@ const demoId = (role, code) => ({
 function initialCode() {
   const fromQuery = new URLSearchParams(window.location.search).get('institute');
   if (fromQuery) return fromQuery.toLowerCase();
-  const sub = window.location.hostname.split('.');
-  if (sub.length >= 3 && !['www', 'app'].includes(sub[0])) return sub[0].toLowerCase();
-  return localStorage.getItem('erp.institute') || '';
+  let saved = '';
+  try { saved = localStorage.getItem('erp.institute') || ''; } catch { /* storage blocked */ }
+  return initialInstituteCode(window.location.hostname, saved);
 }
 
 export default function Login() {
