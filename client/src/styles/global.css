@@ -1467,3 +1467,15 @@ a.banner__next:hover { text-decoration: underline; }
 @media (max-width: 1024px) { .dash-page .alert a { display: inline-flex; align-items: center; min-height: 44px; } }
 .dash-page .myday__notices strong { white-space: normal; overflow-wrap: anywhere; }
 .dash-page .myday__notices a { flex-wrap: wrap; }
+
+/* Install steps (iPhone sheet, Add to Dock, install page) */
+.install-sheet { display: grid; gap: 14px; margin-bottom: 18px; }
+.install-sheet__lead { margin: 0; font-size: 14px; color: var(--muted); }
+.install-sheet__steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; counter-reset: step; }
+.install-sheet__steps li { counter-increment: step; display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start; font-size: 15px; line-height: 1.45; }
+.install-sheet__steps li::before { content: counter(step); display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--brand-50); color: var(--brand); font-family: var(--font-head); font-size: 13px; font-weight: 600; }
+.install-sheet__icon { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; margin: 0 2px; vertical-align: middle; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface); color: var(--link); }
+.install-sheet__note { margin: 0; font-size: 13px; color: var(--muted); }
+@media (max-width: 640px) {
+  .getapp__actions .btn, .getapp-banner .btn, .getapp-banner .icon-btn { min-height: 44px; min-width: 44px; }
+}
