@@ -8,6 +8,7 @@ import { FullPageLoader } from './components/ui/Feedback.jsx';
 import ErrorBoundary from './components/ui/ErrorBoundary.jsx';
 import Login from './pages/Login.jsx';
 import ModuleGate from './components/auth/ModuleGate.jsx';
+import { installedOnIos } from './lib/install.js';
 
 // Pages load on demand, so the first visit downloads only what the sign-in page and the shell need
 const Help = lazy(() => import('./pages/shared/Help.jsx'));
@@ -91,6 +92,7 @@ const ForgotPassword = lazy(() => import('./pages/ForgotPassword.jsx'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword.jsx'));
 const ChangePassword = lazy(() => import('./pages/ChangePassword.jsx'));
 const ApplyStatus = lazy(() => import('./pages/public/ApplyStatus.jsx'));
+const InstalledDocs = lazy(() => import('./components/campus/InstalledDocs.jsx'));
 const loadLanding = () => import('./pages/public/Landing.jsx');
 const Landing = lazy(loadLanding);
 const Privacy = lazy(() => import('./pages/public/Privacy.jsx'));
@@ -124,6 +126,7 @@ export default function App() {
   return (
     <ErrorBoundary>
     <Suspense fallback={<FullPageLoader />}>
+    {installedOnIos() && <InstalledDocs />}
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />

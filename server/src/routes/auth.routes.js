@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
+import { env } from '../config/env.js';
 import { requireAuth } from '../middleware/auth.js';
 import * as auth from '../controllers/auth.controller.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -18,6 +19,8 @@ router.get('/captcha/challenge', limiter, auth.captchaNewChallenge);
 router.post('/captcha/challenge', limiter, auth.captchaAnswer);
 router.post('/login', limiter, asyncHandler(auth.login));
 router.get('/me', requireAuth, asyncHandler(auth.me));
+// The check every page load makes. With no session cookie that is a normal answer, not an error in the browser console.
+router.get('/session', (req, res, next) => (req.cookies?.[env.COOKIE_NAME] ? next() : res.json({ user: null })), requireAuth, asyncHandler(auth.me));
 router.get('/tenant/:code', limiter, asyncHandler(auth.publicTenantInfo));
 router.post('/forgot-password', limiter, asyncHandler(auth.forgotPassword));
 router.post('/reset-password', limiter, asyncHandler(auth.resetPassword));

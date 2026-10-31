@@ -28,6 +28,17 @@ export function isInstalled() {
   return false;
 }
 
+/** Installed on an iPhone or iPad. A new window there has no sign-in and no way back, so documents stay in the app. */
+export function installedOnIos() {
+  return platform().os === 'ios' && isInstalled();
+}
+
+/** Open a signed-in document (PDF) from code. See InstalledDocs.jsx for links. */
+export function openDocument(url) {
+  if (installedOnIos()) window.dispatchEvent(new CustomEvent('erp:open-document', { detail: { url } }));
+  else window.open(url, '_blank');
+}
+
 /** Everything a screen needs to offer the app: can the browser install it, is the APK there, is it installed already. */
 export function useInstall() {
   const [, force] = useState(0);

@@ -187,8 +187,9 @@ export async function me(req, res) {
 }
 
 export function logout(req, res) {
-  res.clearCookie(env.COOKIE_NAME);
-  res.clearCookie(CHILD_COOKIE);
+  // With the attributes it was set with, so that every browser, Safari included, really drops it
+  res.clearCookie(env.COOKIE_NAME, { httpOnly: true, sameSite: 'lax', secure: env.COOKIE_SECURE });
+  res.clearCookie(CHILD_COOKIE, { httpOnly: true, sameSite: 'lax', secure: env.COOKIE_SECURE });
   res.json({ ok: true });
 }
 
