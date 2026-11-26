@@ -1,4 +1,5 @@
 import * as storage from '../storage/index.js';
+import { env } from '../config/env.js';
 /**
  * Demo data. Everything here is FICTIONAL sample data.
  *
@@ -228,7 +229,10 @@ async function seedApplicants(courseId) {
     for (const docType of ['photo', 'id_proof', 'marksheet']) {
       const { rows: [{ t }] } = await q("select current_setting('app.tenant_id') as t");
       const key = `${t}/${crypto.randomUUID()}`;
-      await storage.put(key, SAMPLE_DOC);
+      // With STORAGE_DRIVER=db the bytes go in this same transaction: storage.put opens its own, which cannot see the
+      // institute row created above (not committed yet), so its tenant foreign key would fail and the whole load roll back.
+      if (env.STORAGE_DRIVER === 'db') await q('insert into file_blobs (storage_key, data) values ($1, $2)', [key, SAMPLE_DOC]);
+      else await storage.put(key, SAMPLE_DOC);
       const { rows: [f] } = await q(
         `insert into files (created_by, purpose, original_name, mime, size_bytes, sha256, storage_key)
          values ($1, 'admission', $2, 'image/png', $3, $4, $5) returning id`,
